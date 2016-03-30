@@ -1,97 +1,185 @@
 %%{
     machine html;
 
-    action EmitReplacementCharacterToken {}
+    action EmitReplacementCharacterToken {
+        printf("CharacterToken(NULL)\n");
+    }
 
-    action EmitCharacterToken {}
+    action EmitCharacterToken {
+        printf("CharacterToken('%c')\n", fc);
+    }
 
-    action AppendToComment {}
+    action AppendToComment {
+        printf("Comment.value += '%c'\n", fc);
+    }
 
-    action CreateStartTagToken {}
+    action CreateStartTagToken {
+        printf("TagToken = { kind: 'start' }\n");
+    }
 
-    action AppendUpperCaseToTagName {}
+    action AppendUpperCaseToTagName {
+        printf("TagToken.name += '%c'\n", ufc);
+    }
 
-    action AppendToTagName {}
+    action AppendToTagName {
+        printf("TagToken.name += '%c'\n", fc);
+    }
 
-    action EmitLessThanSignCharacterToken {}
+    action EmitLessThanSignCharacterToken {
+        printf("CharacterToken('<')\n");
+    }
 
-    action EmitTagToken {}
+    action EmitTagToken {
+        printf("TagToken.emit()\n");
+    }
 
-    action CreateTemporaryBuffer {}
+    action CreateTemporaryBuffer {
+        printf("TempBuf = ''\n");
+    }
 
-    action ApppendToTemporaryBuffer {}
+    action ApppendToTemporaryBuffer {
+        printf("TempBuf += '%c'\n", fc);
+    }
 
-    action IsAppropriateEndTagToken {}
+    action IsAppropriateEndTagToken { printf("IsAppropriateEndTagToken?\n"), 1 }
 
-    action EmitTemporaryBufferCharacterToken {}
+    action EmitTemporaryBufferCharacterToken {
+        printf("CharacterToken(TempBuf)\n");
+    }
 
-    action IsTemporaryBufferScript {}
+    action IsTemporaryBufferScript { printf("IsTemporaryBufferScript?\n"), 1 }
 
-    action SetSelfClosingFlag {}
+    action SetSelfClosingFlag {
+        printf("TagToken.selfClosing = true\n");
+    }
 
-    action AppendReplacementCharacterToComment {}
+    action AppendReplacementCharacterToComment {
+        printf("Comment += NULL\n");
+    }
 
-    action CreateComment {}
+    action CreateComment {
+        printf("Comment = { value: '' }\n");
+    }
 
-    action EmitComment {}
+    action EmitComment {
+        printf("Comment.emit()\n");
+    }
 
-    action EmitDocType {}
+    action EmitDocType {
+        printf("DocType.emit()\n");
+    }
 
-    action CreateEndTagToken {}
+    action CreateEndTagToken {
+        printf("TagToken = { kind: 'end' }\n");
+    }
 
-    action EmitSolidusCharacterToken {}
+    action EmitSolidusCharacterToken {
+        printf("CharacterToken('/')\n");
+    }
 
-    action EmitLessThanSignExclamationMarkCharacterToken {}
+    action EmitExclamationMarkCharacterToken {
+        printf("CharacterToken('!')\n");
+    }
 
-    action EmitHyphenMinusCharacterToken {}
+    action EmitHyphenMinusCharacterToken {
+        printf("CharacterToken('-')\n");
+    }
 
-    action EmitGreaterThanCharacterToken {}
+    action EmitGreaterThanCharacterToken {
+        printf("CharacterToken('>')\n");
+    }
 
-    action AppendUpperCaseToTemporaryBuffer {}
+    action AppendUpperCaseToTemporaryBuffer {
+        printf("TempBuf += '%c'\n", ufc);
+    }
 
-    action CreateAttribute {}
+    action CreateAttribute {
+        printf("Attribute = { name: '', value: '' }\n");
+    }
 
-    action AppendUpperCaseToAttributeName {}
+    action AppendUpperCaseToAttributeName {
+        printf("Attribute.name += '%c'\n", ufc);
+    }
 
-    action AppendReplacementCharacterToAttributeName {}
+    action AppendReplacementCharacterToAttributeName {
+        printf("Attribute.name += NULL\n");
+    }
 
-    action AppendToAttributeName {}
+    action AppendToAttributeName {
+        printf("Attribute.name += '%c'\n", fc);
+    }
 
-    action AppendReplacementCharacterToAttributeValue {}
+    action AppendReplacementCharacterToAttributeValue {
+        printf("Attribute.value += NULL\n");
+    }
 
-    action AppendToAttributeValue {}
+    action AppendToAttributeValue {
+        printf("Attribute.value += '%c'\n", fc);
+    }
 
-    action AllowCData {}
+    action IsCDataAllowed { printf("IsCDataAllowed?\n"), 1 }
 
-    action AppendHyphenMinusToComment {}
+    action AppendHyphenMinusToComment {
+        printf("Comment.value += '-'\n");
+    }
 
-    action AppendExclamationMarkToComment {}
+    action AppendExclamationMarkToComment {
+        printf("Comment.value += '!'\n");
+    }
 
-    action CreateDocType {}
+    action CreateDocType {
+        printf("DocType = {}");
+    }
 
-    action SetForceQuirksFlag {}
+    action SetForceQuirksFlag {
+        printf("DocType.forceQuirks = true\n");
+    }
 
-    action AppendUpperCaseToDocTypeName {}
+    action AppendUpperCaseToDocTypeName {
+        printf("DocType.name += '%c'\n", ufc);
+    }
 
-    action AppendReplacementCharacterToDocTypeName {}
+    action AppendReplacementCharacterToDocTypeName {
+        printf("DocType.name += NULL\n");
+    }
 
-    action AppendToDocTypeName {}
+    action AppendToDocTypeName {
+        printf("DocType.name += '%c'\n", fc);
+    }
 
-    action CreatePublicIdentifier {}
+    action CreatePublicIdentifier {
+        printf("DocType.publicId = ''\n");
+    }
 
-    action AppendReplacementCharacterToDocTypePublicIdentifier {}
+    action AppendReplacementCharacterToDocTypePublicIdentifier {
+        printf("DocType.publicId += NULL\n");
+    }
 
-    action AppendToDocTypePublicIdentifier {}
+    action AppendToDocTypePublicIdentifier {
+        printf("DocType.publicId += '%c'\n", fc);
+    }
 
-    action CreateSystemIdentifier {}
+    action CreateSystemIdentifier {
+        printf("DocType.systemId = ''\n");
+    }
 
-    action AppendReplacementCharacterToDocTypeSystemIdentifier {}
+    action AppendReplacementCharacterToDocTypeSystemIdentifier {
+        printf("DocType.systemId += NULL\n");
+    }
 
-    action AppendToDocTypeSystemIdentifier {}
+    action AppendToDocTypeSystemIdentifier {
+        printf("DocType.systemId += '%c'\n", fc);
+    }
 
-    action StartCData {}
+    action StartCData {
+        printf("StartCData\n");
+    }
 
-    action EmitIncompleteCData {}
+    action EmitIncompleteCData {
+        printf("EmitIncompleteCData\n");
+    }
 
-    action EmitCompleteCData {}
+    action EmitCompleteCData {
+        printf("EmitCompleteCData\n");
+    }
 }%%

@@ -32,22 +32,21 @@
     Data: (
         # '&' -> CharacterReferenceInData |
         '<' -> TagOpen |
-        ^'<' @EmitCharacterToken
+        ^'<' @EmitCharacterToken -> Data
     ),
     RCData: (
         # '&' -> CharacterReferenceInRCData |
         '<' -> RCDataLessThanSign |
-        PlainText
+        PlainText -> RCData
     ),
     RawText: (
         '<' -> RawTextLessThanSign |
-        PlainText
+        PlainText -> RawText
     ),
     ScriptData: (
         '<' -> ScriptDataLessThanSign |
-        PlainText
+        PlainText -> ScriptData
     ),
-    PlainText: PlainText,
     TagOpen: (
         '!' -> MarkupDeclarationOpen |
         '/' -> EndTagOpen |
@@ -66,9 +65,9 @@
         TagNameSpace -> BeforeAttributeName |
         '/' -> SelfClosingStartTag |
         '>' @EmitTagToken -> Data |
-        upper @AppendUpperCaseToTagName |
-        UnsafeNULL |
-        ^(TagNameEnd | upper | 0) @AppendToTagName
+        upper @AppendUpperCaseToTagName -> TagName |
+        UnsafeNULL -> TagName |
+        ^(TagNameEnd | upper | 0) @AppendToTagName -> TagName
     ),
     RCDataLessThanSign: (
         '/' @CreateTemporaryBuffer -> RCDataEndTagOpen |
@@ -83,8 +82,8 @@
         TagNameSpace when IsAppropriateEndTagToken -> BeforeAttributeName |
         '/' when IsAppropriateEndTagToken -> SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken -> Data |
-        upper @AppendUpperCaseToTagName @ApppendToTemporaryBuffer |
-        lower @AppendToTagName @ApppendToTemporaryBuffer |
+        upper @AppendUpperCaseToTagName @ApppendToTemporaryBuffer -> RCDataEndTagName |
+        lower @AppendToTagName @ApppendToTemporaryBuffer -> RCDataEndTagName |
         ^(
             TagNameEnd when IsAppropriateEndTagToken |
             alpha
@@ -103,8 +102,8 @@
         TagNameSpace when IsAppropriateEndTagToken -> BeforeAttributeName |
         '/' when IsAppropriateEndTagToken -> SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken -> Data |
-        upper @AppendUpperCaseToTagName @ApppendToTemporaryBuffer |
-        lower @AppendToTagName @ApppendToTemporaryBuffer |
+        upper @AppendUpperCaseToTagName @ApppendToTemporaryBuffer -> RawTextEndTagName |
+        lower @AppendToTagName @ApppendToTemporaryBuffer -> RawTextEndTagName |
         ^(
             TagNameEnd when IsAppropriateEndTagToken |
             alpha
@@ -112,7 +111,7 @@
     ),
     ScriptDataLessThanSign: (
         '/' @CreateTemporaryBuffer -> ScriptDataEndTagOpen |
-        '!' @EmitLessThanSignExclamationMarkCharacterToken -> ScriptDataEscapeStart |
+        '!' @EmitLessThanSignCharacterToken @EmitExclamationMarkCharacterToken -> ScriptDataEscapeStart |
         ^('/' | '!') @EmitLessThanSignCharacterToken @Reconsume -> ScriptData
     ),
     ScriptDataEndTagOpen: (
@@ -124,8 +123,8 @@
         TagNameSpace when IsAppropriateEndTagToken -> BeforeAttributeName |
         '/' when IsAppropriateEndTagToken -> SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken -> Data |
-        upper @AppendUpperCaseToTagName @ApppendToTemporaryBuffer |
-        lower @AppendToTagName @ApppendToTemporaryBuffer |
+        upper @AppendUpperCaseToTagName @ApppendToTemporaryBuffer -> ScriptDataEndTagName |
+        lower @AppendToTagName @ApppendToTemporaryBuffer -> ScriptDataEndTagName |
         ^(
             TagNameEnd when IsAppropriateEndTagToken |
             alpha
@@ -142,17 +141,17 @@
     ScriptDataEscaped: (
         '-' @EmitHyphenMinusCharacterToken -> ScriptDataEscapedDash |
         '<' -> ScriptDataEscapedLessThanSign |
-        UnsafeNULL |
-        ^('-' | '<' | 0) @EmitCharacterToken
+        UnsafeNULL -> ScriptDataEscaped |
+        ^('-' | '<' | 0) @EmitCharacterToken -> ScriptDataEscaped
     ),
     ScriptDataEscapedDash: (
         '-' @EmitHyphenMinusCharacterToken -> ScriptDataEscapedDashDash |
         '<' -> ScriptDataEscapedLessThanSign |
         UnsafeNULL -> ScriptDataEscaped |
-        ^('-' | '<' | 0) @EmitCharacterToken
+        ^('-' | '<' | 0) @EmitCharacterToken -> ScriptDataEscaped
     ),
     ScriptDataEscapedDashDash: (
-        '-' @EmitHyphenMinusCharacterToken |
+        '-' @EmitHyphenMinusCharacterToken -> ScriptDataEscapedDashDash |
         '<' -> ScriptDataEscapedLessThanSign |
         '>' @EmitGreaterThanCharacterToken -> ScriptData |
         UnsafeNULL -> ScriptDataEscaped |
@@ -183,8 +182,8 @@
     ScriptDataDoubleEscapeStart: (
         TagNameEnd when IsTemporaryBufferScript @EmitCharacterToken -> ScriptDataDoubleEscaped |
         (TagNameEnd - (TagNameEnd when IsTemporaryBufferScript)) @EmitCharacterToken -> ScriptDataEscaped |
-        upper @AppendUpperCaseToTemporaryBuffer @EmitCharacterToken |
-        lower @ApppendToTemporaryBuffer @EmitCharacterToken |
+        upper @AppendUpperCaseToTemporaryBuffer @EmitCharacterToken -> ScriptDataDoubleEscapeStart |
+        lower @ApppendToTemporaryBuffer @EmitCharacterToken -> ScriptDataDoubleEscapeStart |
         ^(TagNameEnd | alpha) @Reconsume -> ScriptDataEscaped
     ),
     ScriptDataDoubleEscaped: (
@@ -213,12 +212,12 @@
     ScriptDataDoubleEscapeEnd: (
         TagNameEnd when IsTemporaryBufferScript @EmitCharacterToken -> ScriptDataEscaped |
         (TagNameEnd - (TagNameEnd when IsTemporaryBufferScript)) @EmitCharacterToken -> ScriptDataDoubleEscaped |
-        upper @AppendUpperCaseToTemporaryBuffer @EmitCharacterToken |
-        lower @ApppendToTemporaryBuffer @EmitCharacterToken |
+        upper @AppendUpperCaseToTemporaryBuffer @EmitCharacterToken -> ScriptDataDoubleEscapeEnd |
+        lower @ApppendToTemporaryBuffer @EmitCharacterToken -> ScriptDataDoubleEscapeEnd |
         ^(TagNameEnd | alpha) @Reconsume -> ScriptDataDoubleEscaped
     ),
     BeforeAttributeName: (
-        TagNameSpace |
+        TagNameSpace -> BeforeAttributeName |
         '/' -> SelfClosingStartTag |
         '>' @EmitTagToken -> Data |
         upper @CreateAttribute @AppendUpperCaseToAttributeName -> AttributeName |
@@ -230,12 +229,12 @@
         '/' -> SelfClosingStartTag |
         '=' -> BeforeAttributeValue |
         '>' @EmitTagToken -> Data |
-        upper @AppendUpperCaseToAttributeName |
-        0 @AppendReplacementCharacterToAttributeName |
-        ^(TagNameSpace | '/' | '=' | '>' | upper | 0) @AppendToAttributeName
+        upper @AppendUpperCaseToAttributeName -> AttributeName |
+        0 @AppendReplacementCharacterToAttributeName -> AttributeName |
+        ^(TagNameSpace | '/' | '=' | '>' | upper | 0) @AppendToAttributeName -> AttributeName
     ),
     AfterAttributeName: (
-        TagNameSpace |
+        TagNameSpace -> AfterAttributeName |
         '/' -> SelfClosingStartTag |
         '=' -> BeforeAttributeValue |
         '>' @EmitTagToken -> Data |
@@ -244,7 +243,7 @@
         ^(TagNameSpace | '/' | '=' | '>' | upper | 0) @CreateAttribute @AppendToAttributeName -> AttributeName
     ),
     BeforeAttributeValue: (
-        TagNameSpace |
+        TagNameSpace -> BeforeAttributeValue |
         '"' -> AttributeValueDoubleQuoted |
         '&' @Reconsume -> AttributeValueUnquoted |
         "'" -> AttributeValueSingleQuoted |
@@ -255,21 +254,21 @@
     AttributeValueDoubleQuoted: (
         '"' -> AfterAttributeValueQuoted |
         # '&' -> CharacterReferenceInAttributeValue |
-        0 @AppendReplacementCharacterToAttributeValue |
-        ^('"' | 0) @AppendToAttributeValue
+        0 @AppendReplacementCharacterToAttributeValue -> AttributeValueDoubleQuoted |
+        ^('"' | 0) @AppendToAttributeValue -> AttributeValueDoubleQuoted
     ),
     AttributeValueSingleQuoted: (
         "'" -> AfterAttributeValueQuoted |
         # '&' -> CharacterReferenceInAttributeValue |
-        0 @AppendReplacementCharacterToAttributeValue |
-        ^("'" | 0) @AppendToAttributeValue
+        0 @AppendReplacementCharacterToAttributeValue -> AttributeValueSingleQuoted |
+        ^("'" | 0) @AppendToAttributeValue -> AttributeValueSingleQuoted
     ),
     AttributeValueUnquoted: (
         TagNameSpace -> BeforeAttributeName |
         # '&' -> CharacterReferenceInAttributeValue |
         '>' @EmitTagToken -> Data |
-        0 @AppendReplacementCharacterToAttributeValue |
-        ^(TagNameSpace | '>' | 0) @AppendToAttributeValue
+        0 @AppendReplacementCharacterToAttributeValue -> AttributeValueUnquoted |
+        ^(TagNameSpace | '>' | 0) @AppendToAttributeValue -> AttributeValueUnquoted
     ),
     AfterAttributeValueQuoted: (
         TagNameSpace -> BeforeAttributeName |
@@ -285,11 +284,11 @@
     MarkupDeclarationOpen: (
         '--' @CreateComment -> CommentStart |
         /doctype/i -> DocType |
-        '[CDATA[' when AllowCData -> CDataSection |
+        '[CDATA[' when IsCDataAllowed -> CDataSection |
         (_BogusComment - ((
             '--' |
             /doctype/i |
-            '[CDATA[' when AllowCData
+            '[CDATA[' when IsCDataAllowed
         ) any*)) -> Data
     ),
     CommentStart: (
@@ -306,8 +305,8 @@
     ) $eof(EmitComment),
     Comment: (
         '-' -> CommentEndDash |
-        0 @AppendReplacementCharacterToComment |
-        ^('-' | 0) @AppendToComment
+        0 @AppendReplacementCharacterToComment -> Comment |
+        ^('-' | 0) @AppendToComment -> Comment
     ) $eof(EmitComment),
     CommentEndDash: (
         '-' -> CommentEnd |
@@ -331,7 +330,7 @@
         ^TagNameSpace @Reconsume -> BeforeDocTypeName
     ) $eof(CreateDocType) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     BeforeDocTypeName: (
-        TagNameSpace |
+        TagNameSpace -> BeforeDocTypeName |
         upper @CreateDocType @AppendUpperCaseToDocTypeName -> DocTypeName |
         0 @CreateDocType @AppendReplacementCharacterToDocTypeName -> DocTypeName |
         '>' @CreateDocType @SetForceQuirksFlag @EmitDocType -> Data |
@@ -340,12 +339,12 @@
     DocTypeName: (
         TagNameSpace -> AfterDocTypeName |
         '>' @EmitDocType -> Data |
-        upper @AppendUpperCaseToDocTypeName |
-        0 @AppendReplacementCharacterToDocTypeName |
-        ^(TagNameSpace | '>' | upper | 0) @AppendToDocTypeName
+        upper @AppendUpperCaseToDocTypeName -> DocTypeName |
+        0 @AppendReplacementCharacterToDocTypeName -> DocTypeName |
+        ^(TagNameSpace | '>' | upper | 0) @AppendToDocTypeName -> DocTypeName
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     AfterDocTypeName: (
-        TagNameSpace |
+        TagNameSpace -> AfterDocTypeName |
         '>' @EmitDocType -> Data |
         'PUBLIC' -> AfterDocTypePublicKeyword |
         'SYSTEM' -> AfterDocTypeSystemKeyword |
@@ -364,7 +363,7 @@
         ^(TagNameSpace | '"' | "'" | '>') @SetForceQuirksFlag -> BogusDocType
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     BeforeDocTypePublicIdentifier: (
-        TagNameSpace |
+        TagNameSpace -> BeforeDocTypePublicIdentifier |
         '"' @CreatePublicIdentifier -> DocTypePublicIdentifierDoubleQuoted |
         "'" @CreatePublicIdentifier -> DocTypePublicIdentifierSingleQuoted |
         '>' @SetForceQuirksFlag @EmitDocType -> Data |
@@ -372,15 +371,15 @@
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     DocTypePublicIdentifierDoubleQuoted: (
         '"' -> AfterDocTypePublicIdentifier |
-        0 @AppendReplacementCharacterToDocTypePublicIdentifier |
+        0 @AppendReplacementCharacterToDocTypePublicIdentifier -> DocTypePublicIdentifierDoubleQuoted |
         '>' @SetForceQuirksFlag @EmitDocType -> Data |
-        ^('"' | 0 | '>') @AppendToDocTypePublicIdentifier
+        ^('"' | 0 | '>') @AppendToDocTypePublicIdentifier -> DocTypePublicIdentifierDoubleQuoted
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     DocTypePublicIdentifierSingleQuoted: (
         "'" -> AfterDocTypePublicIdentifier |
-        0 @AppendReplacementCharacterToDocTypePublicIdentifier |
+        0 @AppendReplacementCharacterToDocTypePublicIdentifier -> DocTypePublicIdentifierSingleQuoted |
         '>' @SetForceQuirksFlag @EmitDocType -> Data |
-        ^("'" | 0 | '>') @AppendToDocTypePublicIdentifier
+        ^("'" | 0 | '>') @AppendToDocTypePublicIdentifier -> DocTypePublicIdentifierSingleQuoted
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     AfterDocTypePublicIdentifier: (
         TagNameSpace -> BetweenDocTypePublicAndSystemIdentifiers |
@@ -390,7 +389,7 @@
         ^(TagNameSpace | '>' | '"' | "'") @SetForceQuirksFlag -> BogusDocType
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     BetweenDocTypePublicAndSystemIdentifiers: (
-        TagNameSpace |
+        TagNameSpace -> BetweenDocTypePublicAndSystemIdentifiers |
         '>' @EmitDocType -> Data |
         '"' @CreateSystemIdentifier -> DocTypeSystemIdentifierDoubleQuoted |
         "'" @CreateSystemIdentifier -> DocTypeSystemIdentifierSingleQuoted |
@@ -404,7 +403,7 @@
         ^(TagNameSpace | '"' | "'" | '>') @SetForceQuirksFlag -> BogusDocType
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     BeforeDocTypeSystemIdentifier: (
-        TagNameSpace |
+        TagNameSpace -> BeforeDocTypeSystemIdentifier |
         '"' @CreateSystemIdentifier -> DocTypeSystemIdentifierDoubleQuoted |
         "'" @CreateSystemIdentifier -> DocTypeSystemIdentifierSingleQuoted |
         '>' @SetForceQuirksFlag @EmitDocType -> Data |
@@ -412,24 +411,25 @@
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     DocTypeSystemIdentifierDoubleQuoted: (
         '"' -> AfterDocTypeSystemIdentifier |
-        0 @AppendReplacementCharacterToDocTypeSystemIdentifier |
+        0 @AppendReplacementCharacterToDocTypeSystemIdentifier -> DocTypeSystemIdentifierDoubleQuoted |
         '>' @SetForceQuirksFlag @EmitDocType -> Data |
-        ^('"' | 0 | '>') @AppendToDocTypeSystemIdentifier
+        ^('"' | 0 | '>') @AppendToDocTypeSystemIdentifier -> DocTypeSystemIdentifierDoubleQuoted
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     DocTypeSystemIdentifierSingleQuoted: (
         "'" -> AfterDocTypeSystemIdentifier |
-        0 @AppendReplacementCharacterToDocTypeSystemIdentifier |
+        0 @AppendReplacementCharacterToDocTypeSystemIdentifier -> DocTypeSystemIdentifierSingleQuoted |
         '>' @SetForceQuirksFlag @EmitDocType -> Data |
-        ^("'" | 0 | '>') @AppendToDocTypeSystemIdentifier
+        ^("'" | 0 | '>') @AppendToDocTypeSystemIdentifier -> DocTypeSystemIdentifierSingleQuoted
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     AfterDocTypeSystemIdentifier: (
-        TagNameSpace |
+        TagNameSpace -> AfterDocTypeSystemIdentifier |
         '>' @EmitDocType -> Data |
         ^(TagNameSpace | '>') -> BogusDocType
     ) $eof(SetForceQuirksFlag) $eof(EmitDocType),
     BogusDocType: _BogusDocType -> Data,
     CDataSection: (
         any* >StartCData $eof(EmitIncompleteCData) :>> ']]>' @EmitCompleteCData
-    ) -> Data
-    ;
+    ) -> Data;
+
+    write data;
 }%%
