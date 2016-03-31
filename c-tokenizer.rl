@@ -7,7 +7,10 @@
 
     access state->;
 
+    include 'c-actions.rl';
     include 'syntax.rl';
+
+    write data;
 }%%
 
 typedef struct TokenizerState {

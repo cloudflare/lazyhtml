@@ -3,8 +3,6 @@
 
     action Reconsume { fhold; }
 
-    include "actions.rl";
-
     TAB = '\t';
     LF = '\n';
     FF = '\f';
@@ -284,11 +282,11 @@
     MarkupDeclarationOpen: (
         '--' @CreateComment -> CommentStart |
         /doctype/i -> DocType |
-        '[CDATA[' when IsCDataAllowed -> CDataSection |
+        '[' when IsCDataAllowed 'CDATA[' -> CDataSection |
         (_BogusComment - ((
             '--' |
             /doctype/i |
-            '[CDATA[' when IsCDataAllowed
+            '[' when IsCDataAllowed 'CDATA['
         ) any*)) -> Data
     ),
     CommentStart: (
@@ -430,6 +428,4 @@
     CDataSection: (
         any* >StartCData $eof(EmitIncompleteCData) :>> ']]>' @EmitCompleteCData
     ) -> Data;
-
-    write data;
 }%%

@@ -128,7 +128,7 @@
     }
 
     action CreateDocType {
-        printf("DocType = {}");
+        printf("DocType = {}\n");
     }
 
     action SetForceQuirksFlag {
