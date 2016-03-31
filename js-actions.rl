@@ -2,184 +2,220 @@
     machine html;
 
     action EmitReplacementCharacterToken {
-        console.log("CharacterToken(NULL)");
+        this.emitToken({
+            type: 'Character',
+            value: '\uFFFD'
+        });
     }
 
     action EmitCharacterToken {
-        console.log("CharacterToken('%s')", data[p]);
+        this.emitToken({
+            type: 'Character',
+            value: data[p]
+        });
     }
 
     action AppendToComment {
-        console.log("Comment.value += '%s'", data[p]);
+        this.commentToken.value += data[p];
     }
 
     action CreateStartTagToken {
-        console.log("TagToken = { kind: 'start' }");
+        this.tagToken = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
     }
 
     action AppendUpperCaseToTagName {
-        console.log("TagToken.name += '%s'", data[p].toLowerCase());
+        this.tagToken.name += data[p].toLowerCase();
     }
 
     action AppendToTagName {
-        console.log("TagToken.name += '%s'", data[p]);
+        this.tagToken.name += data[p];
     }
 
     action EmitLessThanSignCharacterToken {
-        console.log("CharacterToken('<')");
+        this.emitToken({
+            type: 'Character',
+            value: '<'
+        });
     }
 
     action EmitTagToken {
-        console.log("TagToken.emit()");
+        if (this.tagToken.type === 'StartTag') {
+            this.lastStartTagName = this.tagToken.name;
+        }
+        this.emitToken(this.tagToken);
     }
 
     action CreateTemporaryBuffer {
-        console.log("TempBuf = ''");
+        this.tempBuf = '';
     }
 
     action ApppendToTemporaryBuffer {
-        console.log("TempBuf += '%s'", data[p]);
+        this.tempBuf += data[p];
     }
 
-    action IsAppropriateEndTagToken { console.log("IsAppropriateEndTagToken?"), 1 }
+    action IsAppropriateEndTagToken { this.tagToken.name === this.lastStartTagName }
 
     action EmitTemporaryBufferCharacterToken {
-        console.log("CharacterToken(TempBuf)");
+        this.emitToken({
+            type: 'Character',
+            value: this.tempBuf
+        });
     }
 
-    action IsTemporaryBufferScript { console.log("IsTemporaryBufferScript?"), 1 }
+    action IsTemporaryBufferScript { this.tempBuf === 'script' }
 
     action SetSelfClosingFlag {
-        console.log("TagToken.selfClosing = true");
+        this.tagToken.selfClosing = true;
     }
 
     action AppendReplacementCharacterToComment {
-        console.log("Comment += NULL");
+        this.commentToken.value += '\uFFFD';
     }
 
     action CreateComment {
-        console.log("Comment = { value: '' }");
+        this.commentToken = { type: 'Comment', value: '' };
     }
 
     action EmitComment {
-        console.log("Comment.emit()");
+        this.emitToken(this.commentToken);
     }
 
     action EmitDocType {
-        console.log("DocType.emit()");
+        this.emitToken(this.docTypeToken);
     }
 
     action CreateEndTagToken {
-        console.log("TagToken = { kind: 'end' }");
+        this.tagToken = { type: 'EndTag', name: '' };
     }
 
     action EmitSolidusCharacterToken {
-        console.log("CharacterToken('/')");
+        this.emitToken({
+            type: 'Character',
+            value: '/'
+        });
     }
 
     action EmitExclamationMarkCharacterToken {
-        console.log("CharacterToken('!')");
+        this.emitToken({
+            type: 'Character',
+            value: '!'
+        });
     }
 
     action EmitHyphenMinusCharacterToken {
-        console.log("CharacterToken('-')");
+        this.emitToken({
+            type: 'Character',
+            value: '-'
+        });
     }
 
     action EmitGreaterThanCharacterToken {
-        console.log("CharacterToken('>')");
+        this.emitToken({
+            type: 'Character',
+            value: '>'
+        });
     }
 
     action AppendUpperCaseToTemporaryBuffer {
-        console.log("TempBuf += '%s'", data[p].toLowerCase());
+        this.tempBuf += data[p].toLowerCase();
     }
 
     action CreateAttribute {
-        console.log("Attribute = { name: '', value: '' }");
+        this.tagToken.attributes.push(this.attribute = {
+            name: '',
+            value: ''
+        });
     }
 
     action AppendUpperCaseToAttributeName {
-        console.log("Attribute.name += '%s'", data[p].toLowerCase());
+        this.attribute.name += data[p].toLowerCase();
     }
 
     action AppendReplacementCharacterToAttributeName {
-        console.log("Attribute.name += NULL");
+        this.attribute.name = '\uFFFD';
     }
 
     action AppendToAttributeName {
-        console.log("Attribute.name += '%s'", data[p]);
+        this.attribute.name += data[p];
     }
 
     action AppendReplacementCharacterToAttributeValue {
-        console.log("Attribute.value += NULL");
+        this.attribute.value += '\uFFFD';
     }
 
     action AppendToAttributeValue {
-        console.log("Attribute.value += '%s'", data[p]);
+        this.attribute.value += data[p];
     }
 
-    action IsCDataAllowed { console.log("IsCDataAllowed?"), 1 }
+    action IsCDataAllowed { this.allowCData }
 
     action AppendHyphenMinusToComment {
-        console.log("Comment.value += '-'");
+        this.commentToken.value += '-';
     }
 
     action AppendExclamationMarkToComment {
-        console.log("Comment.value += '!'");
+        this.commentToken.value += '!';
     }
 
     action CreateDocType {
-        console.log("DocType = {}");
+        this.docTypeToken = { type: 'DocType', name: '', forceQuirks: false };
     }
 
     action SetForceQuirksFlag {
-        console.log("DocType.forceQuirks = true");
+        this.docTypeToken.forceQuirks = true;
     }
 
     action AppendUpperCaseToDocTypeName {
-        console.log("DocType.name += '%s'", data[p].toLowerCase());
+        this.docTypeToken.name += data[p].toLowerCase();
     }
 
     action AppendReplacementCharacterToDocTypeName {
-        console.log("DocType.name += NULL");
+        this.docTypeToken.name += '\uFFFD';
     }
 
     action AppendToDocTypeName {
-        console.log("DocType.name += '%s'", data[p]);
+        this.docTypeToken.name += data[p];
     }
 
     action CreatePublicIdentifier {
-        console.log("DocType.publicId = ''");
+        this.docTypeToken.publicId = '';
     }
 
     action AppendReplacementCharacterToDocTypePublicIdentifier {
-        console.log("DocType.publicId += NULL");
+        this.docTypeToken.publicId += '\uFFFD';
     }
 
     action AppendToDocTypePublicIdentifier {
-        console.log("DocType.publicId += '%s'", data[p]);
+        this.docTypeToken.publicId += data[p];
     }
 
     action CreateSystemIdentifier {
-        console.log("DocType.systemId = ''");
+        this.docTypeToken.systemId = '';
     }
 
     action AppendReplacementCharacterToDocTypeSystemIdentifier {
-        console.log("DocType.systemId += NULL");
+        this.docTypeToken.systemId += '\uFFFD';
     }
 
     action AppendToDocTypeSystemIdentifier {
-        console.log("DocType.systemId += '%s'", data[p]);
+        this.docTypeToken.systemId += data[p];
     }
 
     action StartCData {
-        console.log("StartCData");
+        this.startCData = p;
     }
 
     action EmitIncompleteCData {
-        console.log("EmitIncompleteCData");
+        this.emitToken({
+            type: 'CData',
+            value: data.slice(this.startCData)
+        });
     }
 
     action EmitCompleteCData {
-        console.log("EmitCompleteCData");
+        this.emitToken({
+            type: 'CData',
+            value: data.slice(this.startCData, p - 2)
+        });
     }
 }%%
