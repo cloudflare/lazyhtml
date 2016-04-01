@@ -32,6 +32,19 @@ function codeFrame(str, pos) {
     return str + '\n' + '-'.repeat(pos) + '^'.repeat(length) + '-'.repeat(str.length - pos - length);
 }
 
+function squashCharTokens(tokens) {
+    const newTokens = [];
+    let lastToken;
+    for (let token of tokens) {
+        if (token[0] === 'Character' && lastToken !== undefined && lastToken[0] === 'Character') {
+            lastToken[1] += token[1];
+        } else {
+            newTokens.push(lastToken = token);
+        }
+    }
+    return newTokens;
+}
+
 const stateMappings = {
     'data state': states.Data,
     'PLAINTEXT state': states.PlainText,
@@ -52,11 +65,7 @@ function tokenize(input, { lastStartTag, initialState }) {
             // console.log(token);
             switch (token.type) {
                 case 'Character': {
-                    if (tokens.length > 0 && tokens[tokens.length - 1][0] === 'Character') {
-                        tokens[tokens.length - 1][1] += token.value;
-                    } else {
-                        tokens.push(['Character', token.value]);
-                    }
+                    tokens.push(['Character', token.value]);
                     break;
                 }
 
@@ -142,7 +151,11 @@ fs.readdirSync(testsDir).forEach(name => {
                     output = deepUnescape(output);
                 }
                 initialStates.forEach(initialState => {
-                    t.deepEqual(tokenize(input, { lastStartTag, initialState }), output, initialState);
+                    t.deepEqual(
+                        squashCharTokens(tokenize(input, { lastStartTag, initialState })),
+                        squashCharTokens(output),
+                        initialState
+                    );
                 });
                 t.end();
             });
