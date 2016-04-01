@@ -31,6 +31,10 @@
         this.tagToken.name += data[p];
     }
 
+    action AppendReplacementCharacterToTagName {
+        this.tagToken.name += '\uFFFD';
+    }
+
     action EmitLessThanSignCharacterToken {
         this.emitToken({
             type: 'Character',
@@ -49,7 +53,7 @@
         this.tempBuf = '';
     }
 
-    action ApppendToTemporaryBuffer {
+    action AppendToTemporaryBuffer {
         this.tempBuf += data[p];
     }
 
@@ -121,10 +125,10 @@
     }
 
     action CreateAttribute {
-        this.tagToken.attributes.push(this.attribute = {
+        this.attribute = {
             name: '',
             value: ''
-        });
+        };
     }
 
     action AppendUpperCaseToAttributeName {
@@ -145,6 +149,12 @@
 
     action AppendToAttributeValue {
         this.attribute.value += data[p];
+    }
+
+    action AppendAttribute {
+        if (this.tagToken.type === 'StartTag' && !(this.attribute.name in this.tagToken.attributes)) {
+            this.tagToken.attributes.push(this.attribute);
+        }
     }
 
     action IsCDataAllowed { this.allowCData }

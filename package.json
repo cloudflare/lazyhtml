@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "postinstall": "typings install",
+    "test": "node --harmony_destructuring test.js | faucet"
+  },
+  "devDependencies": {
+    "faucet": "0.0.1",
+    "tape": "^4.5.1",
+    "tape-catch": "^1.0.4"
+  }
+}

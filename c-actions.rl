@@ -25,6 +25,10 @@
         printf("TagToken.name += '%c'\n", fc);
     }
 
+    action AppendReplacementCharacterToTagName {
+        printf("TagToken.name += NULL\n");
+    }
+
     action EmitLessThanSignCharacterToken {
         printf("CharacterToken('<')\n");
     }
@@ -37,7 +41,7 @@
         printf("TempBuf = ''\n");
     }
 
-    action ApppendToTemporaryBuffer {
+    action AppendToTemporaryBuffer {
         printf("TempBuf += '%c'\n", fc);
     }
 
@@ -115,6 +119,10 @@
 
     action AppendToAttributeValue {
         printf("Attribute.value += '%c'\n", fc);
+    }
+
+    action AppendAttribute {
+        printf("TagToken.append(Attribute)\n");
     }
 
     action IsCDataAllowed { printf("IsCDataAllowed?\n"), 1 }

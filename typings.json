@@ -1,0 +1,9 @@
+{
+  "version": false,
+  "dependencies": {
+    "tape": "registry:npm/tape#4.0.0+20160322235547"
+  },
+  "ambientDependencies": {
+    "node": "registry:dt/node#4.0.0+20160330064709"
+  }
+}
