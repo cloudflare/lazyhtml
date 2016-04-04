@@ -136,7 +136,7 @@
     }
 
     action AppendReplacementCharacterToAttributeName {
-        this.attribute.name = '\uFFFD';
+        this.attribute.name += '\uFFFD';
     }
 
     action AppendToAttributeName {
@@ -152,7 +152,7 @@
     }
 
     action AppendAttribute {
-        if (this.tagToken.type === 'StartTag' && !(this.attribute.name in this.tagToken.attributes)) {
+        if (this.tagToken.type === 'StartTag' && !this.tagToken.attributes.some(attr => attr.name === this.attribute.name)) {
             this.tagToken.attributes.push(this.attribute);
         }
     }
@@ -168,7 +168,11 @@
     }
 
     action CreateDocType {
-        this.docTypeToken = { type: 'DocType', name: '', forceQuirks: false };
+        this.docTypeToken = { type: 'DocType', name: null, forceQuirks: false, publicId: null, systemId: null };
+    }
+
+    action CreateDocTypeName {
+        this.docTypeToken.name = '';
     }
 
     action SetForceQuirksFlag {

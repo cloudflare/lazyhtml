@@ -4,6 +4,7 @@ const test = require('tape-catch');
 const testsDir = 'html5lib-tests/tokenizer';
 const fs = require('fs');
 const { HtmlTokenizer, states } = require('./js-tokenizer');
+const decodeHtmlEntitites = require('he').decode;
 
 function unescape(str) {
     return str.replace(/\\u([0-9a-f]{4})/i, (_, code) => String.fromCharCode(parseInt(code, 16)));
@@ -95,8 +96,8 @@ function tokenize(input, { lastStartTag, initialState }) {
                     tokens.push([
                         'DOCTYPE',
                         token.name,
-                        'publicId' in token ? token.publicId : null,
-                        'systemId' in token ? token.systemId : null,
+                        token.publicId,
+                        token.systemId,
                         !token.forceQuirks
                     ]);
                     break;
@@ -128,6 +129,7 @@ function tokenize(input, { lastStartTag, initialState }) {
 }
 
 fs.readdirSync(testsDir).forEach(name => {
+    if (/entities/i.test(name)) return;
     const match = name.match(/(.*)\.test$/);
     if (!match) return;
     const { tests } = JSON.parse(fs.readFileSync(`${testsDir}/${name}`, 'utf-8'));
@@ -140,20 +142,32 @@ fs.readdirSync(testsDir).forEach(name => {
             doubleEscaped = false,
             lastStartTag
         }) => {
-            if (description.includes('entity')) {
-                // We're not yet ready for this
-                return;
-            }
             test(description, t => {
                 output = output.filter(item => item !== 'ParseError');
                 if (doubleEscaped) {
                     input = unescape(input);
                     output = deepUnescape(output);
                 }
+                output = squashCharTokens(output);
                 initialStates.forEach(initialState => {
                     t.deepEqual(
-                        squashCharTokens(tokenize(input, { lastStartTag, initialState })),
-                        squashCharTokens(output),
+                        squashCharTokens(tokenize(input, { lastStartTag, initialState })).map(token => {
+                            switch (token[0]) {
+                                case 'Character':
+                                    token[1] = decodeHtmlEntitites(token[1]);
+                                    break;
+
+                                case 'StartTag':
+                                    for (let name in token[2]) {
+                                        token[2][name] = decodeHtmlEntitites(token[2][name], {
+                                            isAttributeValue: true
+                                        });
+                                    }
+                                    break;
+                            }
+                            return token;
+                        }),
+                        output,
                         initialState
                     );
                 });

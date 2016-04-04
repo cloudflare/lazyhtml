@@ -3,7 +3,7 @@ RAGELFLAGS += -d
 CFLAGS += -g $(shell pkg-config --cflags json-c)
 LDFLAGS += $(shell pkg-config --libs json-c)
 
-%.dot: js-tokenizer.rl
+%.dot: js-tokenizer.rl syntax.rl
 	$(RAGEL) $(RAGELFLAGS) -PVp -M $(notdir $(basename $@)) $< > $@ || rm $@
 
 %.png: %.dot

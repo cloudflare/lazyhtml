@@ -119,7 +119,7 @@
             lower @CreateEndTagToken @AppendToTagName @To_TagName |
             '>' @To_Data
         ) >1 |
-        any >0 @To_BogusComment
+        any >0 @Reconsume @To_BogusComment
     ) @eof(EmitLessThanSignCharacterToken) @eof(EmitSolidusCharacterToken) @eof(Reconsume) @eof(To_Data);
 
     TagName := (
@@ -441,10 +441,7 @@
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEndDash := (
-        (
-            '-' @To_CommentEnd |
-            '>' @EmitComment @To_Data
-        ) >1 |
+        '-' >1 @To_CommentEnd |
         (
             0 >1 @AppendReplacementCharacterToComment |
             any >0 @AppendToComment
@@ -493,7 +490,7 @@
                 0 @AppendReplacementCharacterToDocTypeName
             ) >1 |
             any >0 @AppendToDocTypeName
-        ) @To_DocTypeName
+        ) >CreateDocTypeName @To_DocTypeName
     ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     DocTypeName := (
@@ -512,13 +509,10 @@
     AfterDocTypeName := (
         TagNameSpace >2
     )* :> (
-        (
-            '>' @EmitDocType @To_Data |
-            /PUBLIC/i @To_AfterDocTypePublicKeyword |
-            /SYSTEM/i @To_AfterDocTypeSystemKeyword
-        ) @1 |
-        (any _BogusDocType) $0
-    ) >eof(SetForceQuirksFlag) >eof(EmitDocType) >eof(Reconsume) >eof(To_Data);
+        '>' @EmitDocType @To_Data |
+        /PUBLIC/i @To_AfterDocTypePublicKeyword |
+        /SYSTEM/i @To_AfterDocTypeSystemKeyword
+    ) $lerr(Reconsume) $lerr(SetForceQuirksFlag) $lerr(To_BogusDocType);
 
     AfterDocTypePublicKeyword := (
         (
