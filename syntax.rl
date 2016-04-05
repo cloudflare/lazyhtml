@@ -57,13 +57,10 @@
     action To_BeforeDocTypeName { fgoto BeforeDocTypeName; }
     action To_DocTypeName { fgoto DocTypeName; }
     action To_AfterDocTypeName { fgoto AfterDocTypeName; }
-    action To_AfterDocTypePublicKeyword { fgoto AfterDocTypePublicKeyword; }
-    action To_AfterDocTypeSystemKeyword { fgoto AfterDocTypeSystemKeyword; }
     action To_BeforeDocTypePublicIdentifier { fgoto BeforeDocTypePublicIdentifier; }
     action To_DocTypePublicIdentifierDoubleQuoted { fgoto DocTypePublicIdentifierDoubleQuoted; }
     action To_DocTypePublicIdentifierSingleQuoted { fgoto DocTypePublicIdentifierSingleQuoted; }
     action To_BogusDocType { fgoto BogusDocType; }
-    action To_AfterDocTypePublicIdentifier { fgoto AfterDocTypePublicIdentifier; }
     action To_BetweenDocTypePublicAndSystemIdentifiers { fgoto BetweenDocTypePublicAndSystemIdentifiers; }
     action To_DocTypeSystemIdentifierDoubleQuoted { fgoto DocTypeSystemIdentifierDoubleQuoted; }
     action To_DocTypeSystemIdentifierSingleQuoted { fgoto DocTypeSystemIdentifierSingleQuoted; }
@@ -108,15 +105,13 @@
     TagOpen := (
         '!' @To_MarkupDeclarationOpen |
         '/' @To_EndTagOpen |
-        upper @CreateStartTagToken @AppendUpperCaseToTagName @To_TagName |
-        lower @CreateStartTagToken @AppendToTagName @To_TagName |
+        alpha @CreateStartTagToken @Reconsume @To_TagName |
         '?' @Reconsume @To_BogusComment
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_Data);
 
     EndTagOpen := (
         (
-            upper @CreateEndTagToken @AppendUpperCaseToTagName @To_TagName |
-            lower @CreateEndTagToken @AppendToTagName @To_TagName |
+            alpha @CreateEndTagToken @Reconsume @To_TagName |
             '>' @To_Data
         ) >1 |
         any >0 @Reconsume @To_BogusComment
@@ -138,10 +133,7 @@
         '/' @CreateTemporaryBuffer @To_RCDataEndTagOpen
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
 
-    RCDataEndTagOpen := (
-        upper @AppendUpperCaseToTagName |
-        lower @AppendToTagName
-    ) >CreateEndTagToken @AppendToTemporaryBuffer @To_RCDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
+    RCDataEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_RCDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
 
     RCDataEndTagName := (
         upper @AppendUpperCaseToTagName |
@@ -156,10 +148,7 @@
         '/' @CreateTemporaryBuffer @To_RawTextEndTagOpen
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
 
-    RawTextEndTagOpen := (
-        upper @AppendUpperCaseToTagName |
-        lower @AppendToTagName
-    ) >CreateEndTagToken @AppendToTemporaryBuffer @To_RawTextEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
+    RawTextEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_RawTextEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
 
     RawTextEndTagName := (
         upper @AppendUpperCaseToTagName |
@@ -175,11 +164,7 @@
         '!' @EmitLessThanSignCharacterToken @EmitExclamationMarkCharacterToken @To_ScriptDataEscapeStart
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
 
-    ScriptDataEndTagOpen := (
-        upper @AppendUpperCaseToTagName |
-        lower @AppendToTagName
-    ) >CreateEndTagToken @AppendToTemporaryBuffer @To_ScriptDataEndTagName
-    @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
+    ScriptDataEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_ScriptDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
 
     ScriptDataEndTagName := (
         upper @AppendUpperCaseToTagName @AppendToTemporaryBuffer @To_ScriptDataEndTagName |
@@ -227,18 +212,12 @@
     ScriptDataEscapedLessThanSign := (
         (
             '/' @To_ScriptDataEscapedEndTagOpen |
-            (
-                upper @AppendUpperCaseToTagName |
-                lower @AppendToTagName
-            ) @AppendToTemporaryBuffer @EmitLessThanSignCharacterToken @EmitCharacterToken @To_ScriptDataDoubleEscapeStart
+            alpha @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataDoubleEscapeStart
         ) >CreateTemporaryBuffer |
         ^('/' | alpha) @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataEscaped
     );
 
-    ScriptDataEscapedEndTagOpen := (
-        upper @AppendUpperCaseToTagName |
-        lower @AppendToTagName
-    ) >CreateEndTagToken @AppendToTemporaryBuffer @To_ScriptDataEscapedEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
+    ScriptDataEscapedEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_ScriptDataEscapedEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
 
     ScriptDataEscapedEndTagName := (
         upper @AppendUpperCaseToTagName |
@@ -300,16 +279,10 @@
     BeforeAttributeName := (
         TagNameSpace >2
     )* :> (
+        ('/' | '>') >1 @Reconsume @To_AfterAttributeName |
         (
-            '/' @To_SelfClosingStartTag |
-            '>' @EmitTagToken @To_Data
-        ) >1 |
-        (
-            (
-                upper @AppendUpperCaseToAttributeName |
-                0 @AppendReplacementCharacterToAttributeName
-            ) >1 |
-            any >0 @AppendToAttributeName
+            '=' >1 @AppendToAttributeName |
+            any >0 @Reconsume
         ) >CreateAttribute @To_AttributeName
     ) @eof(Reconsume) @eof(To_Data);
 
@@ -320,10 +293,8 @@
         ) >1 |
         any >0 @AppendToAttributeName
     )* %AppendAttribute :> (
-        TagNameSpace @To_AfterAttributeName |
-        '/' @To_SelfClosingStartTag |
-        '=' @To_BeforeAttributeValue |
-        '>' @EmitTagToken @To_Data
+        TagNameEnd @Reconsume @To_AfterAttributeName |
+        '=' @To_BeforeAttributeValue
     ) @eof(Reconsume) @eof(To_Data);
 
     AfterAttributeName := (
@@ -334,13 +305,7 @@
             '=' @To_BeforeAttributeValue |
             '>' @EmitTagToken @To_Data
         ) >1 |
-        (
-            (
-                upper @AppendUpperCaseToAttributeName |
-                0 @AppendReplacementCharacterToAttributeName
-            ) >1 |
-            any >0 @AppendToAttributeName
-        ) >CreateAttribute @To_AttributeName
+        any >0 @CreateAttribute @Reconsume @To_AttributeName
     ) @eof(Reconsume) @eof(To_Data);
 
     BeforeAttributeValue := (
@@ -476,21 +441,10 @@
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     DocType := (
-        TagNameSpace >1 |
-        any >0 @Reconsume
-    ) @To_BeforeDocTypeName @eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
-
-    BeforeDocTypeName := (
-        TagNameSpace >2
+        TagNameSpace >1
     )* :> (
         '>' >1 @SetForceQuirksFlag @EmitDocType @To_Data |
-        (
-            (
-                upper @AppendUpperCaseToDocTypeName |
-                0 @AppendReplacementCharacterToDocTypeName
-            ) >1 |
-            any >0 @AppendToDocTypeName
-        ) >CreateDocTypeName @To_DocTypeName
+        any >0 @CreateDocTypeName @Reconsume @To_DocTypeName
     ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     DocTypeName := (
@@ -500,50 +454,30 @@
         ) >1 |
         any >0 @AppendToDocTypeName
     )* :> (
-        TagNameSpace @To_AfterDocTypeName |
-        '>' @EmitDocType @To_Data
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
-
-    _BogusDocType = any* :> '>' @EmitDocType @To_Data @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+        TagNameSpace |
+        '>'
+    ) @Reconsume @To_AfterDocTypeName @eof(Reconsume) @eof(To_AfterDocTypeName);
 
     AfterDocTypeName := (
         TagNameSpace >2
     )* :> (
         '>' @EmitDocType @To_Data |
-        /PUBLIC/i @To_AfterDocTypePublicKeyword |
-        /SYSTEM/i @To_AfterDocTypeSystemKeyword
+        /PUBLIC/i @To_BeforeDocTypePublicIdentifier |
+        /SYSTEM/i @To_BeforeDocTypeSystemIdentifier
     ) $lerr(Reconsume) $lerr(SetForceQuirksFlag) $lerr(To_BogusDocType);
-
-    AfterDocTypePublicKeyword := (
-        (
-            TagNameSpace @To_BeforeDocTypePublicIdentifier |
-            (
-                '"' @To_DocTypePublicIdentifierDoubleQuoted |
-                "'" @To_DocTypePublicIdentifierSingleQuoted
-            ) >CreatePublicIdentifier |
-            '>' @SetForceQuirksFlag @EmitDocType @To_Data
-        ) >1 |
-        any >0 @SetForceQuirksFlag @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     BeforeDocTypePublicIdentifier := (
         TagNameSpace >2
     )* :> (
-        (
-            (
-                '"' @To_DocTypePublicIdentifierDoubleQuoted |
-                "'" @To_DocTypePublicIdentifierSingleQuoted
-            ) >CreatePublicIdentifier |
-            '>' @SetForceQuirksFlag @EmitDocType @To_Data
-        ) >1 |
-        any >0 @SetForceQuirksFlag @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+        '"' @To_DocTypePublicIdentifierDoubleQuoted |
+        "'" @To_DocTypePublicIdentifierSingleQuoted
+    ) >CreatePublicIdentifier @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
     DocTypePublicIdentifierDoubleQuoted := (
         0 >1 @AppendReplacementCharacterToDocTypePublicIdentifier |
         any >0 @AppendToDocTypePublicIdentifier
     )* :> (
-        '"' @To_AfterDocTypePublicIdentifier |
+        '"' @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
@@ -551,59 +485,26 @@
         0 >1 @AppendReplacementCharacterToDocTypePublicIdentifier |
         any >0 @AppendToDocTypePublicIdentifier
     )* :> (
-        "'" @To_AfterDocTypePublicIdentifier |
+        "'" @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
-
-    AfterDocTypePublicIdentifier := (
-        (
-            TagNameSpace @To_BetweenDocTypePublicAndSystemIdentifiers |
-            '>' @EmitDocType @To_Data |
-            (
-                '"' @To_DocTypeSystemIdentifierDoubleQuoted |
-                "'" @To_DocTypeSystemIdentifierSingleQuoted
-            ) >CreateSystemIdentifier
-        ) >1 |
-        any >0 @SetForceQuirksFlag @To_BogusDocType
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     BetweenDocTypePublicAndSystemIdentifiers := (
         TagNameSpace >2
     )* :> (
         (
-            (
-                '"' @To_DocTypeSystemIdentifierDoubleQuoted |
-                "'" @To_DocTypeSystemIdentifierSingleQuoted
-            ) >CreateSystemIdentifier |
-            '>' @EmitDocType @To_Data
-        ) >1 |
-        any >0 @SetForceQuirksFlag @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
-
-    AfterDocTypeSystemKeyword := (
-        (
-            TagNameSpace @To_BeforeDocTypeSystemIdentifier |
-            (
-                '"' @To_DocTypeSystemIdentifierDoubleQuoted |
-                "'" @To_DocTypeSystemIdentifierSingleQuoted
-            ) >CreateSystemIdentifier |
-            '>' @SetForceQuirksFlag @EmitDocType @To_Data
-        ) >1 |
-        any >0 @SetForceQuirksFlag @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+            '"' @To_DocTypeSystemIdentifierDoubleQuoted |
+            "'" @To_DocTypeSystemIdentifierSingleQuoted
+        ) >CreateSystemIdentifier |
+        '>' @EmitDocType @To_Data
+    ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
     BeforeDocTypeSystemIdentifier := (
         TagNameSpace >2
     )* :> (
-        (
-            (
-                '"' @To_DocTypeSystemIdentifierDoubleQuoted |
-                "'" @To_DocTypeSystemIdentifierSingleQuoted
-            ) >CreateSystemIdentifier |
-            '>' @SetForceQuirksFlag @EmitDocType @To_Data
-        ) >1 |
-        any >0 @SetForceQuirksFlag @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+        '"' @To_DocTypeSystemIdentifierDoubleQuoted |
+        "'" @To_DocTypeSystemIdentifierSingleQuoted
+    ) >CreateSystemIdentifier @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
     DocTypeSystemIdentifierDoubleQuoted := (
         0 >1 @AppendReplacementCharacterToDocTypeSystemIdentifier |
@@ -628,7 +529,7 @@
         any >0 @To_BogusDocType
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
-    BogusDocType := _BogusDocType;
+    BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     CDataSection := (
         any* >StartCData :>> ']]>'
