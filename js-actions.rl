@@ -1,6 +1,12 @@
 %%{
     machine html;
 
+    action SaveQuote {
+        this.quote = fc;
+    }
+
+    action IsMatchingQuote { fc === this.quote }
+
     action EmitReplacementCharacterToken {
         this.emitToken({
             type: 'Character',

@@ -41,9 +41,8 @@
     action To_AttributeName { fgoto AttributeName; }
     action To_AfterAttributeName { fgoto AfterAttributeName; }
     action To_BeforeAttributeValue { fgoto BeforeAttributeValue; }
-    action To_AttributeValueDoubleQuoted { fgoto AttributeValueDoubleQuoted; }
+    action To_AttributeValueQuoted { fgoto AttributeValueQuoted; }
     action To_AttributeValueUnquoted { fgoto AttributeValueUnquoted; }
-    action To_AttributeValueSingleQuoted { fgoto AttributeValueSingleQuoted; }
     action To_AfterAttributeValueQuoted { fgoto AfterAttributeValueQuoted; }
     action To_CharacterReferenceInAttributeValue { fgoto CharacterReferenceInAttributeValue; }
     action To_CommentStart { fgoto CommentStart; }
@@ -58,12 +57,10 @@
     action To_DocTypeName { fgoto DocTypeName; }
     action To_AfterDocTypeName { fgoto AfterDocTypeName; }
     action To_BeforeDocTypePublicIdentifier { fgoto BeforeDocTypePublicIdentifier; }
-    action To_DocTypePublicIdentifierDoubleQuoted { fgoto DocTypePublicIdentifierDoubleQuoted; }
-    action To_DocTypePublicIdentifierSingleQuoted { fgoto DocTypePublicIdentifierSingleQuoted; }
+    action To_DocTypePublicIdentifierQuoted { fgoto DocTypePublicIdentifierQuoted; }
     action To_BogusDocType { fgoto BogusDocType; }
     action To_BetweenDocTypePublicAndSystemIdentifiers { fgoto BetweenDocTypePublicAndSystemIdentifiers; }
-    action To_DocTypeSystemIdentifierDoubleQuoted { fgoto DocTypeSystemIdentifierDoubleQuoted; }
-    action To_DocTypeSystemIdentifierSingleQuoted { fgoto DocTypeSystemIdentifierSingleQuoted; }
+    action To_DocTypeSystemIdentifierQuoted { fgoto DocTypeSystemIdentifierQuoted; }
     action To_BeforeDocTypeSystemIdentifier { fgoto BeforeDocTypeSystemIdentifier; }
     action To_AfterDocTypeSystemIdentifier { fgoto AfterDocTypeSystemIdentifier; }
 
@@ -81,6 +78,12 @@
         UnsafeNULL |
         ^0 @EmitCharacterToken
     )*;
+
+    _Quote = ('"' | "'");
+
+    _StartQuote = _Quote @SaveQuote;
+
+    _EndQuote = _Quote when IsMatchingQuote;
 
     Data := (
         # '&' @To_CharacterReferenceInData |
@@ -312,28 +315,19 @@
         TagNameSpace >2
     )* :> (
         (
-            '"' @To_AttributeValueDoubleQuoted |
+            _StartQuote @To_AttributeValueQuoted |
             '&' @Reconsume @To_AttributeValueUnquoted |
-            "'" @To_AttributeValueSingleQuoted |
             0 @AppendReplacementCharacterToAttributeValue @To_AttributeValueUnquoted |
             '>' @EmitTagToken @To_Data
         ) >1 |
         any >0 @AppendToAttributeValue @To_AttributeValueUnquoted
     ) @eof(Reconsume) @eof(To_Data);
 
-    AttributeValueDoubleQuoted := (
+    AttributeValueQuoted := (
         0 >1 @AppendReplacementCharacterToAttributeValue |
         any >0 @AppendToAttributeValue
     )* :> (
-        '"' @To_AfterAttributeValueQuoted
-        # '&' @To_CharacterReferenceInAttributeValue
-    ) @eof(Reconsume) @eof(To_Data);
-
-    AttributeValueSingleQuoted := (
-        0 >1 @AppendReplacementCharacterToAttributeValue |
-        any >0 @AppendToAttributeValue
-    )* :> (
-        "'" @To_AfterAttributeValueQuoted
+        _EndQuote @To_AfterAttributeValueQuoted
         # '&' @To_CharacterReferenceInAttributeValue
     ) @eof(Reconsume) @eof(To_Data);
 
@@ -469,56 +463,35 @@
     BeforeDocTypePublicIdentifier := (
         TagNameSpace >2
     )* :> (
-        '"' @To_DocTypePublicIdentifierDoubleQuoted |
-        "'" @To_DocTypePublicIdentifierSingleQuoted
-    ) >CreatePublicIdentifier @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
+        _StartQuote @CreatePublicIdentifier @To_DocTypePublicIdentifierQuoted
+    ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
-    DocTypePublicIdentifierDoubleQuoted := (
+    DocTypePublicIdentifierQuoted := (
         0 >1 @AppendReplacementCharacterToDocTypePublicIdentifier |
         any >0 @AppendToDocTypePublicIdentifier
     )* :> (
-        '"' @To_BetweenDocTypePublicAndSystemIdentifiers |
-        '>' @SetForceQuirksFlag @EmitDocType @To_Data
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
-
-    DocTypePublicIdentifierSingleQuoted := (
-        0 >1 @AppendReplacementCharacterToDocTypePublicIdentifier |
-        any >0 @AppendToDocTypePublicIdentifier
-    )* :> (
-        "'" @To_BetweenDocTypePublicAndSystemIdentifiers |
+        _EndQuote @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     BetweenDocTypePublicAndSystemIdentifiers := (
         TagNameSpace >2
     )* :> (
-        (
-            '"' @To_DocTypeSystemIdentifierDoubleQuoted |
-            "'" @To_DocTypeSystemIdentifierSingleQuoted
-        ) >CreateSystemIdentifier |
+        _StartQuote @CreateSystemIdentifier @To_DocTypeSystemIdentifierQuoted |
         '>' @EmitDocType @To_Data
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
     BeforeDocTypeSystemIdentifier := (
         TagNameSpace >2
     )* :> (
-        '"' @To_DocTypeSystemIdentifierDoubleQuoted |
-        "'" @To_DocTypeSystemIdentifierSingleQuoted
-    ) >CreateSystemIdentifier @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
+        _StartQuote @CreateSystemIdentifier @To_DocTypeSystemIdentifierQuoted
+    ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
-    DocTypeSystemIdentifierDoubleQuoted := (
+    DocTypeSystemIdentifierQuoted := (
         0 >1 @AppendReplacementCharacterToDocTypeSystemIdentifier |
         any >0 @AppendToDocTypeSystemIdentifier
     )* :> (
-        '"' @To_AfterDocTypeSystemIdentifier |
-        '>' @SetForceQuirksFlag @EmitDocType @To_Data
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
-
-    DocTypeSystemIdentifierSingleQuoted := (
-        0 >1 @AppendReplacementCharacterToDocTypeSystemIdentifier |
-        any >0 @AppendToDocTypeSystemIdentifier
-    )* :> (
-        "'" @To_AfterDocTypeSystemIdentifier |
+        _EndQuote @To_AfterDocTypeSystemIdentifier |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
