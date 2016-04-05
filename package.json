@@ -1,11 +1,15 @@
 {
   "scripts": {
     "postinstall": "typings install",
-    "test": "node --harmony_destructuring test.js | faucet"
+    "test": "node --harmony_destructuring test.js | tap-spec",
+    "bench": "node bench"
   },
   "devDependencies": {
+    "benchmark": "^2.1.0",
     "faucet": "0.0.1",
     "he": "^0.5.0",
+    "microtime": "^2.0.0",
+    "parse5": "^2.1.5",
     "tape": "^4.5.1",
     "tape-catch": "^1.0.4"
   }

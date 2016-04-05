@@ -24,3 +24,7 @@ c-tokenizer: c-tokenizer.c
 .PHONY: test
 test: test.js js-tokenizer.js
 	npm test
+
+.PHONY: bench
+bench: bench/index.js js-tokenizer.js
+	npm run bench

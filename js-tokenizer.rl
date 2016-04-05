@@ -10,7 +10,7 @@
     write data nofinal noprefix;
 }%%
 
-const states = exports.states = {
+var states = exports.states = {
     start,
     error,
     PlainText: en_PlainText,
@@ -80,11 +80,11 @@ const states = exports.states = {
     CDataSection: en_CDataSection
 };
 
-for (let key in states) {
+for (var key in states) {
     states[states[key]] = key;
 }
 
-const CR = new RegExp('\r\n?', 'g');
+var CR = new RegExp('\r\n?', 'g');
 
 exports.HtmlTokenizer = class HtmlTokenizer {
     constructor(options) {
@@ -112,9 +112,9 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         {
             data = data.replace(CR, '\n');
         }
-        let p = 0;
-        const pe = data.length;
-        const eof = isEnd ? pe : -1;
+        var p = 0;
+        var pe = data.length;
+        var eof = isEnd ? pe : -1;
         if (this.onTrace) {
             Object.defineProperty(this, 'cs', {
                 set(value) {
