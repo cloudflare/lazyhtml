@@ -85,10 +85,12 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
-    _SafeString = (
+    _SafeStringChunk = (
         0 >1 @AppendReplacementCharacter |
         any >0 @AppendCharacter
-    )* >StartString >eof(StartString);
+    )*;
+
+    _SafeString = _SafeStringChunk >StartString >eof(StartString);
 
     Data := (
         # '&' @To_CharacterReferenceInData |
@@ -366,10 +368,7 @@
             '-' @To_CommentStartDash |
             '>' @EmitComment @To_Data
         ) >1 |
-        (
-            0 >1 @AppendReplacementCharacter |
-            any >0 @AppendCharacter
-        ) @To_Comment
+        any >0 @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentStartDash := (
@@ -377,25 +376,16 @@
             '-' @To_CommentEnd |
             '>' @EmitComment @To_Data
         ) >1 |
-        (
-            0 >1 @AppendReplacementCharacter |
-            any >0 @AppendCharacter
-        ) >AppendHyphenMinusCharacter @To_Comment
+        any >0 @AppendHyphenMinusCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
-    Comment := (
-        0 >1 @AppendReplacementCharacter |
-        any >0 @AppendCharacter
-    )* :> (
+    Comment := _SafeStringChunk :> (
         '-' @To_CommentEndDash
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEndDash := (
         '-' >1 @To_CommentEnd |
-        (
-            0 >1 @AppendReplacementCharacter |
-            any >0 @AppendCharacter
-        ) >AppendHyphenMinusCharacter @To_Comment
+        any >0 @AppendHyphenMinusCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEnd := (
@@ -405,23 +395,14 @@
             '>' @EmitComment @To_Data |
             '!' @To_CommentEndBang
         ) >1 |
-        (
-            0 >1 @AppendReplacementCharacter |
-            any >0 @AppendCharacter
-        ) >AppendHyphenMinusCharacter >AppendHyphenMinusCharacter @To_Comment
+        any >0 @AppendHyphenMinusCharacter @AppendHyphenMinusCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEndBang := (
         (
             '>' @EmitComment @To_Data
         ) >1 |
-        (
-            '-' >1 @To_CommentEndDash |
-            (
-                0 >1 @AppendReplacementCharacter |
-                any >0 @AppendCharacter
-            ) @To_Comment
-        ) >AppendHyphenMinusCharacter >AppendHyphenMinusCharacter >AppendExclamationMarkCharacter
+        any >0 @AppendHyphenMinusCharacter @AppendHyphenMinusCharacter @AppendExclamationMarkCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     DocType := (
