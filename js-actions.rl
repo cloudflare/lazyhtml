@@ -27,6 +27,10 @@
         this.string += '-';
     }
 
+    action AppendDoubleHyphenMinusCharacter {
+        this.string += '--';
+    }
+
     action AppendExclamationMarkCharacter {
         this.string += '!';
     }

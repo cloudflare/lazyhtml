@@ -394,14 +394,14 @@
             '>' @EmitComment @To_Data |
             '!' @To_CommentEndBang
         ) >1 |
-        any >0 @AppendHyphenMinusCharacter @AppendHyphenMinusCharacter @Reconsume @To_Comment
+        any >0 @AppendDoubleHyphenMinusCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEndBang := (
         (
             '>' @EmitComment @To_Data
         ) >1 |
-        any >0 @AppendHyphenMinusCharacter @AppendHyphenMinusCharacter @AppendExclamationMarkCharacter @Reconsume @To_Comment
+        any >0 @AppendDoubleHyphenMinusCharacter @AppendExclamationMarkCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     DocType := (
