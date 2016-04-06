@@ -8,6 +8,7 @@ LDFLAGS += $(shell pkg-config --libs json-c)
 
 %.png: %.dot
 	dot -Tpng $< -o $@
+	open $@
 
 c-tokenizer.c: c-tokenizer.rl c-actions.rl syntax.rl
 	$(RAGEL) $(RAGELFLAGS) $<

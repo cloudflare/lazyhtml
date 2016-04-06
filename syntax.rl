@@ -80,6 +80,8 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
+    _Slice = (any $1 %0)+ >StartSlice %AppendSlice %eof(AppendSlice);
+
     _SafeStringChunk = (
         0 >1 @AppendReplacementCharacter |
         any >0 @AppendCharacter
@@ -87,10 +89,10 @@
 
     _SafeString = _SafeStringChunk >StartString >eof(StartString);
 
-    Data := (
+    Data := ((
         # '&' @To_CharacterReferenceInData |
-        any @EmitCharacterToken
-    )* :> '<' @To_TagOpen;
+        _Slice $1 %0
+    )+ >StartString %EmitString %eof(EmitString))? :> '<' >2 @To_TagOpen;
 
     _SafeText = (any+ >StartString %EmitString %eof(EmitString)) | _SafeStringChunk;
 
