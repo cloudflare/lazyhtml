@@ -412,8 +412,7 @@
     )* :> (
         (
             '>' @EmitComment @To_Data |
-            '!' @To_CommentEndBang |
-            '-' @AppendHyphenMinusToComment
+            '!' @To_CommentEndBang
         ) >1 |
         (
             0 >1 @AppendReplacementCharacterToComment |
