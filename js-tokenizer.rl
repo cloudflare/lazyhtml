@@ -81,12 +81,19 @@ var CR = new RegExp('\r\n?', 'g');
 
 exports.HtmlTokenizer = class HtmlTokenizer {
     constructor(options) {
-        %%write init;
-        this.cs = options.initialState || states.Data;
+        %%write init nocs;
+        this.cs = options.initialState || en_Data;
         this.allowCData = true;
         this.emitToken = options.onToken;
         this.lastStartTagName = options.lastStartTagName;
         this.onTrace = options.onTrace;
+        this.quote = 0;
+        this.tempBuf = '';
+        this.commentToken = null;
+        this.docTypeToken = null;
+        this.tagToken = null;
+        this.attribute = null;
+        this.startCData = 0;
         if (this.onTrace) {
             this._cs = this.cs;
             Object.defineProperty(this, 'cs', {
