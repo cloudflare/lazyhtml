@@ -172,12 +172,8 @@
         this.attribute.name += data[p];
     }
 
-    action AppendReplacementCharacterToAttributeValue {
-        this.attribute.value += '\uFFFD';
-    }
-
-    action AppendToAttributeValue {
-        this.attribute.value += data[p];
+    action SetAttributeValue {
+        this.attribute.value = this.string;
     }
 
     action AppendAttribute {

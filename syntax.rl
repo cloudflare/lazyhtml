@@ -85,6 +85,11 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
+    _SafeString = (
+        0 >1 @AppendReplacementCharacter |
+        any >0 @AppendCharacter
+    )* >StartString >eof(StartString);
+
     Data := (
         # '&' @To_CharacterReferenceInData |
         any @EmitCharacterToken
@@ -314,27 +319,16 @@
     BeforeAttributeValue := (
         TagNameSpace >2
     )* :> (
-        (
-            _StartQuote @To_AttributeValueQuoted |
-            '&' @Reconsume @To_AttributeValueUnquoted |
-            0 @AppendReplacementCharacterToAttributeValue @To_AttributeValueUnquoted |
-            '>' @EmitTagToken @To_Data
-        ) >1 |
-        any >0 @AppendToAttributeValue @To_AttributeValueUnquoted
+        _StartQuote >1 @To_AttributeValueQuoted |
+        any >0 @Reconsume @To_AttributeValueUnquoted
     ) @eof(Reconsume) @eof(To_Data);
 
-    AttributeValueQuoted := (
-        0 >1 @AppendReplacementCharacterToAttributeValue |
-        any >0 @AppendToAttributeValue
-    )* :> (
+    AttributeValueQuoted := _SafeString %SetAttributeValue :> (
         _EndQuote @To_AfterAttributeValueQuoted
         # '&' @To_CharacterReferenceInAttributeValue
     ) @eof(Reconsume) @eof(To_Data);
 
-    AttributeValueUnquoted := (
-        0 >1 @AppendReplacementCharacterToAttributeValue |
-        any >0 @AppendToAttributeValue
-    )* :> (
+    AttributeValueUnquoted := _SafeString %SetAttributeValue :> (
         TagNameSpace @To_BeforeAttributeName |
         '>' @EmitTagToken @To_Data
         # '&' @To_CharacterReferenceInAttributeValue
