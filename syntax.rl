@@ -348,10 +348,7 @@
         any >0 @Reconsume @To_BeforeAttributeName
     ) @eof(Reconsume) @eof(To_Data);
 
-    _BogusComment = (
-        0 >1 @AppendReplacementCharacter |
-        any >0 @AppendCharacter
-    )* >StartString >eof(StartString) :> '>' @EmitComment @To_Data @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+    _BogusComment = _SafeString :> '>' @EmitComment @To_Data @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     BogusComment := _BogusComment;
 
@@ -459,10 +456,7 @@
         _StartQuote @To_DocTypePublicIdentifierQuoted
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
-    DocTypePublicIdentifierQuoted := (
-        0 >1 @AppendReplacementCharacter |
-        any >0 @AppendCharacter
-    )* >StartString >eof(StartString) %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
+    DocTypePublicIdentifierQuoted := _SafeString %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
         _EndQuote @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
@@ -480,10 +474,7 @@
         _StartQuote @To_DocTypeSystemIdentifierQuoted
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
-    DocTypeSystemIdentifierQuoted := (
-        0 >1 @AppendReplacementCharacter |
-        any >0 @AppendCharacter
-    )* >StartString >eof(StartString) %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
+    DocTypeSystemIdentifierQuoted := _SafeString %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
         _EndQuote @To_AfterDocTypeSystemIdentifier |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
