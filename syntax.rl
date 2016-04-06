@@ -48,6 +48,8 @@
     action To_CommentStart { fgoto CommentStart; }
     action To_DocType { fgoto DocType; }
     action To_CDataSection { fgoto CDataSection; }
+    action To_CDataSectionEnd { fgoto CDataSectionEnd; }
+    action To_CDataSectionEndRightBracket { fgoto CDataSectionEndRightBracket; }
     action To_CommentStartDash { fgoto CommentStartDash; }
     action To_Comment { fgoto Comment; }
     action To_CommentEnd { fgoto CommentEnd; }
@@ -356,7 +358,7 @@
     MarkupDeclarationOpen := (
         (
             '--' @StartString @To_CommentStart |
-            /DOCTYPE/i @To_DocType
+            /DOCTYPE/i @To_DocType |
             '[' when IsCDataAllowed 'CDATA[' @To_CDataSection
         ) @1 |
         _BogusComment $0
@@ -469,6 +471,17 @@
     BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     CDataSection := (
-        any* :>> ']]>'
-    ) >StartSlice >eof(StartSlice) @EmitCompleteCData @To_Data @eof(EmitIncompleteCData) @eof(Reconsume) @eof(To_Data);
+        ']' @To_CDataSectionEnd |
+        (_Slice -- ']') $1 %0
+    )* >StartString >eof(StartString) $eof(EmitCData) @eof(Reconsume) @eof(To_Data);
+
+    CDataSectionEnd := (
+        ']' >1 @To_CDataSectionEndRightBracket |
+        any >0 @AppendRightBracketCharacter @Reconsume @To_CDataSection
+    ) @eof(EmitCData) @eof(Reconsume) @eof(To_Data);
+
+    CDataSectionEndRightBracket := (
+        '>' >1 @EmitCData @To_Data |
+        any >0 @AppendDoubleRightBracketCharacter @Reconsume @To_CDataSection
+    ) @eof(EmitCData) @eof(Reconsume) @eof(To_Data);
 }%%

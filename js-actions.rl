@@ -35,6 +35,14 @@
         this.string += '!';
     }
 
+    action AppendRightBracketCharacter {
+        this.string += ']';
+    }
+
+    action AppendDoubleRightBracketCharacter {
+        this.string += ']]';
+    }
+
     action StartSlice {
         this.startSlice = p;
     }
@@ -194,17 +202,10 @@
         this.docTypeToken.systemId = this.string;
     }
 
-    action EmitIncompleteCData {
+    action EmitCData {
         this.emitToken({
             type: 'CData',
-            value: data.slice(this.startSlice)
-        });
-    }
-
-    action EmitCompleteCData {
-        this.emitToken({
-            type: 'CData',
-            value: data.slice(this.startSlice, p - 2)
+            value: this.string
         });
     }
 }%%
