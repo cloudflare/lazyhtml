@@ -504,6 +504,6 @@
     BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     CDataSection := (
-        any* >StartCData :>> ']]>'
-    ) @EmitCompleteCData @To_Data @eof(EmitIncompleteCData) @eof(Reconsume) @eof(To_Data);
+        any* :>> ']]>'
+    ) >StartSlice >eof(StartSlice) @EmitCompleteCData @To_Data @eof(EmitIncompleteCData) @eof(Reconsume) @eof(To_Data);
 }%%

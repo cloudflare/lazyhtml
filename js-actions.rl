@@ -31,6 +31,14 @@
         this.string += '!';
     }
 
+    action StartSlice {
+        this.startSlice = p;
+    }
+
+    action AppendSlice {
+        this.string += data.slice(this.startSlice, p);
+    }
+
     action EmitReplacementCharacterToken {
         this.emitToken({
             type: 'Character',
@@ -228,21 +236,17 @@
         this.docTypeToken.systemId += data[p];
     }
 
-    action StartCData {
-        this.startCData = p;
-    }
-
     action EmitIncompleteCData {
         this.emitToken({
             type: 'CData',
-            value: data.slice(this.startCData)
+            value: data.slice(this.startSlice)
         });
     }
 
     action EmitCompleteCData {
         this.emitToken({
             type: 'CData',
-            value: data.slice(this.startCData, p - 2)
+            value: data.slice(this.startSlice, p - 2)
         });
     }
 }%%

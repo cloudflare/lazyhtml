@@ -83,7 +83,7 @@ exports.HtmlTokenizer = class HtmlTokenizer {
     constructor(options) {
         %%write init nocs;
         this.cs = options.initialState || en_Data;
-        this.allowCData = true;
+        this.allowCData = !!options.allowCData;
         this.emitToken = options.onToken;
         this.lastStartTagName = options.lastStartTagName;
         this.onTrace = options.onTrace;
@@ -92,7 +92,6 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         this.docTypeToken = null;
         this.tagToken = null;
         this.attribute = null;
-        this.startCData = 0;
         this.string = '';
         if (this.onTrace) {
             this._cs = this.cs;
