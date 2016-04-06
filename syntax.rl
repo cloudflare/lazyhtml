@@ -83,23 +83,23 @@
     _Slice = (any $1 %0)+ >StartSlice %AppendSlice %eof(AppendSlice);
 
     _SafeStringChunk = (
-        0 >1 @AppendReplacementCharacter |
-        any >0 @AppendCharacter
-    )*;
+        0 @AppendReplacementCharacter |
+        (_Slice -- 0) $1 %0
+    )+ %2;
 
-    _SafeString = _SafeStringChunk >StartString >eof(StartString);
+    _SafeText = (_SafeStringChunk >StartString %EmitString %eof(EmitString))? $1 %2;
+
+    _SafeString = _SafeStringChunk? >StartString >eof(StartString);
 
     Data := ((
         # '&' @To_CharacterReferenceInData |
         _Slice $1 %0
-    )+ >StartString %EmitString %eof(EmitString))? :> '<' >2 @To_TagOpen;
+    )+ %2 >StartString %EmitString %eof(EmitString))? :> '<' @To_TagOpen;
 
-    _SafeText = (any+ >StartString %EmitString %eof(EmitString)) | _SafeStringChunk;
-
-    RCData := (
+    RCData := ((
         # '&' @To_CharacterReferenceInRCData |
-        _SafeText
-    ) :> '<' @To_RCDataLessThanSign;
+        _SafeStringChunk
+    )+ %2 >StartString %EmitString %eof(EmitString))? :> '<' @To_RCDataLessThanSign;
 
     RawText := (
         _SafeText
@@ -109,7 +109,7 @@
         _SafeText
     ) :> '<' @To_ScriptDataLessThanSign;
 
-    PlainText := (_SafeStringChunk & any+) >StartString %EmitString;
+    PlainText := _SafeText;
 
     TagOpen := (
         '!' @To_MarkupDeclarationOpen |
@@ -378,7 +378,7 @@
         any >0 @AppendHyphenMinusCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
-    Comment := _SafeStringChunk :> (
+    Comment := _SafeStringChunk? :> (
         '-' @To_CommentEndDash
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
