@@ -139,27 +139,6 @@
         });
     }
 
-    action EmitExclamationMarkCharacterToken {
-        this.emitToken({
-            type: 'Character',
-            value: '!'
-        });
-    }
-
-    action EmitHyphenMinusCharacterToken {
-        this.emitToken({
-            type: 'Character',
-            value: '-'
-        });
-    }
-
-    action EmitGreaterThanCharacterToken {
-        this.emitToken({
-            type: 'Character',
-            value: '>'
-        });
-    }
-
     action AppendUpperCaseToTemporaryBuffer {
         this.tempBuf += data[p].toLowerCase();
     }

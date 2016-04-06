@@ -170,7 +170,7 @@
 
     ScriptDataLessThanSign := (
         '/' @CreateTemporaryBuffer @To_ScriptDataEndTagOpen |
-        '!' @EmitLessThanSignCharacterToken @EmitExclamationMarkCharacterToken @To_ScriptDataEscapeStart
+        '!' @EmitLessThanSignCharacterToken @EmitCharacterToken @To_ScriptDataEscapeStart
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
 
     ScriptDataEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_ScriptDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
@@ -185,23 +185,23 @@
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
 
     ScriptDataEscapeStart := (
-        '-' @EmitHyphenMinusCharacterToken @To_ScriptDataEscapeStartDash
+        '-' @EmitCharacterToken @To_ScriptDataEscapeStartDash
     ) @lerr(Reconsume) @lerr(To_ScriptData);
 
     ScriptDataEscapeStartDash := (
-        '-' @EmitHyphenMinusCharacterToken @To_ScriptDataEscapedDashDash
+        '-' @EmitCharacterToken @To_ScriptDataEscapedDashDash
     ) @lerr(Reconsume) @lerr(To_ScriptData);
 
     ScriptDataEscaped := (
         any @EmitCharacterToken
     )* :> (
-        '-' @EmitHyphenMinusCharacterToken @To_ScriptDataEscapedDash |
+        '-' @EmitCharacterToken @To_ScriptDataEscapedDash |
         '<' @To_ScriptDataEscapedLessThanSign
     ) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataEscapedDash := (
         (
-            '-' @EmitHyphenMinusCharacterToken @To_ScriptDataEscapedDashDash |
+            '-' @EmitCharacterToken @To_ScriptDataEscapedDashDash |
             '<' @To_ScriptDataEscapedLessThanSign |
             UnsafeNULL @To_ScriptDataEscaped
         ) >1 |
@@ -210,9 +210,9 @@
 
     ScriptDataEscapedDashDash := (
         (
-            '-' @EmitHyphenMinusCharacterToken @To_ScriptDataEscapedDashDash |
+            '-' @EmitCharacterToken @To_ScriptDataEscapedDashDash |
             '<' @To_ScriptDataEscapedLessThanSign |
-            '>' @EmitGreaterThanCharacterToken @To_ScriptData |
+            '>' @EmitCharacterToken @To_ScriptData |
             UnsafeNULL @To_ScriptDataEscaped
         ) >1 |
         any >0 @EmitCharacterToken @To_ScriptDataEscaped
@@ -248,8 +248,8 @@
 
     ScriptDataDoubleEscaped := (
         (
-            '-' @EmitHyphenMinusCharacterToken @To_ScriptDataDoubleEscapedDash |
-            '<' @EmitLessThanSignCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
+            '-' @EmitCharacterToken @To_ScriptDataDoubleEscapedDash |
+            '<' @EmitCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
             UnsafeNULL
         ) >1 |
         any >0 @EmitCharacterToken
@@ -257,18 +257,18 @@
 
     ScriptDataDoubleEscapedDash := (
         (
-            '-' @EmitHyphenMinusCharacterToken @To_ScriptDataDoubleEscapedDashDash |
-            '<' @EmitLessThanSignCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
+            '-' @EmitCharacterToken @To_ScriptDataDoubleEscapedDashDash |
+            '<' @EmitCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
             UnsafeNULL @To_ScriptDataDoubleEscaped
         ) >1 |
         any >0 @EmitCharacterToken @To_ScriptDataDoubleEscaped
     ) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataDoubleEscapedDashDash := (
-        '-' @EmitHyphenMinusCharacterToken
+        '-' @EmitCharacterToken
     )* :> (
-        '<' @EmitLessThanSignCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
-        '>' @EmitGreaterThanCharacterToken @To_ScriptData |
+        '<' @EmitCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
+        '>' @EmitCharacterToken @To_ScriptData |
         UnsafeNULL @To_ScriptDataDoubleEscaped
     ) @eof(Reconsume) @eof(To_Data);
 
@@ -387,9 +387,9 @@
         any >0 @AppendHyphenMinusCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
-    CommentEnd := (
-        '-' >2 @AppendHyphenMinusCharacter
-    )* :> (
+    CommentEnd := ((
+        '-' >2
+    )+ >StartSlice %AppendSlice %eof(AppendSlice))? :> (
         (
             '>' @EmitComment @To_Data |
             '!' @To_CommentEndBang
