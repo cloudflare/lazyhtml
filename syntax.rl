@@ -355,15 +355,15 @@
     ) @eof(Reconsume) @eof(To_Data);
 
     _BogusComment = (
-        0 >1 @AppendReplacementCharacterToComment |
-        any >0 @AppendToComment
-    )* >CreateComment >eof(CreateComment) :> '>' @EmitComment @To_Data @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+        0 >1 @AppendReplacementCharacter |
+        any >0 @AppendCharacter
+    )* >StartString >eof(StartString) :> '>' @EmitComment @To_Data @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     BogusComment := _BogusComment;
 
     MarkupDeclarationOpen := (
         (
-            '--' @CreateComment @To_CommentStart |
+            '--' @StartString @To_CommentStart |
             /DOCTYPE/i @To_DocType
             '[' when IsCDataAllowed 'CDATA[' @To_CDataSection
         ) @1 |
@@ -376,8 +376,8 @@
             '>' @EmitComment @To_Data
         ) >1 |
         (
-            0 >1 @AppendReplacementCharacterToComment |
-            any >0 @AppendToComment
+            0 >1 @AppendReplacementCharacter |
+            any >0 @AppendCharacter
         ) @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
@@ -387,14 +387,14 @@
             '>' @EmitComment @To_Data
         ) >1 |
         (
-            0 >1 @AppendReplacementCharacterToComment |
-            any >0 @AppendToComment
-        ) >AppendHyphenMinusToComment @To_Comment
+            0 >1 @AppendReplacementCharacter |
+            any >0 @AppendCharacter
+        ) >AppendHyphenMinusCharacter @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     Comment := (
-        0 >1 @AppendReplacementCharacterToComment |
-        any >0 @AppendToComment
+        0 >1 @AppendReplacementCharacter |
+        any >0 @AppendCharacter
     )* :> (
         '-' @To_CommentEndDash
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
@@ -402,22 +402,22 @@
     CommentEndDash := (
         '-' >1 @To_CommentEnd |
         (
-            0 >1 @AppendReplacementCharacterToComment |
-            any >0 @AppendToComment
-        ) >AppendHyphenMinusToComment @To_Comment
+            0 >1 @AppendReplacementCharacter |
+            any >0 @AppendCharacter
+        ) >AppendHyphenMinusCharacter @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEnd := (
-        '-' >2 @AppendHyphenMinusToComment
+        '-' >2 @AppendHyphenMinusCharacter
     )* :> (
         (
             '>' @EmitComment @To_Data |
             '!' @To_CommentEndBang
         ) >1 |
         (
-            0 >1 @AppendReplacementCharacterToComment |
-            any >0 @AppendToComment
-        ) >AppendHyphenMinusToComment >AppendHyphenMinusToComment @To_Comment
+            0 >1 @AppendReplacementCharacter |
+            any >0 @AppendCharacter
+        ) >AppendHyphenMinusCharacter >AppendHyphenMinusCharacter @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEndBang := (
@@ -427,10 +427,10 @@
         (
             '-' >1 @To_CommentEndDash |
             (
-                0 >1 @AppendReplacementCharacterToComment |
-                any >0 @AppendToComment
+                0 >1 @AppendReplacementCharacter |
+                any >0 @AppendCharacter
             ) @To_Comment
-        ) >AppendHyphenMinusToComment >AppendHyphenMinusToComment >AppendExclamationMarkToComment
+        ) >AppendHyphenMinusCharacter >AppendHyphenMinusCharacter >AppendExclamationMarkCharacter
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     DocType := (

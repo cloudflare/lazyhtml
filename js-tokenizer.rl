@@ -89,11 +89,11 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         this.onTrace = options.onTrace;
         this.quote = 0;
         this.tempBuf = '';
-        this.commentToken = null;
         this.docTypeToken = null;
         this.tagToken = null;
         this.attribute = null;
         this.startCData = 0;
+        this.string = '';
         if (this.onTrace) {
             this._cs = this.cs;
             Object.defineProperty(this, 'cs', {

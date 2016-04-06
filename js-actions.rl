@@ -7,6 +7,30 @@
 
     action IsMatchingQuote { fc === this.quote }
 
+    action StartString {
+        this.string = '';
+    }
+
+    action AppendCharacter {
+        this.string += data[p];
+    }
+
+    action AppendLowerCasedCharacter {
+        this.string += String.fromCharCode(fc + 0x20);
+    }
+
+    action AppendReplacementCharacter {
+        this.string += '\uFFFD';
+    }
+
+    action AppendHyphenMinusCharacter {
+        this.string += '-';
+    }
+
+    action AppendExclamationMarkCharacter {
+        this.string += '!';
+    }
+
     action EmitReplacementCharacterToken {
         this.emitToken({
             type: 'Character',
@@ -19,10 +43,6 @@
             type: 'Character',
             value: data[p]
         });
-    }
-
-    action AppendToComment {
-        this.commentToken.value += data[p];
     }
 
     action CreateStartTagToken {
@@ -78,16 +98,11 @@
         this.tagToken.selfClosing = true;
     }
 
-    action AppendReplacementCharacterToComment {
-        this.commentToken.value += '\uFFFD';
-    }
-
-    action CreateComment {
-        this.commentToken = { type: 'Comment', value: '' };
-    }
-
     action EmitComment {
-        this.emitToken(this.commentToken);
+        this.emitToken({
+            type: 'Comment',
+            value: this.string
+        });
     }
 
     action EmitDocType {
@@ -164,14 +179,6 @@
     }
 
     action IsCDataAllowed { this.allowCData }
-
-    action AppendHyphenMinusToComment {
-        this.commentToken.value += '-';
-    }
-
-    action AppendExclamationMarkToComment {
-        this.commentToken.value += '!';
-    }
 
     action CreateDocType {
         this.docTypeToken = { type: 'DocType', name: null, forceQuirks: false, publicId: null, systemId: null };
