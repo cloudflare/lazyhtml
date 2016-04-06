@@ -39,6 +39,13 @@
         this.string += data.slice(this.startSlice, p);
     }
 
+    action EmitString {
+        this.emitToken({
+            type: 'Character',
+            value: this.string
+        });
+    }
+
     action EmitReplacementCharacterToken {
         this.emitToken({
             type: 'Character',

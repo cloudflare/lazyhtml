@@ -74,11 +74,6 @@
 
     UnsafeNULL = 0 @EmitReplacementCharacterToken;
 
-    _PlainText = (
-        UnsafeNULL |
-        ^0 @EmitCharacterToken
-    )*;
-
     _Quote = ('"' | "'");
 
     _StartQuote = _Quote @SaveQuote;
@@ -97,20 +92,22 @@
         any @EmitCharacterToken
     )* :> '<' @To_TagOpen;
 
+    _SafeText = (any+ >StartString %EmitString %eof(EmitString)) | _SafeStringChunk;
+
     RCData := (
         # '&' @To_CharacterReferenceInRCData |
-        _PlainText
+        _SafeText
     ) :> '<' @To_RCDataLessThanSign;
 
     RawText := (
-        _PlainText
+        _SafeText
     ) :> '<' @To_RawTextLessThanSign;
 
     ScriptData := (
-        _PlainText
+        _SafeText
     ) :> '<' @To_ScriptDataLessThanSign;
 
-    PlainText := _PlainText;
+    PlainText := (_SafeStringChunk & any+) >StartString %EmitString;
 
     TagOpen := (
         '!' @To_MarkupDeclarationOpen |
