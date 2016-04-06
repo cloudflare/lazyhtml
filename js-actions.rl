@@ -192,48 +192,20 @@
         this.docTypeToken = { type: 'DocType', name: null, forceQuirks: false, publicId: null, systemId: null };
     }
 
-    action CreateDocTypeName {
-        this.docTypeToken.name = '';
+    action SetDocTypeName {
+        this.docTypeToken.name = this.string;
     }
 
     action SetForceQuirksFlag {
         this.docTypeToken.forceQuirks = true;
     }
 
-    action AppendUpperCaseToDocTypeName {
-        this.docTypeToken.name += data[p].toLowerCase();
+    action SetDocTypePublicIdentifier {
+        this.docTypeToken.publicId = this.string;
     }
 
-    action AppendReplacementCharacterToDocTypeName {
-        this.docTypeToken.name += '\uFFFD';
-    }
-
-    action AppendToDocTypeName {
-        this.docTypeToken.name += data[p];
-    }
-
-    action CreatePublicIdentifier {
-        this.docTypeToken.publicId = '';
-    }
-
-    action AppendReplacementCharacterToDocTypePublicIdentifier {
-        this.docTypeToken.publicId += '\uFFFD';
-    }
-
-    action AppendToDocTypePublicIdentifier {
-        this.docTypeToken.publicId += data[p];
-    }
-
-    action CreateSystemIdentifier {
-        this.docTypeToken.systemId = '';
-    }
-
-    action AppendReplacementCharacterToDocTypeSystemIdentifier {
-        this.docTypeToken.systemId += '\uFFFD';
-    }
-
-    action AppendToDocTypeSystemIdentifier {
-        this.docTypeToken.systemId += data[p];
+    action SetDocTypeSystemIdentifier {
+        this.docTypeToken.systemId = this.string;
     }
 
     action EmitIncompleteCData {

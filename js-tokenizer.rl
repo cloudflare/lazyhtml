@@ -2,7 +2,6 @@
     machine html;
 
     access this.;
-    alphtype u8;
 
     include 'js-actions.rl';
     include 'syntax.rl';

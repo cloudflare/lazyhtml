@@ -437,16 +437,16 @@
         TagNameSpace >1
     )* :> (
         '>' >1 @SetForceQuirksFlag @EmitDocType @To_Data |
-        any >0 @CreateDocTypeName @Reconsume @To_DocTypeName
+        any >0 @Reconsume @To_DocTypeName
     ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
     DocTypeName := (
         (
-            0 @AppendReplacementCharacterToDocTypeName |
-            upper @AppendUpperCaseToDocTypeName
+            0 @AppendReplacementCharacter |
+            upper @AppendLowerCasedCharacter
         ) >1 |
-        any >0 @AppendToDocTypeName
-    )* :> (
+        any >0 @AppendCharacter
+    )* >StartString %SetDocTypeName %eof(SetDocTypeName) :> (
         TagNameSpace |
         '>'
     ) @Reconsume @To_AfterDocTypeName @eof(Reconsume) @eof(To_AfterDocTypeName);
@@ -462,13 +462,13 @@
     BeforeDocTypePublicIdentifier := (
         TagNameSpace >2
     )* :> (
-        _StartQuote @CreatePublicIdentifier @To_DocTypePublicIdentifierQuoted
+        _StartQuote @To_DocTypePublicIdentifierQuoted
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
     DocTypePublicIdentifierQuoted := (
-        0 >1 @AppendReplacementCharacterToDocTypePublicIdentifier |
-        any >0 @AppendToDocTypePublicIdentifier
-    )* :> (
+        0 >1 @AppendReplacementCharacter |
+        any >0 @AppendCharacter
+    )* >StartString >eof(StartString) %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
         _EndQuote @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
@@ -476,20 +476,20 @@
     BetweenDocTypePublicAndSystemIdentifiers := (
         TagNameSpace >2
     )* :> (
-        _StartQuote @CreateSystemIdentifier @To_DocTypeSystemIdentifierQuoted |
+        _StartQuote @To_DocTypeSystemIdentifierQuoted |
         '>' @EmitDocType @To_Data
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
     BeforeDocTypeSystemIdentifier := (
         TagNameSpace >2
     )* :> (
-        _StartQuote @CreateSystemIdentifier @To_DocTypeSystemIdentifierQuoted
+        _StartQuote @To_DocTypeSystemIdentifierQuoted
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
     DocTypeSystemIdentifierQuoted := (
-        0 >1 @AppendReplacementCharacterToDocTypeSystemIdentifier |
-        any >0 @AppendToDocTypeSystemIdentifier
-    )* :> (
+        0 >1 @AppendReplacementCharacter |
+        any >0 @AppendCharacter
+    )* >StartString >eof(StartString) %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
         _EndQuote @To_AfterDocTypeSystemIdentifier |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
