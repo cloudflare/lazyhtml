@@ -75,7 +75,9 @@ function tokenize(input, { lastStartTag, initialState }) {
                         'StartTag',
                         token.name,
                         token.attributes.reduce((attrs, { name, value }) => {
-                            attrs[name] = value;
+                            attrs[name] = decodeHtmlEntitites(value, {
+                                isAttributeValue: true
+                            });
                             return attrs;
                         }, Object.create(null))
                     ].concat(token.selfClosing ? [true] : []));
@@ -152,18 +154,8 @@ fs.readdirSync(testsDir).forEach(name => {
                 initialStates.forEach(initialState => {
                     t.deepEqual(
                         squashCharTokens(tokenize(input, { lastStartTag, initialState })).map(token => {
-                            switch (token[0]) {
-                                case 'Character':
-                                    token[1] = decodeHtmlEntitites(token[1]);
-                                    break;
-
-                                case 'StartTag':
-                                    for (let name in token[2]) {
-                                        token[2][name] = decodeHtmlEntitites(token[2][name], {
-                                            isAttributeValue: true
-                                        });
-                                    }
-                                    break;
+                            if (token[0] === 'Character') {
+                                token[1] = decodeHtmlEntitites(token[1]);
                             }
                             return token;
                         }),
