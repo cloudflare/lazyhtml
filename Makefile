@@ -29,3 +29,7 @@ test: test.js js-tokenizer.js
 .PHONY: bench
 bench: bench/index.js js-tokenizer.js
 	npm run bench
+
+.PHONY: clean
+clean:
+	rm -rf *.dot *.png c-tokenizer.c c-tokenizer js-tokenizer.js

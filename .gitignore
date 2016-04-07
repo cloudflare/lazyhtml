@@ -1,9 +1,3 @@
-/*
-!/*.rl
-!/*.json
-!/*.git*
-!/.vscode
-!/Makefile
-!/html5lib-tests
-!/test.js
-!/bench
+/*.dSYM
+/node_modules
+/typings
