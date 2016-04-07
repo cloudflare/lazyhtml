@@ -1,3 +1,8 @@
 /*.dSYM
 /node_modules
 /typings
+/*.dot
+/*.png
+/c-tokenizer.c
+/c-tokenizer
+/js-tokenizer.js
