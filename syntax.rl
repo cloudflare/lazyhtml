@@ -359,7 +359,7 @@
         (
             '--' @StartString @To_CommentStart |
             /DOCTYPE/i @To_DocType |
-            '[' when IsCDataAllowed 'CDATA[' @To_CDataSection
+            '[' when IsCDataAllowed 'CDATA[' @StartString @To_CDataSection
         ) @1 |
         _BogusComment $0
     );
@@ -473,17 +473,17 @@
     CDataSection := (
         ']' @To_CDataSectionEnd |
         (_Slice -- ']') $1 %0
-    )* >StartString >eof(StartString) $eof(EmitCData) @eof(Reconsume) @eof(To_Data);
+    )* $eof(EmitString) @eof(Reconsume) @eof(To_Data);
 
     CDataSectionEnd := (
         ']' >1 @To_CDataSectionEndRightBracket |
         any >0 @AppendRightBracketCharacter @Reconsume @To_CDataSection
-    ) @eof(AppendRightBracketCharacter) @eof(EmitCData) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendRightBracketCharacter) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 
     CDataSectionEndRightBracket := (
         ']' >2 @AppendCharacter
     )* :> (
-        '>' >1 @EmitCData @To_Data |
+        '>' >1 @EmitString @To_Data |
         any >0 @AppendDoubleRightBracketCharacter @Reconsume @To_CDataSection
-    ) @eof(AppendDoubleRightBracketCharacter) @eof(EmitCData) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendDoubleRightBracketCharacter) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 }%%

@@ -201,11 +201,4 @@
     action SetDocTypeSystemIdentifier {
         this.docTypeToken.systemId = this.string;
     }
-
-    action EmitCData {
-        this.emitToken({
-            type: 'CData',
-            value: this.string
-        });
-    }
 }%%
