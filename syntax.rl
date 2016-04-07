@@ -478,10 +478,12 @@
     CDataSectionEnd := (
         ']' >1 @To_CDataSectionEndRightBracket |
         any >0 @AppendRightBracketCharacter @Reconsume @To_CDataSection
-    ) @eof(EmitCData) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendRightBracketCharacter) @eof(EmitCData) @eof(Reconsume) @eof(To_Data);
 
     CDataSectionEndRightBracket := (
+        ']' >2 @AppendCharacter
+    )* :> (
         '>' >1 @EmitCData @To_Data |
         any >0 @AppendDoubleRightBracketCharacter @Reconsume @To_CDataSection
-    ) @eof(EmitCData) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendDoubleRightBracketCharacter) @eof(EmitCData) @eof(Reconsume) @eof(To_Data);
 }%%
