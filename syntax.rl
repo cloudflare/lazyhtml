@@ -101,7 +101,7 @@
     RCData := ((
         # '&' @To_CharacterReferenceInRCData |
         _SafeStringChunk
-    )+ %2 >StartString %EmitString %eof(EmitString))? :> '<' @To_RCDataLessThanSign;
+    )+ >StartString %EmitString %eof(EmitString))? :> '<' @To_RCDataLessThanSign;
 
     RawText := (
         _SafeText
@@ -149,7 +149,7 @@
     RCDataEndTagName := (
         upper @AppendUpperCaseToTagName |
         lower @AppendToTagName
-    )* @AppendToTemporaryBuffer :> (
+    )* @AppendToTemporaryBuffer (
         TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
         '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
@@ -164,7 +164,7 @@
     RawTextEndTagName := (
         upper @AppendUpperCaseToTagName |
         lower @AppendToTagName
-    )* @AppendToTemporaryBuffer :> (
+    )* @AppendToTemporaryBuffer (
         TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
         '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
@@ -180,7 +180,7 @@
     ScriptDataEndTagName := (
         upper @AppendUpperCaseToTagName @AppendToTemporaryBuffer @To_ScriptDataEndTagName |
         lower @AppendToTagName @AppendToTemporaryBuffer @To_ScriptDataEndTagName
-    )* :> (
+    )* (
         TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
         '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
@@ -224,8 +224,8 @@
         (
             '/' @To_ScriptDataEscapedEndTagOpen |
             alpha @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataDoubleEscapeStart
-        ) >CreateTemporaryBuffer |
-        ^('/' | alpha) @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataEscaped
+        ) >1 >CreateTemporaryBuffer |
+        any >0 @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataEscaped
     );
 
     ScriptDataEscapedEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_ScriptDataEscapedEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
@@ -233,7 +233,7 @@
     ScriptDataEscapedEndTagName := (
         upper @AppendUpperCaseToTagName |
         lower @AppendToTagName
-    )* @AppendToTemporaryBuffer :> (
+    )* @AppendToTemporaryBuffer (
         TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
         '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
@@ -242,7 +242,7 @@
     ScriptDataDoubleEscapeStart := (
         upper @AppendUpperCaseToTemporaryBuffer |
         lower @AppendToTemporaryBuffer
-    )* @EmitCharacterToken :> (
+    )* @EmitCharacterToken (
         TagNameEnd >1 when IsTemporaryBufferScript @To_ScriptDataDoubleEscaped |
         TagNameEnd >0 @To_ScriptDataEscaped
     ) >EmitCharacterToken
@@ -268,7 +268,7 @@
 
     ScriptDataDoubleEscapedDashDash := (
         '-' @EmitCharacterToken
-    )* :> (
+    )* (
         '<' @EmitCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
         '>' @EmitCharacterToken @To_ScriptData |
         UnsafeNULL @To_ScriptDataDoubleEscaped
@@ -281,15 +281,13 @@
     ScriptDataDoubleEscapeEnd := (
         upper @AppendUpperCaseToTemporaryBuffer |
         lower @AppendToTemporaryBuffer
-    )* @EmitCharacterToken :> (
+    )* @EmitCharacterToken (
         TagNameEnd >1 when IsTemporaryBufferScript @To_ScriptDataEscaped |
         TagNameEnd >0 @To_ScriptDataDoubleEscaped
     ) >EmitCharacterToken
     @lerr(Reconsume) @lerr(To_ScriptDataDoubleEscaped);
 
-    BeforeAttributeName := (
-        TagNameSpace >2
-    )* :> (
+    BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |
         (
             '=' >1 @AppendToAttributeName |
@@ -308,9 +306,7 @@
         '=' @To_BeforeAttributeValue
     ) @eof(Reconsume) @eof(To_Data);
 
-    AfterAttributeName := (
-        TagNameSpace >2
-    )* :> (
+    AfterAttributeName := TagNameSpace* <: (
         (
             '/' @To_SelfClosingStartTag |
             '=' @To_BeforeAttributeValue |
@@ -319,9 +315,7 @@
         any >0 @CreateAttribute @Reconsume @To_AttributeName
     ) @eof(Reconsume) @eof(To_Data);
 
-    BeforeAttributeValue := (
-        TagNameSpace >2
-    )* :> (
+    BeforeAttributeValue := TagNameSpace* <: (
         _StartQuote >1 @To_AttributeValueQuoted |
         any >0 @Reconsume @To_AttributeValueUnquoted
     ) @eof(Reconsume) @eof(To_Data);
@@ -389,9 +383,7 @@
         any >0 @AppendHyphenMinusCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
-    CommentEnd := ((
-        '-' >2
-    )+ >StartSlice %AppendSlice %eof(AppendSlice))? :> (
+    CommentEnd := ('-'+ >StartSlice %AppendSlice %eof(AppendSlice))? <: (
         (
             '>' @EmitComment @To_Data |
             '!' @To_CommentEndBang
@@ -400,15 +392,11 @@
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEndBang := (
-        (
-            '>' @EmitComment @To_Data
-        ) >1 |
+        '>' >1 @EmitComment @To_Data |
         any >0 @AppendDoubleHyphenMinusCharacter @AppendExclamationMarkCharacter @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
-    DocType := (
-        TagNameSpace >1
-    )* :> (
+    DocType := TagNameSpace* <: (
         '>' >1 @SetForceQuirksFlag @EmitDocType @To_Data |
         any >0 @Reconsume @To_DocTypeName
     ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
@@ -424,17 +412,13 @@
         '>'
     ) @Reconsume @To_AfterDocTypeName @eof(Reconsume) @eof(To_AfterDocTypeName);
 
-    AfterDocTypeName := (
-        TagNameSpace >2
-    )* :> (
+    AfterDocTypeName := TagNameSpace* (
         '>' @EmitDocType @To_Data |
         /PUBLIC/i @To_BeforeDocTypePublicIdentifier |
         /SYSTEM/i @To_BeforeDocTypeSystemIdentifier
     ) $lerr(Reconsume) $lerr(SetForceQuirksFlag) $lerr(To_BogusDocType);
 
-    BeforeDocTypePublicIdentifier := (
-        TagNameSpace >2
-    )* :> (
+    BeforeDocTypePublicIdentifier := TagNameSpace* (
         _StartQuote @To_DocTypePublicIdentifierQuoted
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
@@ -443,16 +427,12 @@
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
-    BetweenDocTypePublicAndSystemIdentifiers := (
-        TagNameSpace >2
-    )* :> (
+    BetweenDocTypePublicAndSystemIdentifiers := TagNameSpace* (
         _StartQuote @To_DocTypeSystemIdentifierQuoted |
         '>' @EmitDocType @To_Data
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
-    BeforeDocTypeSystemIdentifier := (
-        TagNameSpace >2
-    )* :> (
+    BeforeDocTypeSystemIdentifier := TagNameSpace* (
         _StartQuote @To_DocTypeSystemIdentifierQuoted
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
 
@@ -461,9 +441,7 @@
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
-    AfterDocTypeSystemIdentifier := (
-        TagNameSpace >2
-    )* :> (
+    AfterDocTypeSystemIdentifier := TagNameSpace* <: (
         '>' >1 @EmitDocType @To_Data |
         any >0 @To_BogusDocType
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
@@ -480,9 +458,7 @@
         any >0 @AppendRightBracketCharacter @Reconsume @To_CDataSection
     ) @eof(AppendRightBracketCharacter) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 
-    CDataSectionEndRightBracket := (
-        ']' >2 @AppendCharacter
-    )* :> (
+    CDataSectionEndRightBracket := (']' @AppendCharacter)* <: (
         '>' >1 @EmitString @To_Data |
         any >0 @AppendDoubleRightBracketCharacter @Reconsume @To_CDataSection
     ) @eof(AppendDoubleRightBracketCharacter) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
