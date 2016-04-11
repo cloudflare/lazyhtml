@@ -150,24 +150,13 @@
         };
     }
 
-    action AppendUpperCaseToAttributeName {
-        this.attribute.name += data[p].toLowerCase();
-    }
-
-    action AppendReplacementCharacterToAttributeName {
-        this.attribute.name += '\uFFFD';
-    }
-
-    action AppendToAttributeName {
-        this.attribute.name += data[p];
-    }
-
     action SetAttributeValue {
         this.attribute.value = this.string;
     }
 
     action AppendAttribute {
-        if (this.tagToken.type === 'StartTag' && !this.tagToken.attributes.some(attr => attr.name === this.attribute.name)) {
+        if (this.tagToken.type === 'StartTag' && !this.tagToken.attributes.some(attr => attr.name === this.string)) {
+            this.attribute.name = this.string;
             this.tagToken.attributes.push(this.attribute);
         }
     }

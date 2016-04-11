@@ -270,18 +270,18 @@
     BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |
         (
-            '=' >1 @AppendToAttributeName |
+            '=' >1 @AppendCharacter |
             any >0 @Reconsume
-        ) >CreateAttribute @To_AttributeName
+        ) >CreateAttribute >StartString @To_AttributeName
     ) @eof(Reconsume) @eof(To_Data);
 
     AttributeName := (
         (
-            upper @AppendUpperCaseToAttributeName |
-            0 @AppendReplacementCharacterToAttributeName
+            upper @AppendLowerCasedCharacter |
+            0 @AppendReplacementCharacter
         ) >1 |
-        any >0 @AppendToAttributeName
-    )* %AppendAttribute :> (
+        (_Slice -- (upper | 0)) $1 %0
+    )* %2 %AppendAttribute :> (
         TagNameEnd @Reconsume @To_AfterAttributeName |
         '=' @To_BeforeAttributeValue
     ) @eof(Reconsume) @eof(To_Data);
@@ -292,7 +292,7 @@
             '=' @To_BeforeAttributeValue |
             '>' @EmitTagToken @To_Data
         ) >1 |
-        any >0 @CreateAttribute @Reconsume @To_AttributeName
+        any >0 @CreateAttribute @StartString @Reconsume @To_AttributeName
     ) @eof(Reconsume) @eof(To_Data);
 
     BeforeAttributeValue := TagNameSpace* <: (
