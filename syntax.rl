@@ -115,25 +115,23 @@
     TagOpen := (
         '!' @To_MarkupDeclarationOpen |
         '/' @To_EndTagOpen |
-        alpha @CreateStartTagToken @Reconsume @To_TagName |
+        alpha @CreateStartTagToken @StartString @Reconsume @To_TagName |
         '?' @Reconsume @To_BogusComment
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_Data);
 
     EndTagOpen := (
         (
-            alpha @CreateEndTagToken @Reconsume @To_TagName |
+            alpha @CreateEndTagToken @StartString @Reconsume @To_TagName |
             '>' @To_Data
         ) >1 |
         any >0 @Reconsume @To_BogusComment
     ) @eof(EmitLessThanSignCharacterToken) @eof(EmitSolidusCharacterToken) @eof(Reconsume) @eof(To_Data);
 
     TagName := (
-        (
-            upper @AppendUpperCaseToTagName |
-            0 @AppendReplacementCharacterToTagName
-        ) >1 |
-        any >0 @AppendToTagName
-    )* :> (
+        upper @AppendLowerCasedCharacter |
+        0 @AppendReplacementCharacter |
+        (_Slice -- (upper | 0)) $1 %0
+    )* %2 %SetTagName :> (
         TagNameSpace @To_BeforeAttributeName |
         '/' @To_SelfClosingStartTag |
         '>' @EmitTagToken @To_Data
@@ -143,12 +141,12 @@
         '/' @CreateTemporaryBuffer @To_RCDataEndTagOpen
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
 
-    RCDataEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_RCDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
+    RCDataEndTagOpen := alpha @CreateEndTagToken @StartString @Reconsume @To_RCDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
 
     RCDataEndTagName := (
-        upper @AppendUpperCaseToTagName |
-        lower @AppendToTagName
-    )* @AppendToTemporaryBuffer (
+        upper @AppendLowerCasedCharacter |
+        lower @AppendCharacter
+    )* @AppendToTemporaryBuffer %SetTagName (
         TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
         '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
@@ -158,12 +156,12 @@
         '/' @CreateTemporaryBuffer @To_RawTextEndTagOpen
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
 
-    RawTextEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_RawTextEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
+    RawTextEndTagOpen := alpha @CreateEndTagToken @StartString @Reconsume @To_RawTextEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
 
     RawTextEndTagName := (
-        upper @AppendUpperCaseToTagName |
-        lower @AppendToTagName
-    )* @AppendToTemporaryBuffer (
+        upper @AppendLowerCasedCharacter |
+        lower @AppendCharacter
+    )* @AppendToTemporaryBuffer %SetTagName (
         TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
         '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
@@ -174,12 +172,12 @@
         '!' @EmitLessThanSignCharacterToken @EmitCharacterToken @To_ScriptDataEscapeStart
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
 
-    ScriptDataEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_ScriptDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
+    ScriptDataEndTagOpen := alpha @CreateEndTagToken @StartString @Reconsume @To_ScriptDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
 
     ScriptDataEndTagName := (
-        upper @AppendUpperCaseToTagName @AppendToTemporaryBuffer @To_ScriptDataEndTagName |
-        lower @AppendToTagName @AppendToTemporaryBuffer @To_ScriptDataEndTagName
-    )* (
+        upper @AppendLowerCasedCharacter @AppendToTemporaryBuffer @To_ScriptDataEndTagName |
+        lower @AppendCharacter @AppendToTemporaryBuffer @To_ScriptDataEndTagName
+    )* %SetTagName (
         TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
         '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
@@ -223,12 +221,12 @@
         any >0 @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataEscaped
     );
 
-    ScriptDataEscapedEndTagOpen := alpha @CreateEndTagToken @Reconsume @To_ScriptDataEscapedEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
+    ScriptDataEscapedEndTagOpen := alpha @CreateEndTagToken @StartString @Reconsume @To_ScriptDataEscapedEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
 
     ScriptDataEscapedEndTagName := (
-        upper @AppendUpperCaseToTagName |
-        lower @AppendToTagName
-    )* @AppendToTemporaryBuffer (
+        upper @AppendLowerCasedCharacter |
+        lower @AppendCharacter
+    )* @AppendToTemporaryBuffer %SetTagName (
         TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
         '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data

@@ -76,16 +76,8 @@
         this.tagToken = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
     }
 
-    action AppendUpperCaseToTagName {
-        this.tagToken.name += data[p].toLowerCase();
-    }
-
-    action AppendToTagName {
-        this.tagToken.name += data[p];
-    }
-
-    action AppendReplacementCharacterToTagName {
-        this.tagToken.name += '\uFFFD';
+    action SetTagName {
+        this.tagToken.name = this.string;
     }
 
     action EmitLessThanSignCharacterToken {
@@ -110,7 +102,7 @@
         this.tempBuf += data[p];
     }
 
-    action IsAppropriateEndTagToken { this.tagToken.name === this.lastStartTagName }
+    action IsAppropriateEndTagToken { this.string === this.lastStartTagName }
 
     action EmitTemporaryBufferCharacterToken {
         this.emitToken({
