@@ -114,7 +114,9 @@
     action IsTemporaryBufferScript { this.tempBuf === 'script' }
 
     action SetSelfClosingFlag {
-        this.tagToken.selfClosing = true;
+        if (this.tagToken.type === 'StartTag') {
+            this.tagToken.selfClosing = true;
+        }
     }
 
     action EmitComment {
@@ -155,7 +157,12 @@
     }
 
     action AppendAttribute {
-        if (this.tagToken.type === 'StartTag' && !this.tagToken.attributes.some(attr => attr.name === this.string)) {
+        AppendAttribute: if (this.tagToken.type === 'StartTag') {
+            for (var i = 0; i < this.tagToken.attributes.length; i++) {
+                if (this.tagToken.attributes[i].name === this.string) {
+                    break AppendAttribute;
+                }
+            }
             this.attribute.name = this.string;
             this.tagToken.attributes.push(this.attribute);
         }
