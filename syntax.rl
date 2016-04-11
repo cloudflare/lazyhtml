@@ -31,7 +31,6 @@
     action To_ScriptDataEscapedLessThanSign { fgoto ScriptDataEscapedLessThanSign; }
     action To_ScriptDataEscaped { fgoto ScriptDataEscaped; }
     action To_ScriptDataEscapedEndTagOpen { fgoto ScriptDataEscapedEndTagOpen; }
-    action To_ScriptDataDoubleEscapeStart { fgoto ScriptDataDoubleEscapeStart; }
     action To_ScriptDataEscapedEndTagName { fgoto ScriptDataEscapedEndTagName; }
     action To_ScriptDataDoubleEscaped { fgoto ScriptDataDoubleEscaped; }
     action To_ScriptDataDoubleEscapedDash { fgoto ScriptDataDoubleEscapedDash; }
@@ -194,9 +193,7 @@
         '-' @EmitCharacterToken @To_ScriptDataEscapedDashDash
     ) @lerr(Reconsume) @lerr(To_ScriptData);
 
-    ScriptDataEscaped := (
-        any @EmitCharacterToken
-    )* :> (
+    ScriptDataEscaped := _SafeText :> (
         '-' @EmitCharacterToken @To_ScriptDataEscapedDash |
         '<' @To_ScriptDataEscapedLessThanSign
     ) @eof(Reconsume) @eof(To_Data);
@@ -204,27 +201,25 @@
     ScriptDataEscapedDash := (
         (
             '-' @EmitCharacterToken @To_ScriptDataEscapedDashDash |
-            '<' @To_ScriptDataEscapedLessThanSign |
-            UnsafeNULL @To_ScriptDataEscaped
+            '<' @To_ScriptDataEscapedLessThanSign
         ) >1 |
-        any >0 @EmitCharacterToken @To_ScriptDataEscaped
+        any >0 @Reconsume @To_ScriptDataEscaped
     ) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataEscapedDashDash := (
         (
             '-' @EmitCharacterToken @To_ScriptDataEscapedDashDash |
             '<' @To_ScriptDataEscapedLessThanSign |
-            '>' @EmitCharacterToken @To_ScriptData |
-            UnsafeNULL @To_ScriptDataEscaped
+            '>' @EmitCharacterToken @To_ScriptData
         ) >1 |
-        any >0 @EmitCharacterToken @To_ScriptDataEscaped
+        any >0 @Reconsume @To_ScriptDataEscaped
     ) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataEscapedLessThanSign := (
         (
-            '/' @To_ScriptDataEscapedEndTagOpen |
-            alpha @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataDoubleEscapeStart
-        ) >1 >CreateTemporaryBuffer |
+            '/' @CreateTemporaryBuffer @To_ScriptDataEscapedEndTagOpen |
+            (/script/i TagNameEnd) >EmitLessThanSignCharacterToken $EmitCharacterToken @To_ScriptDataDoubleEscaped $lerr(Reconsume) $lerr(To_ScriptDataEscaped)
+        ) >1 |
         any >0 @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataEscaped
     );
 
@@ -239,22 +234,9 @@
         '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
     ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
 
-    ScriptDataDoubleEscapeStart := (
-        upper @AppendUpperCaseToTemporaryBuffer |
-        lower @AppendToTemporaryBuffer
-    )* @EmitCharacterToken (
-        TagNameEnd >1 when IsTemporaryBufferScript @To_ScriptDataDoubleEscaped |
-        TagNameEnd >0 @To_ScriptDataEscaped
-    ) >EmitCharacterToken
-    @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
-
-    ScriptDataDoubleEscaped := (
-        (
-            '-' @EmitCharacterToken @To_ScriptDataDoubleEscapedDash |
-            '<' @EmitCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
-            UnsafeNULL
-        ) >1 |
-        any >0 @EmitCharacterToken
+    ScriptDataDoubleEscaped := _SafeText :> (
+        '-' @EmitCharacterToken @To_ScriptDataDoubleEscapedDash |
+        '<' @EmitCharacterToken @To_ScriptDataDoubleEscapedLessThanSign
     ) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataDoubleEscapedDash := (
@@ -266,12 +248,12 @@
         any >0 @EmitCharacterToken @To_ScriptDataDoubleEscaped
     ) @eof(Reconsume) @eof(To_Data);
 
-    ScriptDataDoubleEscapedDashDash := (
-        '-' @EmitCharacterToken
-    )* (
-        '<' @EmitCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
-        '>' @EmitCharacterToken @To_ScriptData |
-        UnsafeNULL @To_ScriptDataDoubleEscaped
+    ScriptDataDoubleEscapedDashDash := ('-'+ >StartString >StartSlice %AppendSlice %EmitString %eof(AppendSlice) %eof(EmitString))? <: (
+        (
+            '<' @EmitCharacterToken @To_ScriptDataDoubleEscapedLessThanSign |
+            '>' @EmitCharacterToken @To_ScriptData
+        ) >1 |
+        any >0 @Reconsume @To_ScriptDataDoubleEscaped
     ) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataDoubleEscapedLessThanSign := (

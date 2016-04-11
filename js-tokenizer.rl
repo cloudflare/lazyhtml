@@ -26,23 +26,6 @@ var states = exports.states = {
     RawTextLessThanSign: en_RawTextLessThanSign,
     RawTextEndTagOpen: en_RawTextEndTagOpen,
     RawTextEndTagName: en_RawTextEndTagName,
-    ScriptDataLessThanSign: en_ScriptDataLessThanSign,
-    ScriptDataEndTagOpen: en_ScriptDataEndTagOpen,
-    ScriptDataEndTagName: en_ScriptDataEndTagName,
-    ScriptDataEscapeStart: en_ScriptDataEscapeStart,
-    ScriptDataEscapeStartDash: en_ScriptDataEscapeStartDash,
-    ScriptDataEscaped: en_ScriptDataEscaped,
-    ScriptDataEscapedDash: en_ScriptDataEscapedDash,
-    ScriptDataEscapedDashDash: en_ScriptDataEscapedDashDash,
-    ScriptDataEscapedLessThanSign: en_ScriptDataEscapedLessThanSign,
-    ScriptDataEscapedEndTagOpen: en_ScriptDataEscapedEndTagOpen,
-    ScriptDataEscapedEndTagName: en_ScriptDataEscapedEndTagName,
-    ScriptDataDoubleEscapeStart: en_ScriptDataDoubleEscapeStart,
-    ScriptDataDoubleEscaped: en_ScriptDataDoubleEscaped,
-    ScriptDataDoubleEscapedDash: en_ScriptDataDoubleEscapedDash,
-    ScriptDataDoubleEscapedDashDash: en_ScriptDataDoubleEscapedDashDash,
-    ScriptDataDoubleEscapedLessThanSign: en_ScriptDataDoubleEscapedLessThanSign,
-    ScriptDataDoubleEscapeEnd: en_ScriptDataDoubleEscapeEnd,
     BeforeAttributeName: en_BeforeAttributeName,
     AttributeName: en_AttributeName,
     AfterAttributeName: en_AfterAttributeName,
@@ -92,6 +75,7 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         this.tagToken = null;
         this.attribute = null;
         this.string = '';
+        this.startSlice = this.endSlice = 0;
         if (this.onTrace) {
             this._cs = this.cs;
             Object.defineProperty(this, 'cs', {

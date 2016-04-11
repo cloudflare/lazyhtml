@@ -50,7 +50,8 @@ const stateMappings = {
     'data state': states.Data,
     'PLAINTEXT state': states.PlainText,
     'RCDATA state': states.RCData,
-    'RAWTEXT state': states.RawText
+    'RAWTEXT state': states.RawText,
+    'script data state': states.ScriptData
 };
 
 function tokenize(input, { lastStartTag, initialState }) {
@@ -58,7 +59,6 @@ function tokenize(input, { lastStartTag, initialState }) {
     if (initialState !== undefined && !(initialState in stateMappings)) {
         throw new Error(`Requested unexpected state ${initialState}`);
     }
-    let lastTrace;
     new HtmlTokenizer({
         lastStartTagName: lastStartTag,
         initialState: initialState && stateMappings[initialState],
@@ -109,32 +109,13 @@ function tokenize(input, { lastStartTag, initialState }) {
                     throw new Error(`Unexpected token type ${token.type}`);
                 }
             }
-        },
-        // onTrace(trace) {
-        //     if (!(trace.from in states)) {
-        //         if (trace.from !== lastTrace.to) {
-        //             throw new Error(`Unexpected transition ${lastTrace.from} -> ${lastTrace.to} -> ... -> ${trace.from} -> ${trace.to}`);
-        //         }
-        //         trace.from = lastTrace.from;
-        //     }
-        //     if (trace.from === trace.to) return;
-        //     if (trace.to in states) {
-        //         console.info('%s -> %s:\n%s', states[trace.from], states[trace.to], codeFrame(trace.in, trace.at));
-        //     }
-        //     lastTrace = trace;
-        // }
+        }
     }).feed(input, true);
-    if (lastTrace && !(lastTrace.to in states)) {
-        console.info('%s -> %s:\n%s', states[lastTrace.from], 'EOF', codeFrame(lastTrace.in, lastTrace.at));
-    }
     return tokens;
 }
 
-fs.readdirSync(testsDir).forEach(name => {
-    if (/entities/i.test(name)) return;
-    const match = name.match(/(.*)\.test$/);
-    if (!match) return;
-    const { tests } = JSON.parse(fs.readFileSync(`${testsDir}/${name}`, 'utf-8'));
+function testFile(path) {
+    const { tests } = JSON.parse(fs.readFileSync(path, 'utf-8'));
     if (tests) {
         tests.forEach(({
             description,
@@ -167,4 +148,13 @@ fs.readdirSync(testsDir).forEach(name => {
             });
         });
     }
+}
+
+fs.readdirSync(testsDir).forEach(name => {
+    if (/\.test$/.test(name) && !/entities/i.test(name)) {
+        testFile(`${testsDir}/${name}`);
+    }
 });
+
+testFile(`${__dirname}/script-data.test`);
+testFile(`${__dirname}/script-data-2.test`);
