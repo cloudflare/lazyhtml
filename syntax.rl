@@ -92,6 +92,12 @@
 
     _SafeString = _SafeStringChunk? >StartString >eof(StartString);
 
+    _Name = (
+        upper @AppendLowerCasedCharacter |
+        0 @AppendReplacementCharacter |
+        (_Slice -- (upper | 0)) $1 %0
+    )* %2;
+
     Data := ((
         # '&' @To_CharacterReferenceInData |
         _Slice $1 %0
@@ -127,11 +133,7 @@
         any >0 @Reconsume @To_BogusComment
     ) @eof(EmitLessThanSignCharacterToken) @eof(EmitSolidusCharacterToken) @eof(Reconsume) @eof(To_Data);
 
-    TagName := (
-        upper @AppendLowerCasedCharacter |
-        0 @AppendReplacementCharacter |
-        (_Slice -- (upper | 0)) $1 %0
-    )* %2 %SetTagName :> (
+    TagName := _Name %SetTagName :> (
         TagNameSpace @To_BeforeAttributeName |
         '/' @To_SelfClosingStartTag |
         '>' @EmitTagToken @To_Data
@@ -275,13 +277,7 @@
         ) >CreateAttribute >StartString @To_AttributeName
     ) @eof(Reconsume) @eof(To_Data);
 
-    AttributeName := (
-        (
-            upper @AppendLowerCasedCharacter |
-            0 @AppendReplacementCharacter
-        ) >1 |
-        (_Slice -- (upper | 0)) $1 %0
-    )* %2 %AppendAttribute :> (
+    AttributeName := _Name %AppendAttribute :> (
         TagNameEnd @Reconsume @To_AfterAttributeName |
         '=' @To_BeforeAttributeValue
     ) @eof(Reconsume) @eof(To_Data);
@@ -381,13 +377,7 @@
         any >0 @Reconsume @To_DocTypeName
     ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
-    DocTypeName := (
-        (
-            0 @AppendReplacementCharacter |
-            upper @AppendLowerCasedCharacter
-        ) >1 |
-        any >0 @AppendCharacter
-    )* >StartString %SetDocTypeName %eof(SetDocTypeName) :> (
+    DocTypeName := _Name >StartString %SetDocTypeName %eof(SetDocTypeName) :> (
         TagNameSpace |
         '>'
     ) @Reconsume @To_AfterDocTypeName @eof(Reconsume) @eof(To_AfterDocTypeName);
