@@ -68,13 +68,6 @@
         this.tagToken.name = this.string;
     }
 
-    action EmitLessThanSignCharacterToken {
-        this.emitToken({
-            type: 'Character',
-            value: '<'
-        });
-    }
-
     action EmitTagToken {
         if (this.tagToken.type === 'StartTag') {
             this.lastStartTagName = this.tagToken.name;
@@ -91,13 +84,6 @@
     }
 
     action IsAppropriateEndTagToken { this.string === this.lastStartTagName }
-
-    action EmitTemporaryBufferCharacterToken {
-        this.emitToken({
-            type: 'Character',
-            value: this.tempBuf
-        });
-    }
 
     action IsTemporaryBufferScript { this.tempBuf === 'script' }
 
@@ -120,13 +106,6 @@
 
     action CreateEndTagToken {
         this.tagToken = { type: 'EndTag', name: '' };
-    }
-
-    action EmitSolidusCharacterToken {
-        this.emitToken({
-            type: 'Character',
-            value: '/'
-        });
     }
 
     action AppendUpperCaseToTemporaryBuffer {
