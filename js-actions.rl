@@ -53,13 +53,6 @@
         });
     }
 
-    action EmitCharacterToken {
-        this.emitToken({
-            type: 'Character',
-            value: data[p]
-        });
-    }
-
     action CreateStartTagToken {
         this.tagToken = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
     }

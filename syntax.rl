@@ -214,17 +214,17 @@
     ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
 
     ScriptDataDoubleEscaped := _SafeText :> (
-        '-' @EmitCharacterToken @To_ScriptDataDoubleEscapedDash |
-        '<' @StartString @StartSlice2 @To_ScriptDataDoubleEscapedLessThanSign
-    ) @eof(Reconsume) @eof(To_Data);
+        '-' @To_ScriptDataDoubleEscapedDash |
+        '<' @To_ScriptDataDoubleEscapedLessThanSign
+    ) >StartString >StartSlice2 @eof(Reconsume) @eof(To_Data);
 
     ScriptDataDoubleEscapedDash := (
         (
-            '-' @StartString @StartSlice2 @To_ScriptDataDoubleEscapedDashDash |
-            '<' @StartString @StartSlice2 @To_ScriptDataDoubleEscapedLessThanSign
+            '-' @To_ScriptDataDoubleEscapedDashDash |
+            '<' @To_ScriptDataDoubleEscapedLessThanSign
         ) >1 |
-        any >0 @Reconsume @To_ScriptDataDoubleEscaped
-    ) @eof(Reconsume) @eof(To_Data);
+        any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataDoubleEscaped
+    ) @eof(AppendSlice2) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataDoubleEscapedDashDash := '-'* <: (
         (
