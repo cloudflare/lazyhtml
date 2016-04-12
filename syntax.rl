@@ -120,22 +120,22 @@
         any >0 @Reconsume @To_BogusComment
     ) @eof(AppendSlice) @lerr(EmitString) @eof(Reconsume) @eof(To_Data);
 
-    TagName := _Name %SetTagName :> (
+    _TagEnd = (
         TagNameSpace @To_BeforeAttributeName |
         '/' @To_SelfClosingStartTag |
         '>' @EmitTagToken @To_Data
-    ) @eof(Reconsume) @eof(To_Data);
+    );
+
+    TagName := _Name %SetTagName :> _TagEnd @eof(Reconsume) @eof(To_Data);
 
     _SpecialEndTag = (
         '/' @CreateEndTagToken
         (
-            upper @AppendLowerCasedCharacter |
-            lower @AppendCharacter
-        )* %SetTagName (
-            TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
-            '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
-            '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
-        ) @lerr(StartString)
+            (
+                upper @AppendLowerCasedCharacter |
+                lower+ $1 %0 >StartSlice %AppendSlice
+            )* %SetTagName <: any @Reconsume _TagEnd when IsAppropriateEndTagToken
+        ) <>lerr(StartString)
     );
 
     RCDataLessThanSign := _SpecialEndTag @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RCData);
@@ -213,9 +213,8 @@
 
     AfterAttributeName := TagNameSpace* <: (
         (
-            '/' @To_SelfClosingStartTag |
-            '=' @To_BeforeAttributeValue |
-            '>' @EmitTagToken @To_Data
+            _TagEnd |
+            '=' @To_BeforeAttributeValue
         ) >1 |
         any >0 @CreateAttribute @StartString @Reconsume @To_AttributeName
     ) @eof(Reconsume) @eof(To_Data);
@@ -231,17 +230,12 @@
     ) @eof(Reconsume) @eof(To_Data);
 
     AttributeValueUnquoted := _SafeString %SetAttributeValue :> (
-        TagNameSpace @To_BeforeAttributeName |
-        '>' @EmitTagToken @To_Data
+        (TagNameSpace | '>') & _TagEnd
         # '&' @To_CharacterReferenceInAttributeValue
     ) @eof(Reconsume) @eof(To_Data);
 
     AfterAttributeValueQuoted := (
-        (
-            TagNameSpace @To_BeforeAttributeName |
-            '/' @To_SelfClosingStartTag |
-            '>' @EmitTagToken @To_Data
-        ) >1 |
+        _TagEnd >1 |
         any >0 @Reconsume @To_BeforeAttributeName
     ) @eof(Reconsume) @eof(To_Data);
 
