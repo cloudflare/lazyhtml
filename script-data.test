@@ -1,0 +1,488 @@
+{
+  "tests": [
+    {
+      "description": "'Hello'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'Hello'</script>BAR",
+      "output": [
+        ["Character", "'Hello'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "</script>BAR",
+      "output": [
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "</script >BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "</script >BAR",
+      "output": [
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "</script/>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "</script/>BAR",
+      "output": [
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "</script/ >BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "</script/ >BAR",
+      "output": [
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "</scriptx>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "</scriptx>BAR",
+      "output": [["Character", "</scriptx>BAR"]]
+    },
+    {
+      "description": "</script foo=\">\" dd>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "</script foo=\">\" dd>BAR",
+      "output": [
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<'</script>BAR",
+      "output": [
+        ["Character", "'<'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!'</script>BAR",
+      "output": [
+        ["Character", "'<!'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!-'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-'</script>BAR",
+      "output": [
+        ["Character", "'<!-'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!--'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!--'</script>BAR",
+      "output": [
+        ["Character", "'<!--'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!---'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!---'</script>BAR",
+      "output": [
+        ["Character", "'<!---'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!-->'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-->'</script>BAR",
+      "output": [
+        ["Character", "'<!-->'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!-->'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-->'</script>BAR",
+      "output": [
+        ["Character", "'<!-->'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!-- potato'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- potato'</script>BAR",
+      "output": [
+        ["Character", "'<!-- potato'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!-- <sCrIpt'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt'</script>BAR",
+      "output": [
+        ["Character", "'<!-- <sCrIpt'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!-- <sCrIpt>'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt>'</script>BAR",
+      "output": [["Character", "'<!-- <sCrIpt>'</script>BAR"]]
+    },
+    {
+      "description": "'<!-- <sCrIpt> -'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt> -'</script>BAR",
+      "output": [["Character", "'<!-- <sCrIpt> -'</script>BAR"]]
+    },
+    {
+      "description": "'<!-- <sCrIpt> --'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt> --'</script>BAR",
+      "output": [["Character", "'<!-- <sCrIpt> --'</script>BAR"]]
+    },
+    {
+      "description": "'<!-- <sCrIpt> -->'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt> -->'</script>BAR",
+      "output": [
+        ["Character", "'<!-- <sCrIpt> -->'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!-- <sCrIpt> --!>'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt> --!>'</script>BAR",
+      "output": [["Character", "'<!-- <sCrIpt> --!>'</script>BAR"]]
+    },
+    {
+      "description": "'<!-- <sCrIpt> -- >'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt> -- >'</script>BAR",
+      "output": [["Character", "'<!-- <sCrIpt> -- >'</script>BAR"]]
+    },
+    {
+      "description": "'<!-- <sCrIpt '</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt '</script>BAR",
+      "output": [["Character", "'<!-- <sCrIpt '</script>BAR"]]
+    },
+    {
+      "description": "'<!-- <sCrIpt/'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt/'</script>BAR",
+      "output": [["Character", "'<!-- <sCrIpt/'</script>BAR"]]
+    },
+    {
+      "description": "'<!-- <sCrIpt\\'</script>BAR",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt\\'</script>BAR",
+      "output": [
+        ["Character", "'<!-- <sCrIpt\\'"],
+        ["EndTag", "script"],
+        ["Character", "BAR"]
+      ]
+    },
+    {
+      "description": "'<!-- <sCrIpt/'</script>BAR</script>QUX",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "'<!-- <sCrIpt/'</script>BAR</script>QUX",
+      "output": [
+        ["Character", "'<!-- <sCrIpt/'</script>BAR"],
+        ["EndTag", "script"],
+        ["Character", "QUX"]
+      ]
+    },
+    {
+      "description": "<!--<script>-></script>--></script>QUX",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script>-></script>--></script>QUX",
+      "output": [
+        ["Character", "<!--<script>-></script>-->"],
+        ["EndTag", "script"],
+        ["Character", "QUX"]
+      ]
+    },
+    {
+      "description": "a='\u0000'</script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "a='\u0000'</script>",
+      "output": [
+        ["Character", "a='�'"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--\u0000</script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--\u0000</script>",
+      "output": [
+        ["Character", "<!--�"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--foo\u0000</script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--foo\u0000</script>",
+      "output": [
+        ["Character", "<!--foo�"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!-- foo-\u0000</script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!-- foo-\u0000</script>",
+      "output": [
+        ["Character", "<!-- foo-�"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!-- foo--\u0000</script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!-- foo--\u0000</script>",
+      "output": [
+        ["Character", "<!-- foo--�"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!-- foo-",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!-- foo-",
+      "output": [["Character", "<!-- foo-"]]
+    },
+    {
+      "description": "<!-- foo-<</script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!-- foo-<</script>",
+      "output": [
+        ["Character", "<!-- foo-<"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!-- foo-<S",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!-- foo-<S",
+      "output": [["Character", "<!-- foo-<S"]]
+    },
+    {
+      "description": "<!-- foo-</SCRIPT>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!-- foo-</SCRIPT>",
+      "output": [
+        ["Character", "<!-- foo-"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<p></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<p></script>",
+      "output": [
+        ["Character", "<!--<p>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<script></script></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script></script></script>",
+      "output": [
+        ["Character", "<!--<script></script>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<script>\u0000</script></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script>\u0000</script></script>",
+      "output": [
+        ["Character", "<!--<script>�</script>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<script>-\u0000</script></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script>-\u0000</script></script>",
+      "output": [
+        ["Character", "<!--<script>-�</script>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<script>--\u0000</script></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script>--\u0000</script></script>",
+      "output": [
+        ["Character", "<!--<script>--�</script>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<script>---</script></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script>---</script></script>",
+      "output": [
+        ["Character", "<!--<script>---</script>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<script></scrip></SCRIPT></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script></scrip></SCRIPT></script>",
+      "output": [
+        ["Character", "<!--<script></scrip></SCRIPT>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<script></scrip </SCRIPT></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script></scrip </SCRIPT></script>",
+      "output": [
+        ["Character", "<!--<script></scrip </SCRIPT>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--<script></scrip/</SCRIPT></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--<script></scrip/</SCRIPT></script>",
+      "output": [
+        ["Character", "<!--<script></scrip/</SCRIPT>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "</scrip/></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "</scrip/></script>",
+      "output": [
+        ["Character", "</scrip/>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "</scrip ></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "</scrip ></script>",
+      "output": [
+        ["Character", "</scrip >"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--</scrip></script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--</scrip></script>",
+      "output": [
+        ["Character", "<!--</scrip>"],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--</scrip </script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--</scrip </script>",
+      "output": [
+        ["Character", "<!--</scrip "],
+        ["EndTag", "script"]
+      ]
+    },
+    {
+      "description": "<!--</scrip/</script>",
+      "initialStates": ["script data state"],
+      "lastStartTag": "script",
+      "input": "<!--</scrip/</script>",
+      "output": [
+        ["Character", "<!--</scrip/"],
+        ["EndTag", "script"]
+      ]
+    }
+  ]
+}
