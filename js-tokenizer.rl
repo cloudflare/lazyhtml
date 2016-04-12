@@ -10,18 +10,28 @@
 }%%
 
 var states = exports.states = {
-    start,
     error,
-    PlainText: en_PlainText,
     Data: en_Data,
     RCData: en_RCData,
     RawText: en_RawText,
     ScriptData: en_ScriptData,
+    PlainText: en_PlainText,
     TagOpen: en_TagOpen,
     EndTagOpen: en_EndTagOpen,
     TagName: en_TagName,
     RCDataLessThanSign: en_RCDataLessThanSign,
     RawTextLessThanSign: en_RawTextLessThanSign,
+    ScriptDataLessThanSign: en_ScriptDataLessThanSign,
+    ScriptDataEscapeStart: en_ScriptDataEscapeStart,
+    ScriptDataEscapeStartDash: en_ScriptDataEscapeStartDash,
+    ScriptDataEscaped: en_ScriptDataEscaped,
+    ScriptDataEscapedDash: en_ScriptDataEscapedDash,
+    ScriptDataEscapedDashDash: en_ScriptDataEscapedDashDash,
+    ScriptDataEscapedLessThanSign: en_ScriptDataEscapedLessThanSign,
+    ScriptDataDoubleEscaped: en_ScriptDataDoubleEscaped,
+    ScriptDataDoubleEscapedDash: en_ScriptDataDoubleEscapedDash,
+    ScriptDataDoubleEscapedDashDash: en_ScriptDataDoubleEscapedDashDash,
+    ScriptDataDoubleEscapedLessThanSign: en_ScriptDataDoubleEscapedLessThanSign,
     BeforeAttributeName: en_BeforeAttributeName,
     AttributeName: en_AttributeName,
     AfterAttributeName: en_AfterAttributeName,
@@ -48,7 +58,9 @@ var states = exports.states = {
     DocTypeSystemIdentifierQuoted: en_DocTypeSystemIdentifierQuoted,
     AfterDocTypeSystemIdentifier: en_AfterDocTypeSystemIdentifier,
     BogusDocType: en_BogusDocType,
-    CDataSection: en_CDataSection
+    CDataSection: en_CDataSection,
+    CDataSectionEnd: en_CDataSectionEnd,
+    CDataSectionEndRightBracket: en_CDataSectionEndRightBracket
 };
 
 for (var key in states) {
@@ -66,7 +78,6 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         this.lastStartTagName = options.lastStartTagName;
         this.onTrace = options.onTrace;
         this.quote = 0;
-        this.tempBuf = '';
         this.docTypeToken = null;
         this.tagToken = null;
         this.attribute = null;

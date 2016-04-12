@@ -75,17 +75,7 @@
         this.emitToken(this.tagToken);
     }
 
-    action CreateTemporaryBuffer {
-        this.tempBuf = '';
-    }
-
-    action AppendToTemporaryBuffer {
-        this.tempBuf += data[p];
-    }
-
     action IsAppropriateEndTagToken { this.string === this.lastStartTagName }
-
-    action IsTemporaryBufferScript { this.tempBuf === 'script' }
 
     action SetSelfClosingFlag {
         if (this.tagToken.type === 'StartTag') {
@@ -106,10 +96,6 @@
 
     action CreateEndTagToken {
         this.tagToken = { type: 'EndTag', name: '' };
-    }
-
-    action AppendUpperCaseToTemporaryBuffer {
-        this.tempBuf += data[p].toLowerCase();
     }
 
     action CreateAttribute {
