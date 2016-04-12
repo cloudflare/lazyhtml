@@ -62,8 +62,6 @@
 
     TagNameEnd = TagNameSpace | '/' | '>';
 
-    UnsafeNULL = 0 @EmitReplacementCharacterToken;
-
     _Quote = ('"' | "'");
 
     _StartQuote = _Quote @SaveQuote;

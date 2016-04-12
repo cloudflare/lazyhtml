@@ -46,13 +46,6 @@
         });
     }
 
-    action EmitReplacementCharacterToken {
-        this.emitToken({
-            type: 'Character',
-            value: '\uFFFD'
-        });
-    }
-
     action CreateStartTagToken {
         this.tagToken = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
     }
