@@ -22,8 +22,6 @@ var states = exports.states = {
     RCDataLessThanSign: en_RCDataLessThanSign,
     RawTextLessThanSign: en_RawTextLessThanSign,
     ScriptDataLessThanSign: en_ScriptDataLessThanSign,
-    ScriptDataEscapeStart: en_ScriptDataEscapeStart,
-    ScriptDataEscapeStartDash: en_ScriptDataEscapeStartDash,
     ScriptDataEscaped: en_ScriptDataEscaped,
     ScriptDataEscapedDash: en_ScriptDataEscapedDash,
     ScriptDataEscapedDashDash: en_ScriptDataEscapedDashDash,

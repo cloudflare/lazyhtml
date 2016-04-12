@@ -18,8 +18,6 @@
     action To_BogusComment { fgoto BogusComment; }
     action To_BeforeAttributeName { fgoto BeforeAttributeName; }
     action To_SelfClosingStartTag { fgoto SelfClosingStartTag; }
-    action To_ScriptDataEscapeStart { fgoto ScriptDataEscapeStart; }
-    action To_ScriptDataEscapeStartDash { fgoto ScriptDataEscapeStartDash; }
     action To_ScriptDataEscapedDashDash { fgoto ScriptDataEscapedDashDash; }
     action To_ScriptDataEscapedDash { fgoto ScriptDataEscapedDash; }
     action To_ScriptDataEscapedLessThanSign { fgoto ScriptDataEscapedLessThanSign; }
@@ -166,15 +164,7 @@
                 '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
             ) @lerr(StartString)
         ) |
-        '!' @To_ScriptDataEscapeStart
-    ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptData);
-
-    ScriptDataEscapeStart := (
-        '-' @To_ScriptDataEscapeStartDash
-    ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptData);
-
-    ScriptDataEscapeStartDash := (
-        '-' @To_ScriptDataEscapedDashDash
+        '!--' @To_ScriptDataEscapedDashDash
     ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptData);
 
     ScriptDataEscaped := _SafeText :> (
