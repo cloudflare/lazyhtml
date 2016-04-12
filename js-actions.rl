@@ -23,32 +23,20 @@
         this.string += '\uFFFD';
     }
 
-    action AppendHyphenMinusCharacter {
-        this.string += '-';
-    }
-
-    action AppendDoubleHyphenMinusCharacter {
-        this.string += '--';
-    }
-
-    action AppendExclamationMarkCharacter {
-        this.string += '!';
-    }
-
-    action AppendRightBracketCharacter {
-        this.string += ']';
-    }
-
-    action AppendDoubleRightBracketCharacter {
-        this.string += ']]';
-    }
-
     action StartSlice {
         this.startSlice = p;
     }
 
+    action StartSlice2 {
+        this.startSlice2 = p;
+    }
+
     action AppendSlice {
         this.string += data.slice(this.startSlice, p);
+    }
+
+    action AppendSlice2 {
+        this.string += data.slice(this.startSlice2, p);
     }
 
     action EmitString {

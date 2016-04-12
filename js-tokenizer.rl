@@ -71,7 +71,7 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         this.tagToken = null;
         this.attribute = null;
         this.string = '';
-        this.startSlice = this.endSlice = 0;
+        this.startSlice = this.startSlice2 = 0;
         if (this.onTrace) {
             this._cs = this.cs;
             Object.defineProperty(this, 'cs', {

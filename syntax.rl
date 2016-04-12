@@ -317,7 +317,7 @@
 
     CommentStart := (
         (
-            '-' @To_CommentStartDash |
+            '-' @StartSlice @To_CommentStartDash |
             '>' @EmitComment @To_Data
         ) >1 |
         any >0 @Reconsume @To_Comment
@@ -328,29 +328,29 @@
             '-' @To_CommentEnd |
             '>' @EmitComment @To_Data
         ) >1 |
-        any >0 @AppendHyphenMinusCharacter @Reconsume @To_Comment
+        any >0 @AppendSlice @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     Comment := _SafeStringChunk? :> (
-        '-' @To_CommentEndDash
+        '-' @StartSlice @To_CommentEndDash
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEndDash := (
         '-' >1 @To_CommentEnd |
-        any >0 @AppendHyphenMinusCharacter @Reconsume @To_Comment
+        any >0 @AppendSlice @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
-    CommentEnd := ('-'+ >StartSlice %AppendSlice %eof(AppendSlice))? <: (
+    CommentEnd := '-'* >StartSlice2 <eof(AppendSlice2) <: (
         (
-            '>' @EmitComment @To_Data |
+            '>' @AppendSlice2 @EmitComment @To_Data |
             '!' @To_CommentEndBang
         ) >1 |
-        any >0 @AppendDoubleHyphenMinusCharacter @Reconsume @To_Comment
+        any >0 @AppendSlice @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     CommentEndBang := (
         '>' >1 @EmitComment @To_Data |
-        any >0 @AppendDoubleHyphenMinusCharacter @AppendExclamationMarkCharacter @Reconsume @To_Comment
+        any >0 @AppendSlice @Reconsume @To_Comment
     ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     DocType := TagNameSpace* <: (
@@ -399,18 +399,17 @@
 
     BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
-    CDataSection := (
-        ']' @To_CDataSectionEnd |
-        (_Slice -- ']') $1 %0
-    )* $eof(EmitString) @eof(Reconsume) @eof(To_Data);
+    CDataSection := _Slice? :> (
+        ']' @StartSlice @To_CDataSectionEnd
+    ) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 
     CDataSectionEnd := (
         ']' >1 @To_CDataSectionEndRightBracket |
-        any >0 @AppendRightBracketCharacter @Reconsume @To_CDataSection
-    ) @eof(AppendRightBracketCharacter) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+        any >0 @AppendSlice @Reconsume @To_CDataSection
+    ) @eof(AppendSlice) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 
-    CDataSectionEndRightBracket := (']' @AppendCharacter)* <: (
-        '>' >1 @EmitString @To_Data |
-        any >0 @AppendDoubleRightBracketCharacter @Reconsume @To_CDataSection
-    ) @eof(AppendDoubleRightBracketCharacter) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+    CDataSectionEndRightBracket := ']'* >StartSlice2 <: (
+        '>' >1 @AppendSlice2 @EmitString @To_Data |
+        any >0 @AppendSlice @Reconsume @To_CDataSection
+    ) @eof(AppendSlice) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 }%%
