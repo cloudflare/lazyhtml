@@ -126,7 +126,7 @@
         '>' @EmitTagToken @To_Data
     ) @eof(Reconsume) @eof(To_Data);
 
-    RCDataLessThanSign := (
+    _SpecialEndTag = (
         '/' @CreateEndTagToken
         (
             upper @AppendLowerCasedCharacter |
@@ -136,32 +136,14 @@
             '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
             '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
         ) @lerr(StartString)
-    ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RCData);
+    );
 
-    RawTextLessThanSign := (
-        '/' @CreateEndTagToken
-        (
-            upper @AppendLowerCasedCharacter |
-            lower @AppendCharacter
-        )* %SetTagName (
-            TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
-            '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
-            '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
-        ) @lerr(StartString)
-    ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RawText);
+    RCDataLessThanSign := _SpecialEndTag @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RCData);
+
+    RawTextLessThanSign := _SpecialEndTag @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RawText);
 
     ScriptDataLessThanSign := (
-        (
-            '/' @CreateEndTagToken
-            (
-                upper @AppendLowerCasedCharacter |
-                lower @AppendCharacter
-            )* %SetTagName (
-                TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
-                '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
-                '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
-            ) @lerr(StartString)
-        ) |
+        _SpecialEndTag |
         '!--' @To_ScriptDataEscapedDashDash
     ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptData);
 
@@ -181,24 +163,14 @@
     ScriptDataEscapedDashDash := '-'* <: (
         (
             '<' @To_ScriptDataEscapedLessThanSign |
-            '>' @AppendSlice2 @AppendCharacter @EmitString @To_ScriptData
+            '>' @AppendSlice2 @EmitString @Reconsume @To_ScriptData
         ) >1 |
         any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataEscaped
     ) @eof(AppendSlice2) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataEscapedLessThanSign := (
-        (
-            '/' @CreateEndTagToken
-            (
-                upper @AppendLowerCasedCharacter |
-                lower @AppendCharacter
-            )* %SetTagName (
-                TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
-                '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
-                '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
-            ) @lerr(StartString)
-        ) |
-        (/script/i TagNameEnd) @AppendSlice2 @AppendCharacter @EmitString @To_ScriptDataDoubleEscaped
+        _SpecialEndTag |
+        (/script/i TagNameEnd) @AppendSlice2 @EmitString @Reconsume @To_ScriptDataDoubleEscaped
     ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
 
     ScriptDataDoubleEscaped := _SafeText :> (
