@@ -11,8 +11,8 @@
         this.string = '';
     }
 
-    action AppendCharacter {
-        this.string += data[p];
+    action AppendEqualsCharacter {
+        this.string += '=';
     }
 
     action AppendLowerCasedCharacter {

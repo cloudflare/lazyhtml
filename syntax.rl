@@ -189,19 +189,19 @@
     ScriptDataDoubleEscapedDashDash := '-'* <: (
         (
             '<' @To_ScriptDataDoubleEscapedLessThanSign |
-            '>' @AppendSlice2 @AppendCharacter @EmitString @To_ScriptData
+            '>' @AppendSlice2 @EmitString @Reconsume @To_ScriptData
         ) >1 |
         any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataDoubleEscaped
     ) @eof(AppendSlice2) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
 
     ScriptDataDoubleEscapedLessThanSign := (
-        '/' /script/i TagNameEnd @AppendSlice2 @AppendCharacter @EmitString @To_ScriptDataEscaped
+        '/' /script/i TagNameEnd @AppendSlice2 @EmitString @Reconsume @To_ScriptDataEscaped
     ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataDoubleEscaped);
 
     BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |
         (
-            '=' >1 @AppendCharacter |
+            '=' >1 @AppendEqualsCharacter |
             any >0 @Reconsume
         ) >CreateAttribute >StartString @To_AttributeName
     ) @eof(Reconsume) @eof(To_Data);
