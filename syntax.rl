@@ -18,20 +18,12 @@
     action To_BogusComment { fgoto BogusComment; }
     action To_BeforeAttributeName { fgoto BeforeAttributeName; }
     action To_SelfClosingStartTag { fgoto SelfClosingStartTag; }
-    action To_RCDataEndTagOpen { fgoto RCDataEndTagOpen; }
-    action To_RCDataEndTagName { fgoto RCDataEndTagName; }
-    action To_RawTextEndTagOpen { fgoto RawTextEndTagOpen; }
-    action To_RawTextEndTagName { fgoto RawTextEndTagName; }
-    action To_ScriptDataEndTagOpen { fgoto ScriptDataEndTagOpen; }
     action To_ScriptDataEscapeStart { fgoto ScriptDataEscapeStart; }
-    action To_ScriptDataEndTagName { fgoto ScriptDataEndTagName; }
     action To_ScriptDataEscapeStartDash { fgoto ScriptDataEscapeStartDash; }
     action To_ScriptDataEscapedDashDash { fgoto ScriptDataEscapedDashDash; }
     action To_ScriptDataEscapedDash { fgoto ScriptDataEscapedDash; }
     action To_ScriptDataEscapedLessThanSign { fgoto ScriptDataEscapedLessThanSign; }
     action To_ScriptDataEscaped { fgoto ScriptDataEscaped; }
-    action To_ScriptDataEscapedEndTagOpen { fgoto ScriptDataEscapedEndTagOpen; }
-    action To_ScriptDataEscapedEndTagName { fgoto ScriptDataEscapedEndTagName; }
     action To_ScriptDataDoubleEscaped { fgoto ScriptDataDoubleEscaped; }
     action To_ScriptDataDoubleEscapedDash { fgoto ScriptDataDoubleEscapedDash; }
     action To_ScriptDataDoubleEscapedLessThanSign { fgoto ScriptDataDoubleEscapedLessThanSign; }
@@ -140,50 +132,43 @@
     ) @eof(Reconsume) @eof(To_Data);
 
     RCDataLessThanSign := (
-        '/' @CreateTemporaryBuffer @To_RCDataEndTagOpen
-    ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
-
-    RCDataEndTagOpen := alpha @CreateEndTagToken @StartString @Reconsume @To_RCDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
-
-    RCDataEndTagName := (
-        upper @AppendLowerCasedCharacter |
-        lower @AppendCharacter
-    )* @AppendToTemporaryBuffer %SetTagName (
-        TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
-        '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
-        '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
-    ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken) @lerr(Reconsume) @lerr(To_RCData);
+        '/' @CreateTemporaryBuffer @CreateEndTagToken @StartString @lerr(EmitLessThanSignCharacterToken)
+        (
+            upper @AppendLowerCasedCharacter |
+            lower @AppendCharacter
+        )* $AppendToTemporaryBuffer %SetTagName (
+            TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
+            '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
+            '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
+        ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken)
+    ) @lerr(Reconsume) @lerr(To_RCData);
 
     RawTextLessThanSign := (
-        '/' @CreateTemporaryBuffer @To_RawTextEndTagOpen
-    ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
-
-    RawTextEndTagOpen := alpha @CreateEndTagToken @StartString @Reconsume @To_RawTextEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
-
-    RawTextEndTagName := (
-        upper @AppendLowerCasedCharacter |
-        lower @AppendCharacter
-    )* @AppendToTemporaryBuffer %SetTagName (
-        TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
-        '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
-        '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
-    ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
+        '/' @CreateTemporaryBuffer @CreateEndTagToken @StartString @lerr(EmitLessThanSignCharacterToken)
+        (
+            upper @AppendLowerCasedCharacter |
+            lower @AppendCharacter
+        )* $AppendToTemporaryBuffer %SetTagName (
+            TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
+            '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
+            '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
+        ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken)
+    ) @lerr(Reconsume) @lerr(To_RawText);
 
     ScriptDataLessThanSign := (
-        '/' @CreateTemporaryBuffer @To_ScriptDataEndTagOpen |
+        (
+            '/' @CreateTemporaryBuffer @CreateEndTagToken @StartString
+            (
+                upper @AppendLowerCasedCharacter |
+                lower @AppendCharacter
+            )* $AppendToTemporaryBuffer %SetTagName (
+                TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
+                '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
+                '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
+            ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken)
+        ) |
         '!' @EmitLessThanSignCharacterToken @EmitCharacterToken @To_ScriptDataEscapeStart
-    ) @lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
-
-    ScriptDataEndTagOpen := alpha @CreateEndTagToken @StartString @Reconsume @To_ScriptDataEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
-
-    ScriptDataEndTagName := (
-        upper @AppendLowerCasedCharacter @AppendToTemporaryBuffer @To_ScriptDataEndTagName |
-        lower @AppendCharacter @AppendToTemporaryBuffer @To_ScriptDataEndTagName
-    )* %SetTagName (
-        TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
-        '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
-        '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
-    ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken) @lerr(Reconsume) @lerr(To_ScriptData);
+    ) >lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_RawText);
 
     ScriptDataEscapeStart := (
         '-' @EmitCharacterToken @To_ScriptDataEscapeStartDash
@@ -217,22 +202,18 @@
 
     ScriptDataEscapedLessThanSign := (
         (
-            '/' @CreateTemporaryBuffer @To_ScriptDataEscapedEndTagOpen |
-            (/script/i TagNameEnd) >EmitLessThanSignCharacterToken $EmitCharacterToken @To_ScriptDataDoubleEscaped $lerr(Reconsume) $lerr(To_ScriptDataEscaped)
-        ) >1 |
-        any >0 @EmitLessThanSignCharacterToken @Reconsume @To_ScriptDataEscaped
-    );
-
-    ScriptDataEscapedEndTagOpen := alpha @CreateEndTagToken @StartString @Reconsume @To_ScriptDataEscapedEndTagName @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
-
-    ScriptDataEscapedEndTagName := (
-        upper @AppendLowerCasedCharacter |
-        lower @AppendCharacter
-    )* @AppendToTemporaryBuffer %SetTagName (
-        TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
-        '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
-        '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
-    ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
+            '/' @CreateTemporaryBuffer @CreateEndTagToken @StartString
+            (
+                upper @AppendLowerCasedCharacter |
+                lower @AppendCharacter
+            )* $AppendToTemporaryBuffer %SetTagName (
+                TagNameSpace when IsAppropriateEndTagToken @To_BeforeAttributeName |
+                '/' when IsAppropriateEndTagToken @To_SelfClosingStartTag |
+                '>' when IsAppropriateEndTagToken @EmitTagToken @To_Data
+            ) @lerr(EmitLessThanSignCharacterToken) @lerr(EmitSolidusCharacterToken) @lerr(EmitTemporaryBufferCharacterToken)
+        ) |
+        (/script/i TagNameEnd) >EmitLessThanSignCharacterToken $EmitCharacterToken @To_ScriptDataDoubleEscaped
+    ) >lerr(EmitLessThanSignCharacterToken) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
 
     ScriptDataDoubleEscaped := _SafeText :> (
         '-' @EmitCharacterToken @To_ScriptDataDoubleEscapedDash |
