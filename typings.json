@@ -1,9 +1,11 @@
 {
   "version": false,
-  "dependencies": {
-    "tape": "registry:npm/tape#4.0.0+20160322235547"
-  },
   "ambientDependencies": {
     "node": "registry:dt/node#4.0.0+20160330064709"
+  },
+  "devDependencies": {
+    "chalk": "registry:npm/chalk#1.0.0+20160211003958",
+    "minimist": "registry:npm/minimist#1.0.0+20160229232932",
+    "tape": "registry:npm/tape#4.0.0+20160322235547"
   }
 }

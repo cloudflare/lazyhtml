@@ -2,6 +2,7 @@
     "files": [
         "typings/main.d.ts",
         "js-tokenizer.js",
-        "test.js"
+        "test.js",
+        "trace.js"
     ]
 }
