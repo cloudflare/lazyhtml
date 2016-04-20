@@ -342,7 +342,7 @@
         (
             '--' @StartString @To_CommentStart |
             /DOCTYPE/i @To_DocType |
-            '[' when IsCDataAllowed 'CDATA[' @StartString @To_CDataSection
+            '[' when IsCDataAllowed 'CDATA[' @To_CDataSection
         ) @1 |
         _BogusComment $0
     );
@@ -431,17 +431,21 @@
 
     BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
 
-    CDataSection := _Slice? :> (
-        ']' @StartSlice @To_CDataSectionEnd
-    ) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+    CDataSection := (
+        start: (
+            ']' @MarkPosition >1 -> cdata_end |
+            any >0 -> start
+        ),
 
-    CDataSectionEnd := (
-        ']' >1 @To_CDataSectionEndRightBracket |
-        any >0 @AppendSlice @Reconsume @To_CDataSection
-    ) @eof(AppendSlice) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+        cdata_end: (
+            ']' >1 -> cdata_end_right_bracket |
+            any >0 -> start
+        ),
 
-    CDataSectionEndRightBracket := ']'* >StartSlice2 <: (
-        '>' >1 @AppendSlice2 @EmitString @To_Data |
-        any >0 @AppendSlice @Reconsume @To_CDataSection
-    ) @eof(AppendSlice) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+        cdata_end_right_bracket: (
+            ']' >1 @AdvanceMarkedPosition -> cdata_end_right_bracket |
+            '>' >1 @AppendSliceBeforeTheMark -> final |
+            any >0 -> start
+        )
+    ) >StartString >StartSlice <>eof(AppendSlice) <>eof(EmitString) @EmitString @To_Data @eof(Reconsume) @eof(To_Data);
 }%%

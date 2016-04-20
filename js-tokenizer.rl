@@ -106,9 +106,7 @@ var states = exports.states = {
     DocTypeSystemIdentifierQuoted: en_DocTypeSystemIdentifierQuoted,
     AfterDocTypeSystemIdentifier: en_AfterDocTypeSystemIdentifier,
     BogusDocType: en_BogusDocType,
-    CDataSection: en_CDataSection,
-    CDataSectionEnd: en_CDataSectionEnd,
-    CDataSectionEndRightBracket: en_CDataSectionEndRightBracket
+    CDataSection: en_CDataSection
 };
 
 for (var key in states) {
