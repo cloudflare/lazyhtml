@@ -31,6 +31,22 @@
         this.startSlice2 = p;
     }
 
+    action MarkPosition {
+        this.mark = p;
+    }
+
+    action AdvanceMarkedPosition {
+        this.mark++;
+    }
+
+    action AppendSliceBeforeTheMark {
+        this.string += data.slice(this.startSlice, this.mark);
+    }
+
+    action AppendSliceAfterTheMark {
+        this.string += data.slice(this.mark, p);
+    }
+
     action AppendSlice {
         this.string += data.slice(this.startSlice, p);
     }
@@ -127,5 +143,68 @@
 
     action SetDocTypeSystemIdentifier {
         this.docTypeToken.systemId = this.string;
+    }
+
+    action StartNumericEntity {
+        this.numericEntity = 0;
+    }
+
+    action AppendHexDigit09ToNumericEntity {
+        this.numericEntity = this.numericEntity * 16 + (fc & 0xF);
+    }
+
+    action AppendHexDigitAFToNumericEntity {
+        this.numericEntity = this.numericEntity * 16 + ((fc + 9) & 0xF);
+    }
+
+    action AppendDecDigitToNumericEntity {
+        this.numericEntity = this.numericEntity * 10 + (fc & 0xF);
+    }
+
+    action AppendNumericEntity {
+        this.string += getNumericEntity(this.numericEntity);
+    }
+
+    action StartNamedEntity {
+        this.namedEntityOffset = 1;
+        this.namedEntityMatch = 0;
+    }
+
+    action FeedNamedEntity {
+        var min = 0;
+        var max = namedEntityHandlers[this.namedEntityOffset++] - 1;
+        var ch = fc;
+
+        while (min <= max) {
+            var i = (min + max) >> 1;
+            var curPos = this.namedEntityOffset + i * 3;
+            var curCh = namedEntityHandlers[curPos];
+
+            if (curCh < ch) {
+                min = i + 1;
+            } else if (curCh > ch) {
+                max = i - 1;
+            } else {
+                var action = namedEntityHandlers[++curPos];
+                if (action > 0) {
+                    if (this.namedEntityMatch === 0) {
+                        // console.log('AppendSliceBeforeTheMark', data.slice(this.startSlice, this.mark));
+                        this.string += data.slice(this.startSlice, this.mark);
+                    }
+                    this.namedEntityMatch = action;
+                    this.startSlice = fpc + 1;
+                }
+                this.namedEntityOffset = namedEntityHandlers[++curPos];
+                break;
+            }
+        }
+
+        if (min > max || namedEntityHandlers[this.namedEntityOffset] === 0) {
+            this.namedEntityOffset = 0;
+        }
+    }
+
+    action AppendNamedEntity {
+        this.string += namedEntityValues[this.namedEntityMatch];
     }
 }%%

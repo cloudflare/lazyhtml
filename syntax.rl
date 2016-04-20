@@ -85,10 +85,100 @@
         (_Slice -- (upper | 0)) $1 %0
     )* %2;
 
-    Data := ((
-        # '&' @To_CharacterReferenceInData |
-        _Slice $1 %0
-    )+ %2 >StartString %EmitString %eof(EmitString))? :> '<' @StartString @StartSlice @To_TagOpen;
+    # I seriously tried to avoid this and play with Ragel priorities instead,
+    # but it was too hard to achieve the needed result using just it,
+    # hence the actual state machine with joiners.
+    #
+    # In particular, this allows a contigous slice to cover &... that looks
+    # like beginning of entity while it's really now.
+    _SliceWithEntities = (
+        start: (
+            (
+                '&' @StartSlice @MarkPosition -> entity |
+                '<' -> final
+            ) >1 |
+            any >0 @StartSlice -> text
+        ),
+
+        text: (
+            (
+                '&' @MarkPosition -> entity |
+                '<' @AppendSlice @EmitString -> final
+            ) >1 |
+            any >0 -> text
+        ) @eof(AppendSlice) @eof(EmitString),
+
+        entity: (
+            (
+                '&' @MarkPosition -> entity |
+                '<' @AppendSlice @EmitString -> final |
+                alpha @StartNamedEntity @FeedNamedEntity -> named_entity |
+                '#' -> numeric_entity
+            ) >1 |
+            any >0 -> text
+        ) @eof(AppendSlice) @eof(EmitString),
+
+        named_entity: (
+            (
+                '&' @AppendNamedEntity @MarkPosition -> entity |
+                '<' @AppendNamedEntity @AppendSlice @EmitString -> final |
+                alpha @FeedNamedEntity -> named_entity |
+                ';' @FeedNamedEntity @AppendNamedEntity -> text
+            ) >1 |
+            any >0 @AppendNamedEntity -> text
+        ) @eof(AppendNamedEntity) @eof(AppendSlice) @eof(EmitString),
+
+        numeric_entity: (
+            (
+                '&' @MarkPosition -> entity |
+                '<' @AppendSlice @EmitString -> final |
+                /x/i -> hex_numeric_entity_start |
+                digit @AppendSliceBeforeTheMark @StartNumericEntity @AppendDecDigitToNumericEntity -> dec_numeric_entity
+            ) >1 |
+            any >0 -> text
+        ) @eof(AppendSlice) @eof(EmitString),
+
+        hex_numeric_entity_start: (
+            (
+                '&' @MarkPosition -> entity |
+                '<' @AppendSlice @EmitString -> final |
+                digit @AppendHexDigit09ToNumericEntity -> hex_numeric_entity |
+                /[a-f]/i @AppendHexDigitAFToNumericEntity -> hex_numeric_entity
+            ) >AppendSliceBeforeTheMark >StartNumericEntity >1 |
+            any >0 -> text
+        ) @eof(AppendSlice) @eof(EmitString),
+
+        dec_numeric_entity: (
+            (
+                '&' @AppendNumericEntity @StartSlice @MarkPosition -> entity |
+                '<' @AppendNumericEntity @EmitString -> final |
+                digit @AppendDecDigitToNumericEntity -> dec_numeric_entity |
+                ';' -> numeric_entity_end
+            ) >1 |
+            any >0 @AppendNumericEntity @StartSlice -> text
+        ) @eof(AppendNumericEntity) @eof(EmitString),
+
+        hex_numeric_entity: (
+            (
+                '&' @AppendNumericEntity @StartSlice @MarkPosition -> entity |
+                '<' @AppendNumericEntity @EmitString -> final |
+                digit @AppendHexDigit09ToNumericEntity -> hex_numeric_entity |
+                /[a-f]/i @AppendHexDigitAFToNumericEntity -> hex_numeric_entity |
+                ';' -> numeric_entity_end
+            ) >1 |
+            any >0 @AppendNumericEntity @StartSlice -> text
+        ) @eof(AppendNumericEntity) @eof(EmitString),
+
+        numeric_entity_end: (
+            (
+                '&' @StartSlice @MarkPosition -> entity |
+                '<' @EmitString -> final
+            ) >1 |
+            any >0 @StartSlice -> text
+        ) >AppendNumericEntity @eof(AppendNumericEntity) @eof(EmitString)
+    ) >StartString @StartString @StartSlice;
+
+    Data := _SliceWithEntities @To_TagOpen;
 
     RCData := ((
         # '&' @To_CharacterReferenceInRCData |

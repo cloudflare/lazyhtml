@@ -1,0 +1,26 @@
+RAGEL = ragel
+RAGELFLAGS =
+NODE = node
+NODEFLAGS += --harmony-destructuring
+
+.PHONY: all
+all: handlers.dat
+
+entities.json:
+	curl "https://html.spec.whatwg.org/$@" -o $@
+
+machine.rl: to-ragel.js entities.json
+machine.json: to-json.js machine.xml
+handlers.dat: to-data.js machine.json
+
+values.txt: handlers.dat
+
+machine.rl machine.json handlers.dat:
+	$(NODE) $(NODEFLAGS) $<
+
+machine.xml: machine.rl
+	$(RAGEL) $(RAGELFLAGS) -x $< > $@
+
+.PHONY: clean
+clean:
+	rm entities.json machine.rl machine.json handlers.dat values.txt machine.xml

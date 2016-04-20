@@ -5,7 +5,11 @@
   },
   "devDependencies": {
     "chalk": "registry:npm/chalk#1.0.0+20160211003958",
+    "lodash": "registry:npm/lodash#4.0.0+20160412191219",
     "minimist": "registry:npm/minimist#1.0.0+20160229232932",
     "tape": "registry:npm/tape#4.0.0+20160322235547"
+  },
+  "ambientDevDependencies": {
+    "xml2js": "registry:dt/xml2js#0.0.0+20160317120654"
   }
 }
