@@ -5,6 +5,7 @@ LDFLAGS += $(shell pkg-config --libs json-c)
 
 %.dot: js-tokenizer.rl syntax.rl
 	$(RAGEL) $(RAGELFLAGS) -PVp -M $(notdir $(basename $@)) $< > $@ || rm $@
+	node --harmony-destructuring simplify-graph.js $@
 
 %.png: %.dot
 	dot -Tpng $< -o $@
