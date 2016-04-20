@@ -23,7 +23,7 @@ for (var key in states) {
     stateNames[states[key]] = key;
 }
 
-function str(s) {
+function toStr(s) {
     return JSON.stringify(s).replace(/[\u007f-\uffff]/g, c => `\\u${('000'+c.charCodeAt(0).toString(16)).slice(-4)}`);
 }
 
@@ -31,12 +31,12 @@ function toState(state) {
     return `-> ${chalk.italic(stateNames[state] || state)}`;
 }
 
-function codeFrame(trace) {
-    const head = str(trace.in.slice(0, trace.at)).slice(0, -1);
-    const middle = str(trace.in.charAt(trace.at)).slice(1, -1);
-    const tail = str(trace.in.slice(trace.at + 1)).slice(1);
+function codeFrame(str, pos) {
+    const head = toStr(str.slice(0, pos)).slice(0, -1);
+    const middle = toStr(str.charAt(pos)).slice(1, -1);
+    const tail = toStr(str.slice(pos + 1)).slice(1);
 
-    return `${chalk.yellow(`${head}${middle}${tail}`)}\n${chalk.cyan('-'.repeat(head.length))}${chalk.blue('^'.repeat(middle.length))}${chalk.cyan('-'.repeat(tail.length))}${toState(trace.to)}`;
+    return `${chalk.yellow(`${head}${middle}${tail}`)}\n${chalk.cyan('-'.repeat(head.length))}${chalk.blue('^'.repeat(middle.length))}${chalk.cyan('-'.repeat(tail.length))}`;
 }
 
 const tokenizer = new HtmlTokenizer({
@@ -46,7 +46,7 @@ const tokenizer = new HtmlTokenizer({
     onToken: console.log,
     onTrace(trace) {
         if (trace.to !== trace.from && (trace.to in stateNames)) {
-            console.log(codeFrame(trace));
+            console.log(codeFrame(trace.in, trace.at), toState(trace.to));
         }
     }
 });

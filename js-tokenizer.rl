@@ -109,10 +109,6 @@ var states = exports.states = {
     CDataSection: en_CDataSection
 };
 
-for (var key in states) {
-    states[states[key]] = key;
-}
-
 var CR = new RegExp('\r\n?', 'g');
 
 exports.HtmlTokenizer = class HtmlTokenizer {
@@ -189,12 +185,12 @@ exports.HtmlTokenizer = class HtmlTokenizer {
                 },
                 cs: {
                     configurable: true,
-                get() {
-                    return this._cs;
-                },
-                set(value) {
-                    throw new Error('Changing state before the feed.');
-                }
+                    get() {
+                        return this._cs;
+                    },
+                    set(value) {
+                        throw new Error('Changing state before the feed.');
+                    }
                 }
             });
         } else {
