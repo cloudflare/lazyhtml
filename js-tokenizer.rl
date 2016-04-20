@@ -120,28 +120,92 @@ var CR = new RegExp('\r\n?', 'g');
 exports.HtmlTokenizer = class HtmlTokenizer {
     constructor(options) {
         %%write init nocs;
-        this.cs = options.initialState || en_Data;
-        this.allowCData = !!options.allowCData;
-        this.emitToken = options.onToken;
-        this.lastStartTagName = options.lastStartTagName;
-        this.onTrace = options.onTrace;
-        this.quote = 0;
-        this.docTypeToken = null;
-        this.tagToken = null;
-        this.attribute = null;
-        this.string = '';
-        this.startSlice = this.startSlice2 = 0;
+        Object.defineProperties(this, {
+            allowCData: {
+                enumerable: true,
+                value: !!options.allowCData
+            },
+            emitToken: {
+                enumerable: true,
+                value: options.onToken
+            },
+            lastStartTagName: {
+                writable: true,
+                value: options.lastStartTagName
+            },
+            onTrace: {
+                enumerable: true,
+                value: options.onTrace
+            },
+            quote: {
+                writable: true,
+                value: 0
+            },
+            docTypeToken: {
+                writable: true,
+                value: null
+            },
+            tagToken: {
+                writable: true,
+                value: null
+            },
+            attribute: {
+                writable: true,
+                value: null
+            },
+            string: {
+                writable: true,
+                value: ''
+            },
+            startSlice: {
+                writable: true,
+                value: 0
+            },
+            startSlice2: {
+                writable: true,
+                value: 0
+            },
+            mark: {
+                writable: true,
+                value: 0
+            },
+            numericEntity: {
+                writable: true,
+                value: 0
+            },
+            namedEntityOffset: {
+                writable: true,
+                value: 0
+            },
+            namedEntityMatch: {
+                writable: true,
+                value: 0
+            }
+        });
+        var startState = options.initialState || en_Data;
         if (this.onTrace) {
-            this._cs = this.cs;
-            Object.defineProperty(this, 'cs', {
+            Object.defineProperties(this, {
+                _cs: {
+                    writable: true,
+                    value: startState
+                },
+                cs: {
+                    configurable: true,
                 get() {
                     return this._cs;
                 },
                 set(value) {
                     throw new Error('Changing state before the feed.');
                 }
+                }
+            });
+        } else {
+            Object.defineProperty(this, 'cs', {
+                writable: true,
+                value: startState
             });
         }
+        Object.preventExtensions(this);
     }
 
     feed(data, isEnd) {
@@ -171,3 +235,5 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         }
     }
 };
+
+Object.freeze(exports.HtmlTokenizer.prototype);
