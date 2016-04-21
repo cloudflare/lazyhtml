@@ -38,11 +38,7 @@
     action To_CDataSection { fgoto CDataSection; }
     action To_CDataSectionEnd { fgoto CDataSectionEnd; }
     action To_CDataSectionEndRightBracket { fgoto CDataSectionEndRightBracket; }
-    action To_CommentStartDash { fgoto CommentStartDash; }
     action To_Comment { fgoto Comment; }
-    action To_CommentEnd { fgoto CommentEnd; }
-    action To_CommentEndDash { fgoto CommentEndDash; }
-    action To_CommentEndBang { fgoto CommentEndBang; }
     action To_BeforeDocTypeName { fgoto BeforeDocTypeName; }
     action To_DocTypeName { fgoto DocTypeName; }
     action To_AfterDocTypeName { fgoto AfterDocTypeName; }
@@ -340,50 +336,69 @@
 
     MarkupDeclarationOpen := (
         (
-            '--' @StartString @To_CommentStart |
+            '--' @To_Comment |
             /DOCTYPE/i @To_DocType |
             '[' when IsCDataAllowed 'CDATA[' @To_CDataSection
         ) @1 |
         _BogusComment $0
     );
 
-    CommentStart := (
-        (
-            '-' @StartSlice @To_CommentStartDash |
-            '>' @EmitComment @To_Data
-        ) >1 |
-        any >0 @Reconsume @To_Comment
-    ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+    Comment := (
+        start: (
+            (
+                '-' @StartSlice @MarkPosition -> comment_start_dash |
+                '>' -> final |
+                0 @AppendReplacementCharacter -> text
+            ) >1 |
+            any >0 @StartSlice -> text_slice
+        ),
 
-    CommentStartDash := (
-        (
-            '-' @To_CommentEnd |
-            '>' @EmitComment @To_Data
-        ) >1 |
-        any >0 @AppendSlice @Reconsume @To_Comment
-    ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+        comment_start_dash: (
+            (
+                '-' -> comment_end |
+                '>' -> final |
+                0 @AppendSlice @AppendReplacementCharacter -> text
+            ) >1 |
+            any >0 -> text_slice
+        ),
 
-    Comment := _SafeStringChunk? :> (
-        '-' @StartSlice @To_CommentEndDash
-    ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+        text: (
+            0 >1 @AppendReplacementCharacter -> text |
+            '-' >1 @StartSlice @MarkPosition -> comment_end_dash |
+            any >0 @StartSlice -> text_slice
+        ),
 
-    CommentEndDash := (
-        '-' >1 @To_CommentEnd |
-        any >0 @AppendSlice @Reconsume @To_Comment
-    ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+        text_slice: (
+            0 >1 @AppendSlice @AppendReplacementCharacter -> text |
+            '-' >1 @MarkPosition -> comment_end_dash |
+            any >0 -> text_slice
+        ) @eof(AppendSlice),
 
-    CommentEnd := '-'* >StartSlice2 <eof(AppendSlice2) <: (
-        (
-            '>' @AppendSlice2 @EmitComment @To_Data |
-            '!' @To_CommentEndBang
-        ) >1 |
-        any >0 @AppendSlice @Reconsume @To_Comment
-    ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+        comment_end_dash: (
+            (
+                '-' -> comment_end |
+                0 @AppendSlice @AppendReplacementCharacter -> text
+            ) >1 |
+            any >0 -> text_slice
+        ) @eof(AppendSliceBeforeTheMark),
 
-    CommentEndBang := (
-        '>' >1 @EmitComment @To_Data |
-        any >0 @AppendSlice @Reconsume @To_Comment
-    ) @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+        comment_end: (
+            (
+                '-' @AdvanceMarkedPosition -> comment_end |
+                '>' @AppendSliceBeforeTheMark -> final |
+                '!' -> comment_end_bang |
+                0 @AppendSlice @AppendReplacementCharacter -> text
+            ) >1 |
+            any >0 -> text_slice
+        ) @eof(AppendSliceBeforeTheMark),
+
+        comment_end_bang: (
+            '-' >1 @MarkPosition -> comment_end_dash |
+            '>' >1 @AppendSliceBeforeTheMark -> final |
+            0 >1 @AppendSlice @AppendReplacementCharacter -> text |
+            any >0 -> text_slice
+        ) @eof(AppendSliceBeforeTheMark)
+    ) >StartString @EmitComment @To_Data @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
 
     DocType := TagNameSpace* <: (
         '>' >1 @SetForceQuirksFlag @EmitDocType @To_Data |
