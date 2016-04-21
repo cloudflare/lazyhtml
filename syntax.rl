@@ -158,11 +158,14 @@
     PlainText := _SafeText;
 
     TagOpen := (
-        '!' @To_MarkupDeclarationOpen |
-        '/' @To_EndTagOpen |
-        alpha @CreateStartTagToken @StartString @Reconsume @To_TagName |
-        '?' @Reconsume @To_BogusComment
-    ) @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_Data);
+        (
+            '!' @To_MarkupDeclarationOpen |
+            '/' @To_EndTagOpen |
+            alpha @CreateStartTagToken @StartString @Reconsume @To_TagName |
+            '?' @Reconsume @To_BogusComment
+        ) >1 |
+        any >0 @AppendSlice @EmitString @Reconsume @To_Data
+    ) @eof(AppendSlice) @eof(EmitString);
 
     EndTagOpen := (
         (
@@ -170,7 +173,7 @@
             '>' @To_Data
         ) >1 |
         any >0 @Reconsume @To_BogusComment
-    ) @eof(AppendSlice) @lerr(EmitString) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendSlice) @eof(EmitString);
 
     _TagEnd = (
         TagNameSpace @To_BeforeAttributeName |
@@ -178,7 +181,7 @@
         '>' @EmitTagToken @To_Data
     );
 
-    TagName := _Name %SetTagName :> _TagEnd @eof(Reconsume) @eof(To_Data);
+    TagName := _Name %SetTagName :> _TagEnd;
 
     _SpecialEndTag = (
         '/' @CreateEndTagToken
@@ -202,7 +205,7 @@
     ScriptDataEscaped := _SafeText :> (
         '-' @To_ScriptDataEscapedDash |
         '<' @To_ScriptDataEscapedLessThanSign
-    ) >StartString >StartSlice2 @eof(Reconsume) @eof(To_Data);
+    ) >StartString >StartSlice2;
 
     ScriptDataEscapedDash := (
         (
@@ -210,7 +213,7 @@
             '<' @AppendSlice2 @EmitString @StartString @StartSlice2 @To_ScriptDataEscapedLessThanSign
         ) >1 |
         any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataEscaped
-    ) @eof(AppendSlice2) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendSlice2) @eof(EmitString);
 
     ScriptDataEscapedDashDash := '-'* <: (
         (
@@ -218,7 +221,7 @@
             '>' @AppendSlice2 @EmitString @Reconsume @To_ScriptData
         ) >1 |
         any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataEscaped
-    ) @eof(AppendSlice2) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendSlice2) @eof(EmitString);
 
     ScriptDataEscapedLessThanSign := (
         _SpecialEndTag |
@@ -228,7 +231,7 @@
     ScriptDataDoubleEscaped := _SafeText :> (
         '-' @To_ScriptDataDoubleEscapedDash |
         '<' @To_ScriptDataDoubleEscapedLessThanSign
-    ) >StartString >StartSlice2 @eof(Reconsume) @eof(To_Data);
+    ) >StartString >StartSlice2;
 
     ScriptDataDoubleEscapedDash := (
         (
@@ -236,7 +239,7 @@
             '<' @To_ScriptDataDoubleEscapedLessThanSign
         ) >1 |
         any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataDoubleEscaped
-    ) @eof(AppendSlice2) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendSlice2) @eof(EmitString);
 
     ScriptDataDoubleEscapedDashDash := '-'* <: (
         (
@@ -244,7 +247,7 @@
             '>' @AppendSlice2 @EmitString @Reconsume @To_ScriptData
         ) >1 |
         any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataDoubleEscaped
-    ) @eof(AppendSlice2) @eof(EmitString) @eof(Reconsume) @eof(To_Data);
+    ) @eof(AppendSlice2) @eof(EmitString);
 
     ScriptDataDoubleEscapedLessThanSign := (
         '/' /script/i TagNameEnd @AppendSlice2 @EmitString @Reconsume @To_ScriptDataEscaped
@@ -256,12 +259,12 @@
             '=' >1 @AppendEqualsCharacter |
             any >0 @Reconsume
         ) >CreateAttribute >StartString @To_AttributeName
-    ) @eof(Reconsume) @eof(To_Data);
+    );
 
     AttributeName := _Name %AppendAttribute :> (
         TagNameEnd @Reconsume @To_AfterAttributeName |
         '=' @To_BeforeAttributeValue
-    ) @eof(Reconsume) @eof(To_Data);
+    );
 
     AfterAttributeName := TagNameSpace* <: (
         (
@@ -269,34 +272,34 @@
             '=' @To_BeforeAttributeValue
         ) >1 |
         any >0 @CreateAttribute @StartString @Reconsume @To_AttributeName
-    ) @eof(Reconsume) @eof(To_Data);
+    );
 
     BeforeAttributeValue := TagNameSpace* <: (
         _StartQuote >1 @To_AttributeValueQuoted |
         any >0 @Reconsume @To_AttributeValueUnquoted
-    ) @eof(Reconsume) @eof(To_Data);
+    );
 
     AttributeValueQuoted := _SafeString %SetAttributeValue :> (
         _EndQuote @To_AfterAttributeValueQuoted
         # '&' @To_CharacterReferenceInAttributeValue
-    ) @eof(Reconsume) @eof(To_Data);
+    );
 
     AttributeValueUnquoted := _SafeString %SetAttributeValue :> (
         (TagNameSpace | '>') & _TagEnd
         # '&' @To_CharacterReferenceInAttributeValue
-    ) @eof(Reconsume) @eof(To_Data);
+    );
 
     AfterAttributeValueQuoted := (
         _TagEnd >1 |
         any >0 @Reconsume @To_BeforeAttributeName
-    ) @eof(Reconsume) @eof(To_Data);
+    );
 
     SelfClosingStartTag := (
         '>' >1 @SetSelfClosingFlag @EmitTagToken @To_Data |
         any >0 @Reconsume @To_BeforeAttributeName
-    ) @eof(Reconsume) @eof(To_Data);
+    );
 
-    _BogusComment = _SafeString :> '>' @EmitComment @To_Data @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+    _BogusComment = _SafeString :> '>' @EmitComment @To_Data @eof(EmitComment);
 
     BogusComment := _BogusComment;
 
@@ -364,17 +367,17 @@
             0 >1 @AppendSlice @AppendReplacementCharacter -> text |
             any >0 -> text_slice
         ) @eof(AppendSliceBeforeTheMark)
-    ) >StartString @EmitComment @To_Data @eof(EmitComment) @eof(Reconsume) @eof(To_Data);
+    ) >StartString @EmitComment @To_Data @eof(EmitComment);
 
     DocType := TagNameSpace* <: (
         '>' >1 @SetForceQuirksFlag @EmitDocType @To_Data |
         any >0 @Reconsume @To_DocTypeName
-    ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+    ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
     DocTypeName := _Name >StartString %SetDocTypeName %eof(SetDocTypeName) :> (
         TagNameSpace |
         '>'
-    ) @Reconsume @To_AfterDocTypeName @eof(Reconsume) @eof(To_AfterDocTypeName);
+    ) @Reconsume @To_AfterDocTypeName @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
     AfterDocTypeName := TagNameSpace* (
         '>' @EmitDocType @To_Data |
@@ -389,7 +392,7 @@
     DocTypePublicIdentifierQuoted := _SafeString %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
         _EndQuote @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
     BetweenDocTypePublicAndSystemIdentifiers := TagNameSpace* (
         _StartQuote @To_DocTypeSystemIdentifierQuoted |
@@ -403,14 +406,14 @@
     DocTypeSystemIdentifierQuoted := _SafeString %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
         _EndQuote @To_AfterDocTypeSystemIdentifier |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
     AfterDocTypeSystemIdentifier := TagNameSpace* <: (
         '>' >1 @EmitDocType @To_Data |
         any >0 @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType) @eof(Reconsume) @eof(To_Data);
+    BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType);
 
     CDataSection := (
         start: (
@@ -428,5 +431,5 @@
             '>' >1 @AppendSliceBeforeTheMark -> final |
             any >0 -> start
         )
-    ) >StartString >StartSlice <>eof(AppendSlice) <>eof(EmitString) @EmitString @To_Data @eof(Reconsume) @eof(To_Data);
+    ) >StartString >StartSlice <>eof(AppendSlice) <>eof(EmitString) @EmitString @To_Data;
 }%%
