@@ -383,25 +383,30 @@
         '>' @EmitDocType @To_Data |
         /PUBLIC/i @To_BeforeDocTypePublicIdentifier |
         /SYSTEM/i @To_BeforeDocTypeSystemIdentifier
-    ) $lerr(Reconsume) $lerr(SetForceQuirksFlag) $lerr(To_BogusDocType);
-
-    BeforeDocTypePublicIdentifier := TagNameSpace* (
-        _StartQuote @To_DocTypePublicIdentifierQuoted
     ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
+
+    BeforeDocTypePublicIdentifier := TagNameSpace* <: (
+        _StartQuote >1 @To_DocTypePublicIdentifierQuoted |
+        any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
+    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
     DocTypePublicIdentifierQuoted := _SafeString %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
         _EndQuote @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    BetweenDocTypePublicAndSystemIdentifiers := TagNameSpace* (
-        _StartQuote @To_DocTypeSystemIdentifierQuoted |
-        '>' @EmitDocType @To_Data
-    ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
+    BetweenDocTypePublicAndSystemIdentifiers := TagNameSpace* <: (
+        (
+            _StartQuote @To_DocTypeSystemIdentifierQuoted |
+            '>' @EmitDocType @To_Data
+        ) >1 |
+        any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
+    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    BeforeDocTypeSystemIdentifier := TagNameSpace* (
-        _StartQuote @To_DocTypeSystemIdentifierQuoted
-    ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
+    BeforeDocTypeSystemIdentifier := TagNameSpace* <: (
+        _StartQuote >1 @To_DocTypeSystemIdentifierQuoted |
+        any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
+    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
     DocTypeSystemIdentifierQuoted := _SafeString %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
         _EndQuote @To_AfterDocTypeSystemIdentifier |
@@ -409,8 +414,7 @@
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
     AfterDocTypeSystemIdentifier := TagNameSpace* <: (
-        '>' >1 @EmitDocType @To_Data |
-        any >0 @To_BogusDocType
+        any @Reconsume @To_BogusDocType
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
     BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType);
