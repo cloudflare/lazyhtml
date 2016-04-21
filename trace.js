@@ -32,9 +32,9 @@ function toState(state) {
 }
 
 function codeFrame(str, pos) {
-    const head = toStr(str.slice(0, pos)).slice(0, -1);
-    const middle = toStr(str.charAt(pos)).slice(1, -1);
-    const tail = toStr(str.slice(pos + 1)).slice(1);
+    const head = slice.call(toStr(slice.call(str, 0, pos)), 0, -1);
+    const middle = slice.call(toStr(str.charAt(pos)), 1, -1);
+    const tail = slice.call(toStr(slice.call(str, pos + 1)), 1);
 
     return `${chalk.yellow(`${head}${middle}${tail}`)}\n${chalk.cyan('-'.repeat(head.length))}${chalk.blue('^'.repeat(middle.length))}${chalk.cyan('-'.repeat(tail.length))}`;
 }
@@ -53,4 +53,14 @@ const tokenizer = new HtmlTokenizer({
 
 console.log(toState(tokenizer.cs));
 
-tokenizer.feed(args._[0].replace(/\\u([0-9a-f]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16))), true);
+var input = args._[0].replace(/\\u([0-9a-f]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+
+var { slice } = String.prototype;
+
+String.prototype.slice = function (from, to) {
+    var result = slice.apply(this, arguments);
+    console.log(`Sliced input at ${chalk.green(from)}..${chalk.green(to)}: ${chalk.yellow(toStr(result))}`);
+    return result;
+};
+
+tokenizer.feed(input, true);
