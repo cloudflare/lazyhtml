@@ -81,6 +81,24 @@
         (_Slice -- (upper | 0)) $1 %0
     )* %2;
 
+    _DecNumericEntity = digit @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume digit* $AppendDecDigitToNumericEntity %AppendNumericEntity %eof(AppendNumericEntity) <: (
+        ';' >1 |
+        any >0 @Reconsume
+    );
+
+    _HexNumericEntity = xdigit @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume (
+        digit @AppendHexDigit09ToNumericEntity |
+        /[a-f]/i @AppendHexDigitAFToNumericEntity
+    )* %AppendNumericEntity %eof(AppendNumericEntity) <: (
+        ';' >1 |
+        any >0 @Reconsume
+    );
+
+    _NamedEntity = alpha @StartNamedEntity @Reconsume alpha* $FeedNamedEntity <: (
+        ';' >1 @FeedNamedEntity @AppendNamedEntity |
+        any >0 @AppendNamedEntity @Reconsume
+    ) @eof(AppendNamedEntity) @eof(AppendSlice);
+
     # I seriously tried to avoid this and play with Ragel priorities instead,
     # but it was too hard to achieve the needed result using just it,
     # hence the actual state machine with joiners.
@@ -106,45 +124,20 @@
 
         entity: (
             (
-                alpha @StartNamedEntity @Reconsume -> named_entity |
-                '#' -> numeric_entity
+                _NamedEntity -> text |
+                '#' (
+                    (
+                        /x/i (
+                            _HexNumericEntity >1 -> start |
+                            any >0 @Reconsume -> text
+                        ) >eof(AppendSlice) |
+                        _DecNumericEntity -> start
+                    ) >1 |
+                    any >0 @Reconsume -> text
+                ) >eof(AppendSlice)
             ) >1 |
             any >0 @Reconsume -> text
-        ) @eof(AppendSlice),
-
-        named_entity: (
-            (
-                alpha @FeedNamedEntity -> named_entity |
-                ';' @FeedNamedEntity @AppendNamedEntity -> text
-            ) >1 |
-            any >0 @AppendNamedEntity @Reconsume -> text
-        ) @eof(AppendNamedEntity) @eof(AppendSlice),
-
-        numeric_entity: (
-            (
-                /x/i -> hex_numeric_entity_start |
-                digit @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume -> dec_numeric_entity
-            ) >1 |
-            any >0 @Reconsume -> text
-        ) @eof(AppendSlice),
-
-        hex_numeric_entity_start: (
-            xdigit >1 @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume -> hex_numeric_entity |
-            any >0 @Reconsume -> text
-        ) @eof(AppendSlice),
-
-        dec_numeric_entity: digit* $AppendDecDigitToNumericEntity %AppendNumericEntity %eof(AppendNumericEntity) <: (
-            ';' >1 |
-            any >0 @Reconsume
-        ) -> start,
-
-        hex_numeric_entity: (
-            digit @AppendHexDigit09ToNumericEntity |
-            /[a-f]/i @AppendHexDigitAFToNumericEntity
-        )* %AppendNumericEntity %eof(AppendNumericEntity) <: (
-            ';' >1 |
-            any >0 @Reconsume
-        ) -> start
+        ) >eof(AppendSlice)
     ) >StartString @StartString @StartSlice <>eof(EmitString);
 
     Data := _SliceWithEntities @To_TagOpen;
