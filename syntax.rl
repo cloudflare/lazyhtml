@@ -102,77 +102,50 @@
                 '<' @AppendSlice @EmitString -> final
             ) >1 |
             any >0 -> text
-        ) @eof(AppendSlice) @eof(EmitString),
+        ) @eof(AppendSlice),
 
         entity: (
             (
-                '&' @MarkPosition -> entity |
-                '<' @AppendSlice @EmitString -> final |
-                alpha @StartNamedEntity @FeedNamedEntity -> named_entity |
+                alpha @StartNamedEntity @Reconsume -> named_entity |
                 '#' -> numeric_entity
             ) >1 |
-            any >0 -> text
-        ) @eof(AppendSlice) @eof(EmitString),
+            any >0 @Reconsume -> text
+        ) @eof(AppendSlice),
 
         named_entity: (
             (
-                '&' @AppendNamedEntity @MarkPosition -> entity |
-                '<' @AppendNamedEntity @AppendSlice @EmitString -> final |
                 alpha @FeedNamedEntity -> named_entity |
                 ';' @FeedNamedEntity @AppendNamedEntity -> text
             ) >1 |
-            any >0 @AppendNamedEntity -> text
-        ) @eof(AppendNamedEntity) @eof(AppendSlice) @eof(EmitString),
+            any >0 @AppendNamedEntity @Reconsume -> text
+        ) @eof(AppendNamedEntity) @eof(AppendSlice),
 
         numeric_entity: (
             (
-                '&' @MarkPosition -> entity |
-                '<' @AppendSlice @EmitString -> final |
                 /x/i -> hex_numeric_entity_start |
-                digit @AppendSliceBeforeTheMark @StartNumericEntity @AppendDecDigitToNumericEntity -> dec_numeric_entity
+                digit @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume -> dec_numeric_entity
             ) >1 |
-            any >0 -> text
-        ) @eof(AppendSlice) @eof(EmitString),
+            any >0 @Reconsume -> text
+        ) @eof(AppendSlice),
 
         hex_numeric_entity_start: (
-            (
-                '&' @MarkPosition -> entity |
-                '<' @AppendSlice @EmitString -> final |
-                digit @AppendHexDigit09ToNumericEntity -> hex_numeric_entity |
-                /[a-f]/i @AppendHexDigitAFToNumericEntity -> hex_numeric_entity
-            ) >AppendSliceBeforeTheMark >StartNumericEntity >1 |
-            any >0 -> text
-        ) @eof(AppendSlice) @eof(EmitString),
+            xdigit >1 @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume -> hex_numeric_entity |
+            any >0 @Reconsume -> text
+        ) @eof(AppendSlice),
 
-        dec_numeric_entity: (
-            (
-                '&' @AppendNumericEntity @StartSlice @MarkPosition -> entity |
-                '<' @AppendNumericEntity @EmitString -> final |
-                digit @AppendDecDigitToNumericEntity -> dec_numeric_entity |
-                ';' -> numeric_entity_end
-            ) >1 |
-            any >0 @AppendNumericEntity @StartSlice -> text
-        ) @eof(AppendNumericEntity) @eof(EmitString),
+        dec_numeric_entity: digit* $AppendDecDigitToNumericEntity %AppendNumericEntity %eof(AppendNumericEntity) <: (
+            ';' >1 |
+            any >0 @Reconsume
+        ) -> start,
 
         hex_numeric_entity: (
-            (
-                '&' @AppendNumericEntity @StartSlice @MarkPosition -> entity |
-                '<' @AppendNumericEntity @EmitString -> final |
-                digit @AppendHexDigit09ToNumericEntity -> hex_numeric_entity |
-                /[a-f]/i @AppendHexDigitAFToNumericEntity -> hex_numeric_entity |
-                ';' -> numeric_entity_end
-            ) >1 |
-            any >0 @AppendNumericEntity @StartSlice -> text
-        ) @eof(AppendNumericEntity) @eof(EmitString),
-
-        numeric_entity_end: (
-            (
-                '&' @StartSlice @MarkPosition -> entity |
-                '<' @EmitString -> final
-            ) >1 |
-            any >0 @StartSlice -> text
-        ) >AppendNumericEntity @eof(AppendNumericEntity) @eof(EmitString)
-    ) >StartString @StartString @StartSlice;
+            digit @AppendHexDigit09ToNumericEntity |
+            /[a-f]/i @AppendHexDigitAFToNumericEntity
+        )* %AppendNumericEntity %eof(AppendNumericEntity) <: (
+            ';' >1 |
+            any >0 @Reconsume
+        ) -> start
+    ) >StartString @StartString @StartSlice <>eof(EmitString);
 
     Data := _SliceWithEntities @To_TagOpen;
 
