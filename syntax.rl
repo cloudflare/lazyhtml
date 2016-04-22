@@ -82,65 +82,52 @@
     )* %2;
 
     _DecNumericEntity = digit @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume digit* $AppendDecDigitToNumericEntity %AppendNumericEntity %eof(AppendNumericEntity) <: (
-        ';' >1 |
-        any >0 @Reconsume
-    );
+        ';' >1 any |
+        any >0
+    ) @StartSlice @Reconsume;
 
     _HexNumericEntity = xdigit @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume (
         digit @AppendHexDigit09ToNumericEntity |
         /[a-f]/i @AppendHexDigitAFToNumericEntity
     )* %AppendNumericEntity %eof(AppendNumericEntity) <: (
-        ';' >1 |
-        any >0 @Reconsume
-    );
+        ';' >1 any |
+        any >0
+    ) @StartSlice @Reconsume;
 
     _NamedEntity = alpha @StartNamedEntity @Reconsume alpha* $FeedNamedEntity <: (
         ';' >1 @FeedNamedEntity @AppendNamedEntity |
         any >0 @AppendNamedEntity @Reconsume
     ) @eof(AppendNamedEntity) @eof(AppendSlice);
 
-    # I seriously tried to avoid this and play with Ragel priorities instead,
-    # but it was too hard to achieve the needed result using just it,
-    # hence the actual state machine with joiners.
-    #
-    # In particular, this allows a contigous slice to cover &... that looks
-    # like beginning of entity while it's really now.
-    _SliceWithEntities = (
-        start: (
-            (
-                '&' @StartSlice @MarkPosition -> entity |
-                '<' -> final
-            ) >1 |
-            any >0 @StartSlice -> text
-        ),
+    # This is meant to be used as part of a slice-chained string.
+    # It will try hard not to break the current slice by using MarkPosition
+    # and will break it when only absolutely necessary (real entity detected,
+    # so old slice needs to be appended, then character reference added and
+    # new slice started after the match; this way, slice change is transparent for
+    # the parent state machine and it can continue parsing its own text)
+    _Entity = '&' @MarkPosition (
+        (
+            _NamedEntity |
+            '#' (
+                (
+                    /x/i (
+                        _HexNumericEntity >1 |
+                        any >0 @Reconsume
+                    ) >eof(AppendSlice) |
+                    _DecNumericEntity
+                ) >1 |
+                any >0 @Reconsume
+            ) >eof(AppendSlice)
+        ) >1 |
+        any >0 @Reconsume
+    ) >eof(AppendSlice);
 
-        text: (
-            (
-                '&' @MarkPosition -> entity |
-                '<' @AppendSlice @EmitString -> final
-            ) >1 |
-            any >0 -> text
-        ) @eof(AppendSlice),
-
-        entity: (
-            (
-                _NamedEntity -> text |
-                '#' (
-                    (
-                        /x/i (
-                            _HexNumericEntity >1 -> start |
-                            any >0 @Reconsume -> text
-                        ) >eof(AppendSlice) |
-                        _DecNumericEntity -> start
-                    ) >1 |
-                    any >0 @Reconsume -> text
-                ) >eof(AppendSlice)
-            ) >1 |
-            any >0 @Reconsume -> text
-        ) >eof(AppendSlice)
-    ) >StartString @StartString @StartSlice <>eof(EmitString);
-
-    Data := _SliceWithEntities @To_TagOpen;
+    Data := (
+        (
+            _Entity >1 |
+            any >0
+        )+ >StartString >StartSlice %AppendSlice %eof(AppendSlice) %EmitString <eof(EmitString)
+    )? :> '<' @StartString @StartSlice @To_TagOpen;
 
     RCData := ((
         # '&' @To_CharacterReferenceInRCData |
