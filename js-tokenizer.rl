@@ -9,40 +9,15 @@
     write data nofinal noprefix;
 }%%
 
-var numericEntities = new Uint16Array(256);
+var fs = require('fs');
 
-for (var i = 0; i < numericEntities.length; i++) {
-    numericEntities[i] = i;
+function convertBuffer(nodeBuffer) {
+    return nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
 }
 
-numericEntities[0x00] = 0xFFFD;
-numericEntities[0x80] = 0x20AC;
-numericEntities[0x82] = 0x201A;
-numericEntities[0x83] = 0x0192;
-numericEntities[0x84] = 0x201E;
-numericEntities[0x85] = 0x2026;
-numericEntities[0x86] = 0x2020;
-numericEntities[0x87] = 0x2021;
-numericEntities[0x88] = 0x02C6;
-numericEntities[0x89] = 0x2030;
-numericEntities[0x8A] = 0x0160;
-numericEntities[0x8B] = 0x2039;
-numericEntities[0x8C] = 0x0152;
-numericEntities[0x8E] = 0x017D;
-numericEntities[0x91] = 0x2018;
-numericEntities[0x92] = 0x2019;
-numericEntities[0x93] = 0x201C;
-numericEntities[0x94] = 0x201D;
-numericEntities[0x95] = 0x2022;
-numericEntities[0x96] = 0x2013;
-numericEntities[0x97] = 0x2014;
-numericEntities[0x98] = 0x02DC;
-numericEntities[0x99] = 0x2122;
-numericEntities[0x9A] = 0x0161;
-numericEntities[0x9B] = 0x203A;
-numericEntities[0x9C] = 0x0153;
-numericEntities[0x9E] = 0x017E;
-numericEntities[0x9F] = 0x0178;
+var namedEntityValues = JSON.parse('[' + fs.readFileSync(__dirname + '/entities/values.txt', 'utf-8') + ']');
+var namedEntityHandlers = new Uint16Array(convertBuffer(fs.readFileSync(__dirname + '/entities/handlers.dat')));
+var numericEntities = new Uint16Array(convertBuffer(fs.readFileSync(__dirname + '/entities/numeric.dat')));
 
 function getNumericEntity(code) {
     if (code < 256) {
@@ -52,12 +27,6 @@ function getNumericEntity(code) {
     }
     return String.fromCodePoint(code);
 }
-
-var fs = require('fs');
-
-var namedEntityValues = JSON.parse('[' + fs.readFileSync(__dirname + '/entities/values.txt', 'utf-8') + ']');
-
-var namedEntityHandlers = new Uint16Array(fs.readFileSync(__dirname + '/entities/handlers.dat').buffer);
 
 var states = exports.states = {
     error,

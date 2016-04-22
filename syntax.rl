@@ -99,6 +99,17 @@
         any >0 @AppendNamedEntity @Reconsume
     ) @eof(AppendNamedEntity) @eof(AppendSlice);
 
+    _NumericEntity = '#' (
+        (
+            /x/i (
+                _HexNumericEntity >1 |
+                any >0 @Reconsume
+            ) >eof(AppendSlice) |
+            _DecNumericEntity
+        ) >1 |
+        any >0 @Reconsume
+    ) >eof(AppendSlice);
+
     # This is meant to be used as part of a slice-chained string.
     # It will try hard not to break the current slice by using MarkPosition
     # and will break it when only absolutely necessary (real entity detected,
@@ -108,18 +119,9 @@
     _Entity = '&' @MarkPosition (
         (
             _NamedEntity |
-            '#' (
-                (
-                    /x/i (
-                        _HexNumericEntity >1 |
-                        any >0 @Reconsume
-                    ) >eof(AppendSlice) |
-                    _DecNumericEntity
+            _NumericEntity
                 ) >1 |
                 any >0 @Reconsume
-            ) >eof(AppendSlice)
-        ) >1 |
-        any >0 @Reconsume
     ) >eof(AppendSlice);
 
     _UnsafeNUL = 0+ >AppendSlice $AppendReplacementCharacter any @StartSlice;
