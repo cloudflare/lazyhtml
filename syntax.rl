@@ -122,6 +122,8 @@
         any >0 @Reconsume
     ) >eof(AppendSlice);
 
+    _UnsafeNUL = 0+ >AppendSlice $AppendReplacementCharacter any @StartSlice;
+
     Data := (
         (
             _Entity >1 |
@@ -129,10 +131,15 @@
         )+ >StartString >StartSlice %AppendSlice %eof(AppendSlice) %EmitString <eof(EmitString)
     )? :> '<' @StartString @StartSlice @To_TagOpen;
 
-    RCData := ((
-        # '&' @To_CharacterReferenceInRCData |
-        _SafeStringChunk
-    ) >StartString %EmitString %eof(EmitString))? :> '<' @StartString @StartSlice2 @To_RCDataLessThanSign;
+    RCData := (
+        (
+            (
+                _Entity |
+                _UnsafeNUL
+            ) >1 |
+            any >0
+        )+ >StartString >StartSlice %AppendSlice %eof(AppendSlice) %EmitString <eof(EmitString)
+    )? :> '<' @StartString @StartSlice2 @To_RCDataLessThanSign;
 
     RawText := (
         _SafeText

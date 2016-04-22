@@ -134,12 +134,7 @@ function testFile(path) {
                 output = squashCharTokens(output);
                 initialStates.forEach(initialState => {
                     t.deepEqual(
-                        squashCharTokens(tokenize(input, { lastStartTag, initialState })).map(token => {
-                            if (token[0] === 'Character') {
-                                token[1] = decodeHtmlEntitites(token[1]);
-                            }
-                            return token;
-                        }),
+                        squashCharTokens(tokenize(input, { lastStartTag, initialState })),
                         output,
                         initialState
                     );
