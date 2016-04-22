@@ -124,7 +124,7 @@
                 any >0 @Reconsume
     ) >eof(AppendSlice);
 
-    _UnsafeNUL = 0+ >AppendSlice $AppendReplacementCharacter any @StartSlice;
+    _UnsafeNUL = 0+ $1 %0 >AppendSlice $AppendReplacementCharacter %StartSlice %eof(StartSlice);
 
     Data := (
         (
