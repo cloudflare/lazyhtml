@@ -138,6 +138,10 @@ exports.HtmlTokenizer = class HtmlTokenizer {
             namedEntityMatch: {
                 writable: true,
                 value: 0
+            },
+            namedEntityPos: {
+                writable: true,
+                value: 0
             }
         });
         var startState = options.initialState || en_Data;

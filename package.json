@@ -7,7 +7,6 @@
   "devDependencies": {
     "benchmark": "^2.1.0",
     "faucet": "0.0.1",
-    "he": "^0.5.0",
     "lodash": "^4.11.1",
     "microtime": "^2.0.0",
     "minimist": "^1.2.0",

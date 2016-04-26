@@ -4,7 +4,6 @@ const test = require('tape-catch');
 const testsDir = 'html5lib-tests/tokenizer';
 const fs = require('fs');
 const { HtmlTokenizer, states } = require('./js-tokenizer');
-const decodeHtmlEntitites = require('he').decode;
 
 function unescape(str) {
     return str.replace(/\\u([0-9a-f]{4})/i, (_, code) => String.fromCharCode(parseInt(code, 16)));
@@ -75,9 +74,7 @@ function tokenize(input, { lastStartTag, initialState }) {
                         'StartTag',
                         token.name,
                         token.attributes.reduce((attrs, { name, value }) => {
-                            attrs[name] = decodeHtmlEntitites(value, {
-                                isAttributeValue: true
-                            });
+                            attrs[name] = value;
                             return attrs;
                         }, Object.create(null))
                     ].concat(token.selfClosing ? [true] : []));

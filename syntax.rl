@@ -99,6 +99,12 @@
         any >0 @AppendNamedEntity @Reconsume
     ) @eof(AppendNamedEntity) @eof(AppendSlice);
 
+    _AttrNamedEntity = alpha @StartNamedEntity @Reconsume alpha* $DiscardNamedEntity $FeedNamedEntity <: (
+        ';' >1 @FeedNamedEntity @AppendNamedEntity |
+        (alnum | '=') >1 |
+        any >0 @AppendNamedEntity @Reconsume
+    );
+
     _NumericEntity = '#' (
         (
             /x/i (
@@ -120,8 +126,16 @@
         (
             _NamedEntity |
             _NumericEntity
-                ) >1 |
-                any >0 @Reconsume
+        ) >1 |
+        any >0 @Reconsume
+    ) >eof(AppendSlice);
+
+    _AttrEntity = '&' @MarkPosition (
+        (
+            _AttrNamedEntity |
+            _NumericEntity
+        ) >1 |
+        any >0 @Reconsume
     ) >eof(AppendSlice);
 
     _UnsafeNUL = 0+ $1 %0 >AppendSlice $AppendReplacementCharacter %StartSlice %eof(StartSlice);
@@ -275,15 +289,25 @@
         any >0 @Reconsume @To_AttributeValueUnquoted
     );
 
-    AttributeValueQuoted := _SafeString %SetAttributeValue :> (
-        _EndQuote @To_AfterAttributeValueQuoted
-        # '&' @To_CharacterReferenceInAttributeValue
-    );
+    AttributeValueQuoted := (
+        (
+            (
+                _AttrEntity |
+                _UnsafeNUL
+            ) >1 |
+            any >0
+        )+ >StartString >StartSlice %AppendSlice %SetAttributeValue
+    )? :> _EndQuote @To_AfterAttributeValueQuoted;
 
-    AttributeValueUnquoted := _SafeString %SetAttributeValue :> (
-        (TagNameSpace | '>') & _TagEnd
-        # '&' @To_CharacterReferenceInAttributeValue
-    );
+    AttributeValueUnquoted := (
+        (
+            (
+                _AttrEntity |
+                _UnsafeNUL
+            ) >1 |
+            any >0
+        )+ >StartString >StartSlice %AppendSlice %SetAttributeValue
+    )? :> ((TagNameSpace | '>') & _TagEnd);
 
     AfterAttributeValueQuoted := (
         _TagEnd >1 |

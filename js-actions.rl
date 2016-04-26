@@ -170,7 +170,7 @@
         this.namedEntityMatch = 0;
     }
 
-    action FeedNamedEntity() {
+    action FeedNamedEntity {
         var min = 0;
         var max = namedEntityHandlers[this.namedEntityOffset++] - 1;
         var ch = fc;
@@ -187,11 +187,8 @@
             } else {
                 var action = namedEntityHandlers[++curPos];
                 if (action > 0) {
-                    if (this.namedEntityMatch === 0) {
-                        $AppendSliceBeforeTheMark;
-                    }
                     this.namedEntityMatch = action;
-                    this.startSlice = fpc + 1;
+                    this.namedEntityPos = p;
                 }
                 this.namedEntityOffset = namedEntityHandlers[++curPos];
                 break;
@@ -203,7 +200,15 @@
         }
     }
 
-    action AppendNamedEntity {
-        this.string += namedEntityValues[this.namedEntityMatch];
+    action AppendNamedEntity() {
+        if (this.namedEntityMatch > 0) {
+            $AppendSliceBeforeTheMark
+            this.string += namedEntityValues[this.namedEntityMatch];
+            this.startSlice = this.namedEntityPos + 1;
+        }
+    }
+
+    action DiscardNamedEntity {
+        this.namedEntityMatch = 0;
     }
 }%%
