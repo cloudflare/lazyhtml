@@ -170,7 +170,7 @@
         this.namedEntityMatch = 0;
     }
 
-    action FeedNamedEntity {
+    action FeedNamedEntity() {
         var min = 0;
         var max = namedEntityHandlers[this.namedEntityOffset++] - 1;
         var ch = fc;
@@ -188,8 +188,7 @@
                 var action = namedEntityHandlers[++curPos];
                 if (action > 0) {
                     if (this.namedEntityMatch === 0) {
-                        // console.log('AppendSliceBeforeTheMark', data.slice(this.startSlice, this.mark));
-                        this.string += data.slice(this.startSlice, this.mark);
+                        $AppendSliceBeforeTheMark;
                     }
                     this.namedEntityMatch = action;
                     this.startSlice = fpc + 1;
