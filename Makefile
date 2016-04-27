@@ -4,8 +4,8 @@ CFLAGS += -g $(shell pkg-config --cflags json-c)
 LDFLAGS += $(shell pkg-config --libs json-c)
 
 %.dot: js-tokenizer.rl syntax.rl
-	$(RAGEL) $(RAGELFLAGS) -PVp -M $(notdir $(basename $@)) $< > $@ || rm $@
-	node --harmony-destructuring simplify-graph.js $@
+	$(RAGEL) $(RAGELFLAGS) -PVp -M $(notdir $(basename $@)) $< > $@
+	node simplify-graph.js $@
 
 %.png: %.dot
 	dot -Tpng $< -o $@
@@ -15,7 +15,7 @@ c-tokenizer.c: c-tokenizer.rl c-actions.rl syntax.rl
 	$(RAGEL) $(RAGELFLAGS) $<
 
 js-tokenizer.js: js-tokenizer.rl js-actions.rl syntax.rl
-	$(RAGEL) $(RAGELFLAGS) -P $<
+	$(RAGEL) $(RAGELFLAGS) -Ps $< | grep -v "^compiling"
 
 .PHONY: js-tokenizer
 js-tokenizer: js-tokenizer.js

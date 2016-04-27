@@ -11,7 +11,7 @@ const args = minimist(process.argv.slice(2));
 
 if (args.help || !args._.length) {
     console.info(
-    `Usage: node --harmony_destructuring ${chalk.yellow('trace [--state=Data] [--cdata] [--tag=xmp]')} ${chalk.green('"<html>"')}\n` +
+    `Usage: ${chalk.yellow('node trace [--state=Data] [--cdata] [--tag=xmp]')} ${chalk.green('"<html>"')}\n` +
     `Unicode sequences in form of "\\u12AB" are supported and converted into corresponding characters.`
     );
     process.exit(1);

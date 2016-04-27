@@ -1,7 +1,7 @@
 {
   "scripts": {
     "postinstall": "typings install",
-    "test": "node --harmony_destructuring test.js | faucet",
+    "test": "node test.js | faucet",
     "bench": "node bench"
   },
   "devDependencies": {
