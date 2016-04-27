@@ -64,11 +64,9 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
-    _Slice = (any $1 %0)+ >StartSlice %AppendSlice %eof(AppendSlice);
-
     _SafeStringChunk = (
         0 @AppendReplacementCharacter |
-        (_Slice -- 0) $1 %0
+        ^0+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
     )+ %2;
 
     _SafeText = (_SafeStringChunk >StartString %EmitString %eof(EmitString))? $1 %2;
@@ -78,7 +76,7 @@
     _Name = (
         upper @AppendLowerCasedCharacter |
         0 @AppendReplacementCharacter |
-        (_Slice -- (upper | 0)) $1 %0
+        ^(upper | 0)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
     )* %2;
 
     _DecNumericEntity = digit @AppendSliceBeforeTheMark @StartNumericEntity @Reconsume digit* $AppendDecDigitToNumericEntity %AppendNumericEntity %eof(AppendNumericEntity) <: (
