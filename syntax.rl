@@ -92,14 +92,14 @@
         any >0
     ) @StartSlice @Reconsume;
 
-    _NamedEntity = alpha @StartNamedEntity @Reconsume alpha* $FeedNamedEntity <: (
+    _NamedEntity = alnum+ >StartNamedEntity >UnmatchNamedEntity $FeedNamedEntity <: (
         ';' >1 @FeedNamedEntity @AppendNamedEntity |
         any >0 @AppendNamedEntity @Reconsume
     ) @eof(AppendNamedEntity) @eof(AppendSlice);
 
-    _AttrNamedEntity = alpha @StartNamedEntity @Reconsume alpha* $DiscardNamedEntity $FeedNamedEntity <: (
+    _AttrNamedEntity = alnum+ >StartNamedEntity $UnmatchNamedEntity $FeedNamedEntity <: (
         ';' >1 @FeedNamedEntity @AppendNamedEntity |
-        (alnum | '=') >1 |
+        '=' >1 |
         any >0 @AppendNamedEntity @Reconsume
     );
 

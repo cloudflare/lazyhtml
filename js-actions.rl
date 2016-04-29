@@ -167,6 +167,9 @@
 
     action StartNamedEntity {
         this.namedEntityOffset = 1;
+    }
+
+    action UnmatchNamedEntity {
         this.namedEntityMatch = 0;
     }
 
@@ -206,9 +209,5 @@
             this.string += namedEntityValues[this.namedEntityMatch];
             this.startSlice = this.namedEntityPos + 1;
         }
-    }
-
-    action DiscardNamedEntity {
-        this.namedEntityMatch = 0;
     }
 }%%
