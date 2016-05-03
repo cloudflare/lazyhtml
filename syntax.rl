@@ -239,27 +239,27 @@
     ScriptDataDoubleEscaped := _SafeText :> (
         '-' @To_ScriptDataDoubleEscapedDash |
         '<' @To_ScriptDataDoubleEscapedLessThanSign
-    ) >StartString >StartSlice2;
+    ) >StartString >StartSlice;
 
     ScriptDataDoubleEscapedDash := (
         (
             '-' @To_ScriptDataDoubleEscapedDashDash |
             '<' @To_ScriptDataDoubleEscapedLessThanSign
         ) >1 |
-        any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataDoubleEscaped
-    ) @eof(AppendSlice2) @eof(EmitString);
+        any >0 @AppendSlice @EmitString @Reconsume @To_ScriptDataDoubleEscaped
+    ) @eof(AppendSlice) @eof(EmitString);
 
     ScriptDataDoubleEscapedDashDash := '-'* <: (
         (
             '<' @To_ScriptDataDoubleEscapedLessThanSign |
-            '>' @AppendSlice2 @EmitString @Reconsume @To_ScriptData
+            '>' @AppendSlice @EmitString @Reconsume @To_ScriptData
         ) >1 |
-        any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataDoubleEscaped
-    ) @eof(AppendSlice2) @eof(EmitString);
+        any >0 @AppendSlice @EmitString @Reconsume @To_ScriptDataDoubleEscaped
+    ) @eof(AppendSlice) @eof(EmitString);
 
     ScriptDataDoubleEscapedLessThanSign := (
-        '/' /script/i TagNameEnd @AppendSlice2 @EmitString @Reconsume @To_ScriptDataEscaped
-    ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataDoubleEscaped);
+        '/' /script/i TagNameEnd @AppendSlice @EmitString @Reconsume @To_ScriptDataEscaped
+    ) @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataDoubleEscaped);
 
     BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |

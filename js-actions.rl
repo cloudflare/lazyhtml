@@ -27,10 +27,6 @@
         this.startSlice = p;
     }
 
-    action StartSlice2 {
-        this.startSlice2 = p;
-    }
-
     action MarkPosition {
         this.mark = p;
     }
@@ -49,10 +45,6 @@
 
     action AppendSlice {
         this.string += data.slice(this.startSlice, p);
-    }
-
-    action AppendSlice2 {
-        this.string += data.slice(this.startSlice2, p);
     }
 
     action EmitString {
