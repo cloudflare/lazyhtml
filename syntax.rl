@@ -153,15 +153,15 @@
             ) >1 |
             any >0
         )+ >StartString >StartSlice %AppendSlice %eof(AppendSlice) %EmitString <eof(EmitString)
-    )? :> '<' @StartString @StartSlice2 @To_RCDataLessThanSign;
+    )? :> '<' @StartString @StartSlice @To_RCDataLessThanSign;
 
     RawText := (
         _SafeText
-    ) :> '<' @StartString @StartSlice2 @To_RawTextLessThanSign;
+    ) :> '<' @StartString @StartSlice @To_RawTextLessThanSign;
 
     ScriptData := (
         _SafeText
-    ) :> '<' @StartString @StartSlice2 @To_ScriptDataLessThanSign;
+    ) :> '<' @StartString @StartSlice @To_ScriptDataLessThanSign;
 
     PlainText := _SafeText;
 
@@ -192,49 +192,49 @@
     TagName := _Name %SetTagName :> _TagEnd;
 
     _SpecialEndTag = (
-        '/' @CreateEndTagToken
+        '/'
         (
             (
                 upper @AppendLowerCasedCharacter |
-                lower+ $1 %0 >StartSlice %AppendSlice
-            )* %SetTagName <: any @Reconsume _TagEnd when IsAppropriateEndTagToken
+                lower+ $1 %0 >MarkPosition %AppendSliceAfterTheMark
+            )* %CreateEndTagToken %SetTagName <: any @Reconsume _TagEnd when IsAppropriateEndTagToken
         ) <>lerr(StartString)
     );
 
-    RCDataLessThanSign := _SpecialEndTag @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RCData);
+    RCDataLessThanSign := _SpecialEndTag @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RCData);
 
-    RawTextLessThanSign := _SpecialEndTag @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RawText);
+    RawTextLessThanSign := _SpecialEndTag @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RawText);
 
     ScriptDataLessThanSign := (
-        _SpecialEndTag |
-        '!--' @To_ScriptDataEscapedDashDash
-    ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptData);
+        _SpecialEndTag $0 |
+        '!--' @To_ScriptDataEscapedDashDash $1
+    ) @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptData);
 
     ScriptDataEscaped := _SafeText :> (
         '-' @To_ScriptDataEscapedDash |
         '<' @To_ScriptDataEscapedLessThanSign
-    ) >StartString >StartSlice2;
+    ) >StartString >StartSlice;
 
     ScriptDataEscapedDash := (
         (
             '-' @To_ScriptDataEscapedDashDash |
-            '<' @AppendSlice2 @EmitString @StartString @StartSlice2 @To_ScriptDataEscapedLessThanSign
+            '<' @AppendSlice @EmitString @StartString @StartSlice @To_ScriptDataEscapedLessThanSign
         ) >1 |
-        any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataEscaped
-    ) @eof(AppendSlice2) @eof(EmitString);
+        any >0 @AppendSlice @EmitString @Reconsume @To_ScriptDataEscaped
+    ) @eof(AppendSlice) @eof(EmitString);
 
     ScriptDataEscapedDashDash := '-'* <: (
         (
             '<' @To_ScriptDataEscapedLessThanSign |
-            '>' @AppendSlice2 @EmitString @Reconsume @To_ScriptData
+            '>' @AppendSlice @EmitString @Reconsume @To_ScriptData
         ) >1 |
-        any >0 @AppendSlice2 @EmitString @Reconsume @To_ScriptDataEscaped
-    ) @eof(AppendSlice2) @eof(EmitString);
+        any >0 @AppendSlice @EmitString @Reconsume @To_ScriptDataEscaped
+    ) @eof(AppendSlice) @eof(EmitString);
 
     ScriptDataEscapedLessThanSign := (
         _SpecialEndTag |
-        (/script/i TagNameEnd) @AppendSlice2 @EmitString @Reconsume @To_ScriptDataDoubleEscaped
-    ) @lerr(AppendSlice2) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
+        (/script/i TagNameEnd) @AppendSlice @EmitString @Reconsume @To_ScriptDataDoubleEscaped
+    ) @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
 
     ScriptDataDoubleEscaped := _SafeText :> (
         '-' @To_ScriptDataDoubleEscapedDash |
