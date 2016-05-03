@@ -161,6 +161,26 @@
         )+ >StartString >StartSlice %AppendSlice %eof(AppendSlice) %EmitString <eof(EmitString)
     )? :> '<' @StartString @StartSlice @To_TagOpen;
 
+    TagOpen := (
+        (
+            '!' @To_MarkupDeclarationOpen |
+            '/' @To_EndTagOpen |
+            alpha @CreateStartTagToken @StartString @Reconsume @To_TagName |
+            '?' @Reconsume @To_BogusComment
+        ) >1 |
+        any >0 @AppendSlice @EmitString @Reconsume @To_Data
+    ) @eof(AppendSlice) @eof(EmitString);
+
+    EndTagOpen := (
+        (
+            alpha @CreateEndTagToken @StartString @Reconsume @To_TagName |
+            '>' @To_Data
+        ) >1 |
+        any >0 @Reconsume @To_BogusComment
+    ) @eof(AppendSlice) @eof(EmitString);
+
+    TagName := _Name %SetTagName :> _TagEnd;
+
     RCData := (
         (
             (
@@ -240,26 +260,6 @@
     ) @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataDoubleEscaped);
 
     PlainText := _SafeText;
-
-    TagOpen := (
-        (
-            '!' @To_MarkupDeclarationOpen |
-            '/' @To_EndTagOpen |
-            alpha @CreateStartTagToken @StartString @Reconsume @To_TagName |
-            '?' @Reconsume @To_BogusComment
-        ) >1 |
-        any >0 @AppendSlice @EmitString @Reconsume @To_Data
-    ) @eof(AppendSlice) @eof(EmitString);
-
-    EndTagOpen := (
-        (
-            alpha @CreateEndTagToken @StartString @Reconsume @To_TagName |
-            '>' @To_Data
-        ) >1 |
-        any >0 @Reconsume @To_BogusComment
-    ) @eof(AppendSlice) @eof(EmitString);
-
-    TagName := _Name %SetTagName :> _TagEnd;
 
     BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |
