@@ -42,7 +42,7 @@ function codeFrame(str, pos) {
 const tokenizer = new HtmlTokenizer({
     initialState: typeof args.state === 'string' ? states[args.state] : args.state,
     allowCData: args.cdata,
-    tag: args.tag,
+    lastStartTagName: args.tag || 'xmp',
     onToken: console.log,
     onTrace(trace) {
         if (trace.to !== trace.from && (trace.to in stateNames)) {
