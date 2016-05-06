@@ -23,6 +23,10 @@
         this.string += '\uFFFD';
     }
 
+    action AppendLFCharacter {
+        this.string += '\n';
+    }
+
     action StartSlice {
         this.startSlice = p;
     }

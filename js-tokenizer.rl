@@ -167,10 +167,6 @@ exports.HtmlTokenizer = class HtmlTokenizer {
     }
 
     feed(data, isEnd) {
-        // Preprocess
-        {
-            data = data.replace(CR, '\n');
-        }
         var p = 0;
         var pe = data.length;
         var eof = isEnd ? pe : -1;

@@ -51,10 +51,11 @@
     action To_AfterDocTypeSystemIdentifier { fgoto AfterDocTypeSystemIdentifier; }
 
     TAB = '\t';
+    CR = '\r';
     LF = '\n';
     FF = '\f';
 
-    TagNameSpace = TAB | LF | FF | ' ';
+    TagNameSpace = TAB | CR | LF | FF | ' ';
 
     TagNameEnd = TagNameSpace | '/' | '>';
 
@@ -64,9 +65,12 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
+    _CRLF = CR @AppendLFCharacter LF?;
+
     _SafeStringChunk = (
         0 @AppendReplacementCharacter |
-        ^0+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
+        _CRLF $2 |
+        ^(0 | CR)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
     )+ %2;
 
     _SafeText = (_SafeStringChunk >StartString %EmitString %eof(EmitString))? $1 %2;
@@ -136,8 +140,6 @@
         any >0 @Reconsume
     ) >eof(AppendSlice);
 
-    _UnsafeNUL = 0+ $1 %0 >AppendSlice $AppendReplacementCharacter %StartSlice %eof(StartSlice);
-
     _TagEnd = (
         TagNameSpace @To_BeforeAttributeName |
         '/' @To_SelfClosingStartTag |
@@ -154,12 +156,13 @@
         ) <>lerr(StartString)
     );
 
-    Data := (
+    Data := ((
+        _CRLF $2 |
         (
-            _Entity >1 |
-            any >0
-        )+ >StartString >StartSlice %AppendSlice %eof(AppendSlice) %EmitString <eof(EmitString)
-    )? :> '<' @StartString @StartSlice @To_TagOpen;
+            _Entity |
+            ^('&' | CR)
+        )+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
+    )+ %2 >StartString %EmitString <eof(EmitString))? :> '<' @StartString @StartSlice @To_TagOpen;
 
     TagOpen := (
         (
@@ -181,15 +184,14 @@
 
     TagName := _Name %SetTagName :> _TagEnd;
 
-    RCData := (
+    RCData := ((
+        0 @AppendReplacementCharacter |
+        _CRLF $2 |
         (
-            (
-                _Entity |
-                _UnsafeNUL
-            ) >1 |
-            any >0
-        )+ >StartString >StartSlice %AppendSlice %eof(AppendSlice) %EmitString <eof(EmitString)
-    )? :> '<' @StartString @StartSlice @To_RCDataLessThanSign;
+            _Entity |
+            ^(0 | CR | '&')
+        )+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
+    )+ %2 >StartString %EmitString <eof(EmitString))? :> '<' @StartString @StartSlice @To_RCDataLessThanSign;
 
     RCDataLessThanSign := _SpecialEndTag @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RCData);
 
@@ -287,25 +289,18 @@
         any >0 @Reconsume @To_AttributeValueUnquoted
     );
 
-    AttributeValueQuoted := (
+    _AttrValue = ((
+        0 @AppendReplacementCharacter |
+        _CRLF $2 |
         (
-            (
-                _AttrEntity |
-                _UnsafeNUL
-            ) >1 |
-            any >0
-        )+ >StartString >StartSlice %AppendSlice %SetAttributeValue
-    )? :> _EndQuote @To_AfterAttributeValueQuoted;
+            _AttrEntity |
+            ^(0 | CR | '&')
+        )+ $1 %0 >StartSlice %AppendSlice
+    )+ %2 >StartString %SetAttributeValue)?;
 
-    AttributeValueUnquoted := (
-        (
-            (
-                _AttrEntity |
-                _UnsafeNUL
-            ) >1 |
-            any >0
-        )+ >StartString >StartSlice %AppendSlice %SetAttributeValue
-    )? :> ((TagNameSpace | '>') & _TagEnd);
+    AttributeValueQuoted := _AttrValue :> _EndQuote @To_AfterAttributeValueQuoted;
+
+    AttributeValueUnquoted := _AttrValue :> ((TagNameSpace | '>') & _TagEnd);
 
     AfterAttributeValueQuoted := (
         _TagEnd >1 |
@@ -335,46 +330,56 @@
             (
                 '-' @StartSlice @MarkPosition -> comment_start_dash |
                 '>' -> final |
-                0 @AppendReplacementCharacter -> text
+                0 @AppendReplacementCharacter -> text |
+                CR -> crlf
             ) >1 |
             any >0 @StartSlice -> text_slice
+        ),
+
+        crlf: CR* $AppendLFCharacter <: (
+            LF >1 @StartSlice -> text_slice |
+            0 >1 @AppendLFCharacter @AppendReplacementCharacter -> text |
+            '-' >1 @AppendLFCharacter @StartSlice @MarkPosition -> comment_end_dash |
+            any >0 @AppendLFCharacter @StartSlice -> text_slice
         ),
 
         comment_start_dash: (
             (
                 '-' -> comment_end |
                 '>' -> final |
-                0 @AppendSlice @AppendReplacementCharacter -> text
+                0 @AppendSlice @AppendReplacementCharacter -> text |
+                CR @AppendSlice -> crlf
             ) >1 |
             any >0 -> text_slice
         ),
 
-        text: (
-            0 >1 @AppendReplacementCharacter -> text |
+        text: 0* $AppendReplacementCharacter <: (
             '-' >1 @StartSlice @MarkPosition -> comment_end_dash |
+            CR >1 -> crlf |
             any >0 @StartSlice -> text_slice
         ),
 
-        text_slice: (
-            0 >1 @AppendSlice @AppendReplacementCharacter -> text |
-            '-' >1 @MarkPosition -> comment_end_dash |
-            any >0 -> text_slice
+        text_slice: any* :> (
+            0 @AppendSlice @AppendReplacementCharacter -> text |
+            '-' @MarkPosition -> comment_end_dash |
+            CR @AppendSlice -> crlf
         ) @eof(AppendSlice),
 
         comment_end_dash: (
             (
                 '-' -> comment_end |
-                0 @AppendSlice @AppendReplacementCharacter -> text
+                0 @AppendSlice @AppendReplacementCharacter -> text |
+                CR >1 @AppendSlice -> crlf
             ) >1 |
             any >0 -> text_slice
         ) @eof(AppendSliceBeforeTheMark),
 
-        comment_end: (
+        comment_end: '-'* $AdvanceMarkedPosition <: (
             (
-                '-' @AdvanceMarkedPosition -> comment_end |
                 '>' @AppendSliceBeforeTheMark -> final |
                 '!' -> comment_end_bang |
-                0 @AppendSlice @AppendReplacementCharacter -> text
+                0 @AppendSlice @AppendReplacementCharacter -> text |
+                CR @AppendSlice -> crlf
             ) >1 |
             any >0 -> text_slice
         ) @eof(AppendSliceBeforeTheMark),
@@ -383,6 +388,7 @@
             '-' >1 @MarkPosition -> comment_end_dash |
             '>' >1 @AppendSliceBeforeTheMark -> final |
             0 >1 @AppendSlice @AppendReplacementCharacter -> text |
+            CR >1 @AppendSlice -> crlf |
             any >0 -> text_slice
         ) @eof(AppendSliceBeforeTheMark)
     ) >StartString @EmitComment @To_Data @eof(EmitComment);
@@ -439,19 +445,31 @@
 
     CDataSection := (
         start: (
-            ']' @MarkPosition >1 -> cdata_end |
-            any >0 -> start
+            ']' >1 @StartSlice @MarkPosition -> cdata_end |
+            CR >1 -> crlf |
+            any >0 @StartSlice -> text_slice
         ),
+
+        text_slice: any* :> (
+            CR >1 @AppendSlice -> crlf |
+            ']' >1 @MarkPosition -> cdata_end
+        ) @eof(AppendSlice) @eof(EmitString),
+
+        crlf: CR* $AppendLFCharacter <: (
+            LF >1 -> text_slice |
+            any >0 @AppendLFCharacter
+        ) @StartSlice @eof(AppendLFCharacter) @eof(EmitString) -> text_slice,
 
         cdata_end: (
             ']' >1 -> cdata_end_right_bracket |
-            any >0 -> start
-        ),
+            CR >1 @AppendSlice -> crlf |
+            any >0 -> text_slice
+        ) @eof(AppendSlice) @eof(EmitString),
 
-        cdata_end_right_bracket: (
-            ']' >1 @AdvanceMarkedPosition -> cdata_end_right_bracket |
+        cdata_end_right_bracket: ']'* $AdvanceMarkedPosition <: (
             '>' >1 @AppendSliceBeforeTheMark -> final |
-            any >0 -> start
-        )
-    ) >StartString >StartSlice <>eof(AppendSlice) <>eof(EmitString) @EmitString @To_Data;
+            CR >1 @AppendSlice -> crlf |
+            any >0 -> text_slice
+        ) @eof(AppendSlice) @eof(EmitString)
+    ) >StartString @EmitString @To_Data;
 }%%

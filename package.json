@@ -1,16 +1,16 @@
 {
   "scripts": {
     "postinstall": "typings install",
-    "test": "node test.js | faucet",
+    "test": "node test.js | tap-summary",
     "bench": "node bench"
   },
   "devDependencies": {
     "benchmark": "^2.1.0",
-    "faucet": "0.0.1",
     "lodash": "^4.11.1",
     "microtime": "^2.0.0",
     "minimist": "^1.2.0",
     "parse5": "^2.1.5",
+    "tap-summary": "^1.2.0",
     "tape": "^4.5.1",
     "tape-catch": "^1.0.4",
     "xml2js": "^0.4.16"
