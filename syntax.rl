@@ -181,8 +181,8 @@
                 upper @AppendLowerCasedCharacter |
                 lower+ $1 %0 >MarkPosition %AppendSliceAfterTheMark
             )* <: any @Reconsume _EndTagEnd when IsAppropriateEndTagToken >CreateEndTagToken
-        ) <>lerr(StartString)
-    );
+        )
+    ) @err(StartString) @err(AppendSlice) @err(EmitString) @err(Reconsume);
 
     Data := ((
         _CRLF $2 |
@@ -221,13 +221,13 @@
         )+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
     )+ %2 >StartString %EmitString <eof(EmitString))? :> '<' @StartString @StartSlice @To_RCDataLessThanSign;
 
-    RCDataLessThanSign := _SpecialEndTag @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RCData);
+    RCDataLessThanSign := _SpecialEndTag @err(To_RCData);
 
     RawText := (
         _SafeText
     ) :> '<' @StartString @StartSlice @To_RawTextLessThanSign;
 
-    RawTextLessThanSign := _SpecialEndTag @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_RawText);
+    RawTextLessThanSign := _SpecialEndTag @err(To_RawText);
 
     ScriptData := (
         _SafeText
@@ -236,7 +236,7 @@
     ScriptDataLessThanSign := (
         _SpecialEndTag |
         '!--' @To_ScriptDataEscapedDashDash
-    ) @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptData);
+    ) @err(AppendSlice) @err(EmitString) @err(Reconsume) @err(To_ScriptData);
 
     ScriptDataEscaped := _SafeText :> (
         '-' @To_ScriptDataEscapedDash |
@@ -262,7 +262,7 @@
     ScriptDataEscapedLessThanSign := (
         _SpecialEndTag |
         (/script/i TagNameEnd) @AppendSlice @EmitString @Reconsume @To_ScriptDataDoubleEscaped
-    ) @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataEscaped);
+    ) @err(AppendSlice) @err(EmitString) @err(Reconsume) @err(To_ScriptDataEscaped);
 
     ScriptDataDoubleEscaped := _SafeText :> (
         '-' @To_ScriptDataDoubleEscapedDash |
@@ -287,7 +287,7 @@
 
     ScriptDataDoubleEscapedLessThanSign := (
         '/' /script/i TagNameEnd @AppendSlice @EmitString @Reconsume @To_ScriptDataEscaped
-    ) @lerr(AppendSlice) @lerr(EmitString) @lerr(Reconsume) @lerr(To_ScriptDataDoubleEscaped);
+    ) @err(AppendSlice) @err(EmitString) @err(Reconsume) @err(To_ScriptDataDoubleEscaped);
 
     PlainText := _SafeText;
 
@@ -435,7 +435,7 @@
         '>' @EmitDocType @To_Data |
         /PUBLIC/i @To_BeforeDocTypePublicIdentifier |
         /SYSTEM/i @To_BeforeDocTypeSystemIdentifier
-    ) @lerr(SetForceQuirksFlag) @lerr(Reconsume) @lerr(To_BogusDocType);
+    ) @err(SetForceQuirksFlag) @err(Reconsume) @err(To_BogusDocType);
 
     BeforeDocTypePublicIdentifier := TagNameSpace* <: (
         _StartQuote >1 @To_DocTypePublicIdentifierQuoted |
