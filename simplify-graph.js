@@ -11,7 +11,7 @@ g.nodes().forEach(v => {
     outW.forEach(w => {
         var labels = out.reduce((map, edge) => {
             if (edge.w === w) {
-                var match = g.edge(v, w, edge.name).label.match(/^(.*?)( \/ \w+(?:, \w+)*)?$/);
+                var match = g.edge(v, w, edge.name).label.match(/^(.*?)((?:\(.*?\))? \/ \w+(?:, \w+)*)?$/);
                 var strings = map.get(match[2] || '');
                 if (!strings) {
                     map.set(match[2] || '', strings = []);
