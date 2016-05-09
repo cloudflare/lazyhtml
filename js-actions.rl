@@ -11,6 +11,18 @@
         this.string = '';
     }
 
+    action StartAppropriateEndTag {
+        this.appropriateEndTagOffset = 0;
+    }
+
+    action IsAppropriateEndTagFed { this.appropriateEndTagOffset === this.lastStartTagName.length }
+
+    action GetNextAppropriateEndTagChar { this.lastStartTagName.charCodeAt(this.appropriateEndTagOffset++) }
+
+    action SetAppropriateEndTagName {
+        this.endTagToken.name = this.lastStartTagName;
+    }
+
     action AppendEqualsCharacter {
         this.string += '=';
     }
@@ -48,10 +60,6 @@
         $DiscardSlice
     }
 
-    action AppendSliceAfterTheMark {
-        this.string += data.slice(this.mark, p);
-    }
-
     action AppendSlice() {
         this.string += data.slice(this.startSlice, p);
         $DiscardSlice
@@ -87,8 +95,6 @@
         $DiscardSlice
         this.emitToken(this.endTagToken);
     }
-
-    action IsAppropriateEndTagToken { this.string === this.lastStartTagName }
 
     action SetSelfClosingFlag {
         this.startTagToken.selfClosing = true;

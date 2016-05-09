@@ -52,6 +52,10 @@
     action To_BeforeDocTypeSystemIdentifier { fgoto BeforeDocTypeSystemIdentifier; }
     action To_AfterDocTypeSystemIdentifier { fgoto AfterDocTypeSystemIdentifier; }
 
+
+    action FeedAppropriateEndTagWithLowerCased() { !($IsAppropriateEndTagFed) && ($GetNextAppropriateEndTagChar) === fc + 0x20 }
+    action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && ($GetNextAppropriateEndTagChar) === fc }
+
     TAB = '\t';
     CR = '\r';
     LF = '\n';
@@ -152,9 +156,9 @@
         TagNameSpace |
         '/' |
         '>'
-    ) @SetEndTagName @Reconsume @To_EndTagNameContents;
+    ) @Reconsume @To_EndTagNameContents;
 
-    EndTagName := _Name :> _EndTagEnd;
+    EndTagName := _Name :> _EndTagEnd >SetEndTagName;
 
     EndTagNameContents := (
         start: (TagNameSpace | '/')* <: (
@@ -175,14 +179,13 @@
     );
 
     _SpecialEndTag = (
-        '/'
+        '/' >StartAppropriateEndTag
         (
-            (
-                upper @AppendLowerCasedCharacter |
-                lower+ $1 %0 >MarkPosition %AppendSliceAfterTheMark
-            )* <: any @Reconsume _EndTagEnd when IsAppropriateEndTagToken >CreateEndTagToken
-        )
-    ) @err(StartString) @err(AppendSlice) @err(EmitString) @err(Reconsume);
+            upper when FeedAppropriateEndTagWithLowerCased |
+            lower when FeedAppropriateEndTag
+        )*
+        _EndTagEnd when IsAppropriateEndTagFed >CreateEndTagToken >SetAppropriateEndTagName
+    ) @err(AppendSlice) @err(EmitString) @err(Reconsume);
 
     Data := ((
         _CRLF $2 |
