@@ -39,19 +39,26 @@
         this.mark++;
     }
 
-    action AppendSliceBeforeTheMark {
+    action DiscardSlice {
+        this.startSlice = -1;
+    }
+
+    action AppendSliceBeforeTheMark() {
         this.string += data.slice(this.startSlice, this.mark);
+        $DiscardSlice
     }
 
     action AppendSliceAfterTheMark {
         this.string += data.slice(this.mark, p);
     }
 
-    action AppendSlice {
+    action AppendSlice() {
         this.string += data.slice(this.startSlice, p);
+        $DiscardSlice
     }
 
-    action EmitString {
+    action EmitString() {
+        $DiscardSlice
         this.emitToken({
             type: 'Character',
             value: this.string
@@ -70,12 +77,14 @@
         this.endTagToken.name = this.string;
     }
 
-    action EmitStartTagToken {
+    action EmitStartTagToken() {
+        $DiscardSlice
         this.lastStartTagName = this.startTagToken.name;
         this.emitToken(this.startTagToken);
     }
 
-    action EmitEndTagToken {
+    action EmitEndTagToken() {
+        $DiscardSlice
         this.emitToken(this.endTagToken);
     }
 
@@ -85,14 +94,16 @@
         this.startTagToken.selfClosing = true;
     }
 
-    action EmitComment {
+    action EmitComment() {
+        $DiscardSlice
         this.emitToken({
             type: 'Comment',
             value: this.string
         });
     }
 
-    action EmitDocType {
+    action EmitDocType() {
+        $DiscardSlice
         this.emitToken(this.docTypeToken);
     }
 

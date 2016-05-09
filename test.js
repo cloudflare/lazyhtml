@@ -54,11 +54,11 @@ const stateMappings = {
 };
 
 function tokenize(input, { lastStartTag, initialState }) {
-    let tokens = [];
+    const tokens = [];
     if (initialState !== undefined && !(initialState in stateMappings)) {
         throw new Error(`Requested unexpected state ${initialState}`);
     }
-    new HtmlTokenizer({
+    const tokenizer = new HtmlTokenizer({
         lastStartTagName: lastStartTag,
         initialState: initialState && stateMappings[initialState],
         onToken(token) {
@@ -107,7 +107,11 @@ function tokenize(input, { lastStartTag, initialState }) {
                 }
             }
         }
-    }).feed(input, true);
+    });
+    for (const char of input) {
+        tokenizer.feed(char, false);
+    }
+    tokenizer.feed('', true);
     return tokens;
 }
 

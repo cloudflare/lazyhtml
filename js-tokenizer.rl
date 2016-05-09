@@ -119,7 +119,7 @@ exports.HtmlTokenizer = class HtmlTokenizer {
             },
             startSlice: {
                 writable: true,
-                value: 0
+                value: -1
             },
             mark: {
                 writable: true,
@@ -140,6 +140,10 @@ exports.HtmlTokenizer = class HtmlTokenizer {
             namedEntityPos: {
                 writable: true,
                 value: 0
+            },
+            buffer: {
+                writable: true,
+                value: ''
             }
         });
         var startState = options.initialState || en_Data;
@@ -169,7 +173,9 @@ exports.HtmlTokenizer = class HtmlTokenizer {
     }
 
     feed(data, isEnd) {
-        var p = 0;
+        var p = this.buffer.length;
+        data = this.buffer + data;
+        this.buffer = '';
         var pe = data.length;
         var eof = isEnd ? pe : -1;
         if (this.onTrace) {
@@ -188,6 +194,13 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         %%write exec;
         if (this.cs === error) {
             throw new Error('Tokenization error at ' + p);
+        }
+        var bufferStart = this.startSlice;
+        if (bufferStart >= 0) {
+            this.buffer = data.slice(bufferStart);
+            this.mark -= bufferStart;
+            this.namedEntityPos -= bufferStart;
+            this.startSlice = 0;
         }
     }
 };
