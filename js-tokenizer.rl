@@ -37,7 +37,7 @@ var states = exports.states = {
     PlainText: en_PlainText,
     TagOpen: en_TagOpen,
     EndTagOpen: en_EndTagOpen,
-    TagName: en_TagName,
+    StartTagName: en_StartTagName,
     RCDataLessThanSign: en_RCDataLessThanSign,
     RawTextLessThanSign: en_RawTextLessThanSign,
     ScriptDataLessThanSign: en_ScriptDataLessThanSign,
@@ -56,7 +56,7 @@ var states = exports.states = {
     AttributeValueQuoted: en_AttributeValueQuoted,
     AttributeValueUnquoted: en_AttributeValueUnquoted,
     AfterAttributeValueQuoted: en_AfterAttributeValueQuoted,
-    SelfClosingStartTag: en_SelfClosingStartTag,
+    SelfClosingTag: en_SelfClosingTag,
     BogusComment: en_BogusComment,
     MarkupDeclarationOpen: en_MarkupDeclarationOpen,
     Comment: en_Comment,
@@ -72,8 +72,6 @@ var states = exports.states = {
     BogusDocType: en_BogusDocType,
     CDataSection: en_CDataSection
 };
-
-var CR = new RegExp('\r\n?', 'g');
 
 exports.HtmlTokenizer = class HtmlTokenizer {
     constructor(options) {
@@ -103,7 +101,11 @@ exports.HtmlTokenizer = class HtmlTokenizer {
                 writable: true,
                 value: null
             },
-            tagToken: {
+            startTagToken: {
+                writable: true,
+                value: null
+            },
+            endTagToken: {
                 writable: true,
                 value: null
             },

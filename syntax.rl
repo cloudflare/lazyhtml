@@ -14,10 +14,12 @@
     action To_ScriptData { fgoto ScriptData; }
     action To_MarkupDeclarationOpen { fgoto MarkupDeclarationOpen; }
     action To_EndTagOpen { fgoto EndTagOpen; }
-    action To_TagName { fgoto TagName; }
+    action To_StartTagName { fgoto StartTagName; }
+    action To_EndTagName { fgoto EndTagName; }
+    action To_EndTagNameContents { fgoto EndTagNameContents; }
     action To_BogusComment { fgoto BogusComment; }
     action To_BeforeAttributeName { fgoto BeforeAttributeName; }
-    action To_SelfClosingStartTag { fgoto SelfClosingStartTag; }
+    action To_SelfClosingTag { fgoto SelfClosingTag; }
     action To_ScriptDataEscapedDashDash { fgoto ScriptDataEscapedDashDash; }
     action To_ScriptDataEscapedDash { fgoto ScriptDataEscapedDash; }
     action To_ScriptDataEscapedLessThanSign { fgoto ScriptDataEscapedLessThanSign; }
@@ -140,10 +142,36 @@
         any >0 @Reconsume
     ) >eof(AppendSlice);
 
-    _TagEnd = (
+    _StartTagEnd = (
         TagNameSpace @To_BeforeAttributeName |
-        '/' @To_SelfClosingStartTag |
-        '>' @EmitTagToken @To_Data
+        '/' @To_SelfClosingTag |
+        '>' @EmitStartTagToken @To_Data
+    );
+
+    _EndTagEnd = (
+        TagNameSpace |
+        '/' |
+        '>'
+    ) @SetEndTagName @Reconsume @To_EndTagNameContents;
+
+    EndTagName := _Name :> _EndTagEnd;
+
+    EndTagNameContents := (
+        start: (TagNameSpace | '/')* <: (
+            '>' @EmitEndTagToken @To_Data |
+            any+ >0 :> (
+                '/' -> start |
+                '>' @EmitEndTagToken @To_Data |
+                '=' TagNameSpace* <: (
+                    _StartQuote >1 any* :> _EndQuote -> start |
+                    any+ >0 :> (
+                        TagNameSpace -> start |
+                        '>' @EmitEndTagToken @To_Data
+                    ) |
+                    '>' @EmitEndTagToken @To_Data
+                )
+            )
+        )
     );
 
     _SpecialEndTag = (
@@ -152,7 +180,7 @@
             (
                 upper @AppendLowerCasedCharacter |
                 lower+ $1 %0 >MarkPosition %AppendSliceAfterTheMark
-            )* %CreateEndTagToken %SetTagName <: any @Reconsume _TagEnd when IsAppropriateEndTagToken
+            )* <: any @Reconsume _EndTagEnd when IsAppropriateEndTagToken >CreateEndTagToken
         ) <>lerr(StartString)
     );
 
@@ -168,7 +196,7 @@
         (
             '!' @To_MarkupDeclarationOpen |
             '/' @To_EndTagOpen |
-            alpha @CreateStartTagToken @StartString @Reconsume @To_TagName |
+            alpha @CreateStartTagToken @StartString @Reconsume @To_StartTagName |
             '?' @Reconsume @To_BogusComment
         ) >1 |
         any >0 @AppendSlice @EmitString @Reconsume @To_Data
@@ -176,13 +204,13 @@
 
     EndTagOpen := (
         (
-            alpha @CreateEndTagToken @StartString @Reconsume @To_TagName |
+            alpha @CreateEndTagToken @StartString @Reconsume @To_EndTagName |
             '>' @To_Data
         ) >1 |
         any >0 @Reconsume @To_BogusComment
     ) @eof(AppendSlice) @eof(EmitString);
 
-    TagName := _Name %SetTagName :> _TagEnd;
+    StartTagName := _Name %SetStartTagName :> _StartTagEnd;
 
     RCData := ((
         0 @AppendReplacementCharacter |
@@ -278,7 +306,7 @@
 
     AfterAttributeName := TagNameSpace* <: (
         (
-            _TagEnd |
+            _StartTagEnd |
             '=' @To_BeforeAttributeValue
         ) >1 |
         any >0 @CreateAttribute @StartString @Reconsume @To_AttributeName
@@ -300,15 +328,15 @@
 
     AttributeValueQuoted := _AttrValue :> _EndQuote @To_AfterAttributeValueQuoted;
 
-    AttributeValueUnquoted := _AttrValue :> ((TagNameSpace | '>') & _TagEnd);
+    AttributeValueUnquoted := _AttrValue :> ((TagNameSpace | '>') & _StartTagEnd);
 
     AfterAttributeValueQuoted := (
-        _TagEnd >1 |
+        _StartTagEnd >1 |
         any >0 @Reconsume @To_BeforeAttributeName
     );
 
-    SelfClosingStartTag := (
-        '>' >1 @SetSelfClosingFlag @EmitTagToken @To_Data |
+    SelfClosingTag := (
+        '>' >1 @SetSelfClosingFlag @EmitStartTagToken @To_Data |
         any >0 @Reconsume @To_BeforeAttributeName
     );
 

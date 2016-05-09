@@ -59,26 +59,30 @@
     }
 
     action CreateStartTagToken {
-        this.tagToken = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
+        this.startTagToken = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
     }
 
-    action SetTagName {
-        this.tagToken.name = this.string;
+    action SetStartTagName {
+        this.startTagToken.name = this.string;
     }
 
-    action EmitTagToken {
-        if (this.tagToken.type === 'StartTag') {
-            this.lastStartTagName = this.tagToken.name;
-        }
-        this.emitToken(this.tagToken);
+    action SetEndTagName {
+        this.endTagToken.name = this.string;
+    }
+
+    action EmitStartTagToken {
+        this.lastStartTagName = this.startTagToken.name;
+        this.emitToken(this.startTagToken);
+    }
+
+    action EmitEndTagToken {
+        this.emitToken(this.endTagToken);
     }
 
     action IsAppropriateEndTagToken { this.string === this.lastStartTagName }
 
     action SetSelfClosingFlag {
-        if (this.tagToken.type === 'StartTag') {
-            this.tagToken.selfClosing = true;
-        }
+        this.startTagToken.selfClosing = true;
     }
 
     action EmitComment {
@@ -93,7 +97,7 @@
     }
 
     action CreateEndTagToken {
-        this.tagToken = { type: 'EndTag', name: '' };
+        this.endTagToken = { type: 'EndTag', name: '' };
     }
 
     action CreateAttribute {
@@ -108,14 +112,14 @@
     }
 
     action AppendAttribute {
-        AppendAttribute: if (this.tagToken.type === 'StartTag') {
-            for (var i = 0; i < this.tagToken.attributes.length; i++) {
-                if (this.tagToken.attributes[i].name === this.string) {
+        AppendAttribute: {
+            for (var i = 0; i < this.startTagToken.attributes.length; i++) {
+                if (this.startTagToken.attributes[i].name === this.string) {
                     break AppendAttribute;
                 }
             }
             this.attribute.name = this.string;
-            this.tagToken.attributes.push(this.attribute);
+            this.startTagToken.attributes.push(this.attribute);
         }
     }
 
