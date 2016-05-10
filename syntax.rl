@@ -168,11 +168,11 @@
                 '>' @EmitEndTagToken @To_Data |
                 '=' TagNameSpace* <: (
                     _StartQuote >1 any* :> _EndQuote -> start |
+                    '>' >1 @EmitEndTagToken @To_Data |
                     any+ >0 :> (
                         TagNameSpace -> start |
                         '>' @EmitEndTagToken @To_Data
-                    ) |
-                    '>' @EmitEndTagToken @To_Data
+                    )
                 )
             )
         )
@@ -487,7 +487,7 @@
         ) @eof(AppendSlice) @eof(EmitString),
 
         crlf: CR* $AppendLFCharacter <: (
-            LF >1 -> text_slice |
+            LF >1 |
             any >0 @AppendLFCharacter
         ) @StartSlice @eof(AppendLFCharacter) @eof(EmitString) -> text_slice,
 
