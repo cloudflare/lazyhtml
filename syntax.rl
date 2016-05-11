@@ -52,7 +52,6 @@
     action To_BeforeDocTypeSystemIdentifier { fgoto BeforeDocTypeSystemIdentifier; }
     action To_AfterDocTypeSystemIdentifier { fgoto AfterDocTypeSystemIdentifier; }
 
-
     action FeedAppropriateEndTagWithLowerCased() { !($IsAppropriateEndTagFed) && ($GetNextAppropriateEndTagChar) === fc + 0x20 }
     action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && ($GetNextAppropriateEndTagChar) === fc }
 
@@ -199,7 +198,7 @@
         (
             '!' @To_MarkupDeclarationOpen |
             '/' @To_EndTagOpen |
-            alpha @CreateStartTagToken @StartString @Reconsume @To_StartTagName |
+            alpha @CreateStartTagToken @Reconsume @To_StartTagName |
             '?' @Reconsume @To_BogusComment
         ) >1 |
         any >0 @AppendSlice @EmitString @Reconsume @To_Data
@@ -207,7 +206,7 @@
 
     EndTagOpen := (
         (
-            alpha @CreateEndTagToken @StartString @Reconsume @To_EndTagName |
+            alpha @CreateEndTagToken @Reconsume @To_EndTagName |
             '>' @To_Data
         ) >1 |
         any >0 @Reconsume @To_BogusComment
@@ -422,14 +421,14 @@
             CR >1 @AppendSlice -> crlf |
             any >0 -> text_slice
         ) @eof(AppendSliceBeforeTheMark)
-    ) >StartString @EmitComment @To_Data @eof(EmitComment);
+    ) @EmitComment @To_Data @eof(EmitComment);
 
     DocType := TagNameSpace* <: (
         '>' >1 @SetForceQuirksFlag @EmitDocType @To_Data |
         any >0 @Reconsume @To_DocTypeName
     ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    DocTypeName := _Name >StartString %SetDocTypeName %eof(SetDocTypeName) :> (
+    DocTypeName := _Name %SetDocTypeName %eof(SetDocTypeName) :> (
         TagNameSpace |
         '>'
     ) @Reconsume @To_AfterDocTypeName @eof(SetForceQuirksFlag) @eof(EmitDocType);
@@ -502,5 +501,5 @@
             CR >1 @AppendSlice -> crlf |
             any >0 -> text_slice
         ) @eof(AppendSlice) @eof(EmitString)
-    ) >StartString @EmitString @To_Data;
+    ) @EmitString @To_Data;
 }%%
