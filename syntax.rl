@@ -72,8 +72,10 @@
 
     _CRLF = CR @AppendLFCharacter LF?;
 
+    _NUL = 0 @AppendReplacementCharacter;
+
     _SafeStringChunk = (
-        0 @AppendReplacementCharacter |
+        _NUL |
         _CRLF $2 |
         ^(0 | CR)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
     )+ %2;
@@ -84,7 +86,7 @@
 
     _Name = (
         upper @AppendLowerCasedCharacter |
-        0 @AppendReplacementCharacter |
+        _NUL |
         ^(upper | 0)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
     )* %2;
 
@@ -107,8 +109,8 @@
     ) @eof(AppendNamedEntity) @eof(AppendSlice);
 
     _AttrNamedEntity = alnum+ >StartNamedEntity $UnmatchNamedEntity $FeedNamedEntity <: (
-        ';' >1 @FeedNamedEntity @AppendNamedEntity |
-        '=' >1 |
+        ';' @FeedNamedEntity @AppendNamedEntity |
+        '=' |
         any >0 @AppendNamedEntity @Reconsume
     );
 
@@ -215,7 +217,7 @@
     StartTagName := _Name %SetStartTagName :> _StartTagEnd;
 
     RCData := ((
-        0 @AppendReplacementCharacter |
+        _NUL |
         _CRLF $2 |
         (
             _Entity |
@@ -320,7 +322,7 @@
     );
 
     _AttrValue = ((
-        0 @AppendReplacementCharacter |
+        _NUL |
         _CRLF $2 |
         (
             _AttrEntity |
@@ -360,7 +362,7 @@
             (
                 '-' @StartSlice @MarkPosition -> comment_start_dash |
                 '>' -> final |
-                0 @AppendReplacementCharacter -> text |
+                _NUL -> text |
                 CR -> crlf
             ) >1 |
             any >0 @StartSlice -> text_slice
@@ -368,7 +370,7 @@
 
         crlf: CR* $AppendLFCharacter <: (
             LF >1 @StartSlice -> text_slice |
-            0 >1 @AppendLFCharacter @AppendReplacementCharacter -> text |
+            _NUL >1 >AppendLFCharacter -> text |
             '-' >1 @AppendLFCharacter @StartSlice @MarkPosition -> comment_end_dash |
             any >0 @AppendLFCharacter @StartSlice -> text_slice
         ),
@@ -377,20 +379,20 @@
             (
                 '-' -> comment_end |
                 '>' -> final |
-                0 @AppendSlice @AppendReplacementCharacter -> text |
+                _NUL >AppendSlice -> text |
                 CR @AppendSlice -> crlf
             ) >1 |
             any >0 -> text_slice
         ),
 
-        text: 0* $AppendReplacementCharacter <: (
+        text: _NUL* <: (
             '-' >1 @StartSlice @MarkPosition -> comment_end_dash |
             CR >1 -> crlf |
             any >0 @StartSlice -> text_slice
         ),
 
         text_slice: any* :> (
-            0 @AppendSlice @AppendReplacementCharacter -> text |
+            _NUL >AppendSlice -> text |
             '-' @MarkPosition -> comment_end_dash |
             CR @AppendSlice -> crlf
         ) @eof(AppendSlice),
@@ -398,7 +400,7 @@
         comment_end_dash: (
             (
                 '-' -> comment_end |
-                0 @AppendSlice @AppendReplacementCharacter -> text |
+                _NUL >AppendSlice -> text |
                 CR >1 @AppendSlice -> crlf
             ) >1 |
             any >0 -> text_slice
@@ -408,17 +410,19 @@
             (
                 '>' @AppendSliceBeforeTheMark -> final |
                 '!' -> comment_end_bang |
-                0 @AppendSlice @AppendReplacementCharacter -> text |
+                _NUL >AppendSlice -> text |
                 CR @AppendSlice -> crlf
             ) >1 |
             any >0 -> text_slice
         ) @eof(AppendSliceBeforeTheMark),
 
         comment_end_bang: (
-            '-' >1 @MarkPosition -> comment_end_dash |
-            '>' >1 @AppendSliceBeforeTheMark -> final |
-            0 >1 @AppendSlice @AppendReplacementCharacter -> text |
-            CR >1 @AppendSlice -> crlf |
+            (
+                '-' @MarkPosition -> comment_end_dash |
+                '>' @AppendSliceBeforeTheMark -> final |
+                _NUL >AppendSlice -> text |
+                CR @AppendSlice -> crlf
+            ) >1 |
             any >0 -> text_slice
         ) @eof(AppendSliceBeforeTheMark)
     ) @EmitComment @To_Data @eof(EmitComment);
@@ -481,8 +485,8 @@
         ),
 
         text_slice: any* :> (
-            CR >1 @AppendSlice -> crlf |
-            ']' >1 @MarkPosition -> cdata_end
+            CR @AppendSlice -> crlf |
+            ']' @MarkPosition -> cdata_end
         ) @eof(AppendSlice) @eof(EmitString),
 
         crlf: CR* $AppendLFCharacter <: (
