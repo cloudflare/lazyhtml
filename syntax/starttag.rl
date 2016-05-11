@@ -1,6 +1,26 @@
 %%{
     machine html;
 
+    _StartTagEnd = (
+        TagNameSpace @To_BeforeAttributeName |
+        '/' @To_SelfClosingTag |
+        '>' @EmitStartTagToken @To_Data
+    );
+
+    _AttrNamedEntity = alnum+ >StartNamedEntity $UnmatchNamedEntity $FeedNamedEntity <: (
+        ';' @FeedNamedEntity @AppendNamedEntity |
+        '=' |
+        any >0 @AppendNamedEntity @Reconsume
+    );
+
+    _AttrEntity = '&' @MarkPosition (
+        (
+            _AttrNamedEntity |
+            _NumericEntity
+        ) >1 |
+        any >0 @Reconsume
+    ) >eof(AppendSlice);
+
     StartTagName := _Name %SetStartTagName :> _StartTagEnd;
 
     BeforeAttributeName := TagNameSpace* <: (

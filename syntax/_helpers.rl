@@ -54,12 +54,6 @@
         any >0 @AppendNamedEntity @Reconsume
     ) @eof(AppendNamedEntity) @eof(AppendSlice);
 
-    _AttrNamedEntity = alnum+ >StartNamedEntity $UnmatchNamedEntity $FeedNamedEntity <: (
-        ';' @FeedNamedEntity @AppendNamedEntity |
-        '=' |
-        any >0 @AppendNamedEntity @Reconsume
-    );
-
     _NumericEntity = '#' (
         (
             /x/i (
@@ -84,20 +78,6 @@
         ) >1 |
         any >0 @Reconsume
     ) >eof(AppendSlice);
-
-    _AttrEntity = '&' @MarkPosition (
-        (
-            _AttrNamedEntity |
-            _NumericEntity
-        ) >1 |
-        any >0 @Reconsume
-    ) >eof(AppendSlice);
-
-    _StartTagEnd = (
-        TagNameSpace @To_BeforeAttributeName |
-        '/' @To_SelfClosingTag |
-        '>' @EmitStartTagToken @To_Data
-    );
 
     _EndTagEnd = (
         TagNameSpace |
