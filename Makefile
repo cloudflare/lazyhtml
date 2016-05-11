@@ -3,7 +3,9 @@ RAGELFLAGS += --reduce-frontend -F1
 CFLAGS += -g $(shell pkg-config --cflags json-c)
 LDFLAGS += $(shell pkg-config --libs json-c)
 
-%.dot: js-tokenizer.rl syntax.rl
+RL_FILES := $(wildcard syntax/*.rl)
+
+%.dot: js-tokenizer.rl $(RL_FILES)
 	$(RAGEL) $(RAGELFLAGS) -PVp -M $(notdir $(basename $@)) $< > $@
 	node simplify-graph.js $@
 
@@ -11,10 +13,10 @@ LDFLAGS += $(shell pkg-config --libs json-c)
 	dot -Tpng $< -o $@
 	open $@
 
-c-tokenizer.c: c-tokenizer.rl c-actions.rl syntax.rl
+c-tokenizer.c: c-tokenizer.rl c-actions.rl $(RL_FILES)
 	$(RAGEL) $(RAGELFLAGS) $<
 
-js-tokenizer.js: js-tokenizer.rl js-actions.rl syntax.rl
+js-tokenizer.js: js-tokenizer.rl js-actions.rl $(RL_FILES)
 	$(RAGEL) $(RAGELFLAGS) -Ps $< | grep -v "^compiling"
 
 .PHONY: js-tokenizer
