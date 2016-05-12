@@ -36,7 +36,7 @@ function codeFrame(str, pos) {
     const middle = slice.call(toStr(str.charAt(pos)), 1, -1);
     const tail = slice.call(toStr(slice.call(str, pos + 1)), 1);
 
-    return `${chalk.yellow(`${head}${middle}${tail}`)}\n${chalk.cyan('-'.repeat(head.length))}${chalk.blue('^'.repeat(middle.length))}${chalk.cyan('-'.repeat(tail.length))}`;
+    return `${chalk.yellow(`${head}${chalk.bgBlue(middle)}${tail}`)}`;
 }
 
 const tokenizer = new HtmlTokenizer({
