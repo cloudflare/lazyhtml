@@ -185,6 +185,7 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         if (this.onTrace) {
             Object.defineProperty(this, 'cs', {
                 set(value) {
+                    if (value === this._cs) return;
                     this.onTrace({
                         from: this._cs,
                         to: value,

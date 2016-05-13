@@ -10,6 +10,7 @@
     "microtime": "^2.0.0",
     "minimist": "^1.2.0",
     "parse5": "^2.1.5",
+    "performance-now": "^0.2.0",
     "tap-summary": "^1.2.0",
     "tape": "^4.5.1",
     "tape-catch": "^1.0.4",

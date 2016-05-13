@@ -45,7 +45,7 @@ const tokenizer = new HtmlTokenizer({
     lastStartTagName: args.tag || 'xmp',
     onToken: console.log,
     onTrace(trace) {
-        if (trace.to !== trace.from && (trace.to in stateNames)) {
+        if (trace.to in stateNames) {
             console.log(codeFrame(trace.in, trace.at), toState(trace.to));
         }
     }
