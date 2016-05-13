@@ -4,7 +4,7 @@ CFLAGS += -g $(shell pkg-config --cflags json-c)
 LDFLAGS += $(shell pkg-config --libs json-c)
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
-	$(RAGEL) $(RAGELFLAGS) $<
+	cd .. && $(RAGEL) $(RAGELFLAGS) -s c/$< | grep -v "^compiling"
 
 tokenizer: tokenizer.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
