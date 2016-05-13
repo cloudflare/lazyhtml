@@ -4,9 +4,9 @@ require('better-log').install({
     depth: 2
 });
 
-var { states, HtmlTokenizer } = require('./js-tokenizer');
+var { states, HtmlTokenizer } = require('./tokenizer');
 var fs = require('fs');
-var now = require('performance-now');
+var now = require('microtime').nowDouble;
 
 var stateNames = Object.create(null);
 

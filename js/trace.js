@@ -4,7 +4,7 @@ require('better-log').install({
     depth: 2
 });
 
-const { states, HtmlTokenizer } = require('./js-tokenizer');
+const { states, HtmlTokenizer } = require('./tokenizer');
 const chalk = require('chalk');
 const minimist = require('minimist');
 const args = minimist(process.argv.slice(2));

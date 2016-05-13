@@ -1,9 +1,9 @@
 'use strict';
 
 var Benchmark = require('benchmark');
-var MyTokenizer = require('../js-tokenizer').HtmlTokenizer;
+var MyTokenizer = require('./tokenizer').HtmlTokenizer;
 var Parse5Tokenizer = require('parse5/lib/tokenizer');
-var read = require('fs').readFileSync;
+var fs = require('fs');
 var text;
 
 var suite =
@@ -30,11 +30,13 @@ function logAndUnderline(text, char) {
     console.log(char.repeat(text.length));
 }
 
-['huge-page.html', 'huge-page-2.html'].forEach(src => {
+var fixturesPath = `${__dirname}/../bench-fixtures`;
+
+fs.readdirSync(fixturesPath).forEach(src => {
     var fill = '='.repeat(src.length);
     console.log(fill);
     console.log(src);
     console.log(fill);
-    text = read(`${__dirname}/${src}`, 'utf-8');
+    text = fs.readFileSync(`${fixturesPath}/${src}`, 'utf-8');
     suite.run();
 });

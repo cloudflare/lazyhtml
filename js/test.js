@@ -1,9 +1,9 @@
 'use strict';
 
 const test = require('tape-catch');
-const testsDir = 'html5lib-tests/tokenizer';
+const testsDir = '../html5lib-tests/tokenizer';
 const fs = require('fs');
-const { HtmlTokenizer, states } = require('./js-tokenizer');
+const { HtmlTokenizer, states } = require('./tokenizer');
 
 function unescape(str) {
     return str.replace(/\\u([0-9a-f]{4})/i, (_, code) => String.fromCharCode(parseInt(code, 16)));

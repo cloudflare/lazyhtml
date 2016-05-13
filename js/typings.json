@@ -1,11 +1,11 @@
 {
   "version": false,
   "ambientDependencies": {
-    "node": "registry:dt/node#4.0.0+20160330064709"
+    "node": "registry:dt/node#4.0.0+20160509154515"
   },
   "devDependencies": {
     "chalk": "registry:npm/chalk#1.0.0+20160211003958",
-    "lodash": "registry:npm/lodash#4.0.0+20160412191219",
+    "lodash": "registry:npm/lodash#4.0.0+20160416211519",
     "minimist": "registry:npm/minimist#1.0.0+20160229232932",
     "tape": "registry:npm/tape#4.0.0+20160322235547"
   },
