@@ -12,4 +12,4 @@ fs.writeFile('values.txt', JSON.stringify([''].concat(action_table)).slice(1, -1
 fs.writeFile('handlers.dat', new Buffer(new Uint16Array(_(state).map((t, i) => [
     t.length,
     _.map(t, t => [t.match, t.action + 1, stateOffsets[t.toState]])
-]).flattenDeep()).buffer));
+]).flattenDeep().value()).buffer));

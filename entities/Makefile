@@ -1,7 +1,7 @@
 RAGEL = ragel
 RAGELFLAGS =
 NODE = node
-NODEFLAGS += --harmony-destructuring
+NODEFLAGS =
 
 .PHONY: all
 all: handlers.dat numeric.dat
