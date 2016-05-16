@@ -13,7 +13,7 @@
         any >0 @AppendSlice @EmitString @Reconsume @To_Data
     ) @eof(AppendSlice) @eof(EmitString);
 
-    _BogusComment = _SafeString :> '>' @EmitComment @To_Data @eof(EmitComment);
+    _BogusComment = _String :> '>' @EmitComment @To_Data @eof(EmitComment);
 
     BogusComment := _BogusComment;
 

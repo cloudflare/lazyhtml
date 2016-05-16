@@ -5,10 +5,10 @@ require('better-log').install({
 });
 
 const { states, HtmlTokenizer } = require('./tokenizer');
-const { states: decoderStates, decode } = require('./decoder');
 const chalk = require('chalk');
 const minimist = require('minimist');
 const args = minimist(process.argv.slice(2));
+const decodeToken = require('./decode-token');
 
 if (args.help || !args._.length) {
     console.info(
@@ -47,23 +47,7 @@ const tokenizer = new HtmlTokenizer({
     onToken(token) {
         if (args.decode) {
             console.log('Post-processing (decoding)...');
-            switch (token.type) {
-                case 'StartTag':
-                    token.attributes.forEach(attr => {
-                        attr.value = decode(decoderStates.AttrValue, value);
-                    });
-                    break;
-
-                case 'Character':
-                    if (token.kind) {
-                        token.value = decode(decoderStates[token.kind], token.value);
-                    }
-                    break;
-
-                case 'Comment':
-                    token.value = decode(decoderStates.Comment, token.value);
-                    break;
-            }
+            decodeToken(token);
         }
         console.log(token);
     },

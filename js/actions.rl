@@ -19,6 +19,10 @@
         this.charTokenKind = 'CData';
     }
 
+    action StartSafe {
+        this.charTokenKind = 'Safe';
+    }
+
     action StartString {
         this.string = '';
     }
@@ -45,10 +49,6 @@
 
     action AppendReplacementCharacter {
         this.string += '\uFFFD';
-    }
-
-    action AppendLFCharacter {
-        this.string += '\n';
     }
 
     action StartSlice {

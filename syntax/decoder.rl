@@ -96,7 +96,7 @@
         ^CR+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
     )+;
 
-    Comment := (
+    Safe := (
         _CRLF $2 |
         _NUL |
         ^(0 | CR)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)

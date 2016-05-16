@@ -123,11 +123,15 @@ var states = exports.states = {
     Data: en_Data,
     RCData: en_RCData,
     CData: en_CData,
-    Comment: en_Comment,
-    AttrValue: en_AttrValue
+    Comment: en_Safe,
+    AttrValue: en_AttrValue,
+    Safe: en_Safe
 };
 
 exports.decode = function (cs, data) {
+    if (data === null) {
+        return null;
+    }
     var string = '';
     var p = 0, pe = data.length, eof = pe;
     var startSlice, mark;

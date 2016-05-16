@@ -4,7 +4,7 @@ const test = require('tape-catch');
 const testsDir = `${__dirname}/../html5lib-tests/tokenizer`;
 const fs = require('fs');
 const { HtmlTokenizer, states } = require('./tokenizer');
-const { decode, states: decoderStates } = require('./decoder');
+const decodeToken = require('./decode-token');
 
 function unescape(str) {
     return str.replace(/\\u([0-9a-f]{4})/i, (_, code) => String.fromCharCode(parseInt(code, 16)));
@@ -64,11 +64,9 @@ function tokenize(input, { lastStartTag, initialState }) {
         initialState: initialState && stateMappings[initialState],
         onToken(token) {
             // console.log(token);
+            decodeToken(token);
             switch (token.type) {
                 case 'Character': {
-                    if (token.kind) {
-                        token.value = decode(decoderStates[token.kind], token.value);
-                    }
                     tokens.push(['Character', token.value]);
                     break;
                 }
@@ -78,7 +76,7 @@ function tokenize(input, { lastStartTag, initialState }) {
                         'StartTag',
                         token.name,
                         token.attributes.reduce((attrs, { name, value }) => {
-                            attrs[name] = decode(decoderStates.AttrValue, value);
+                            attrs[name] = value;
                             return attrs;
                         }, Object.create(null))
                     ].concat(token.selfClosing ? [true] : []));
@@ -91,7 +89,7 @@ function tokenize(input, { lastStartTag, initialState }) {
                 }
 
                 case 'Comment': {
-                    tokens.push(['Comment', decode(decoderStates.Comment, token.value)]);
+                    tokens.push(['Comment', token.value]);
                     break;
                 }
 
@@ -104,10 +102,6 @@ function tokenize(input, { lastStartTag, initialState }) {
                         !token.forceQuirks
                     ]);
                     break;
-                }
-
-                default: {
-                    throw new Error(`Unexpected token type ${token.type}`);
                 }
             }
         }

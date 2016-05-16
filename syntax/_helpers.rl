@@ -16,19 +16,11 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
-    _CRLF = CR @AppendLFCharacter LF?;
-
     _NUL = 0 @AppendReplacementCharacter;
 
-    _SafeStringChunk = (
-        _NUL |
-        _CRLF $2 |
-        ^(0 | CR)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
-    )+ %2;
+    _SafeText = (any+ >StartSafe >StartSlice %EmitSlice %eof(EmitSlice))?;
 
-    _SafeText = (_SafeStringChunk >StartString %EmitString %eof(EmitString))? $1 %2;
-
-    _SafeString = _SafeStringChunk? >StartString >eof(StartString);
+    _String = (any+ >StartSlice %AppendSlice %eof(AppendSlice))? >StartString >eof(StartString);
 
     _Name = (
         upper @AppendLowerCasedCharacter |

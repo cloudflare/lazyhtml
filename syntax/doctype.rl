@@ -22,7 +22,7 @@
         any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    DocTypePublicIdentifierQuoted := _SafeString %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
+    DocTypePublicIdentifierQuoted := _String %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
         _EndQuote @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
@@ -40,7 +40,7 @@
         any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    DocTypeSystemIdentifierQuoted := _SafeString %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
+    DocTypeSystemIdentifierQuoted := _String %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
         _EndQuote @To_AfterDocTypeSystemIdentifier |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
