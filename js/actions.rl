@@ -33,7 +33,7 @@
 
     action IsAppropriateEndTagFed { this.appropriateEndTagOffset === this.lastStartTagName.length }
 
-    action GetNextAppropriateEndTagChar { this.lastStartTagName.charCodeAt(this.appropriateEndTagOffset++) }
+    action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && this.lastStartTagName.charCodeAt(this.appropriateEndTagOffset++) === (fc | 0x20) }
 
     action SetAppropriateEndTagName {
         this.endTagToken.name = this.lastStartTagName;

@@ -34,15 +34,9 @@
         '>'
     ) @Reconsume @To_EndTagNameContents;
 
-    action FeedAppropriateEndTagWithLowerCased() { !($IsAppropriateEndTagFed) && ($GetNextAppropriateEndTagChar) === fc + 0x20 }
-    action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && ($GetNextAppropriateEndTagChar) === fc }
-
     _SpecialEndTag = (
         '/' >StartAppropriateEndTag
-        (
-            upper when FeedAppropriateEndTagWithLowerCased |
-            lower when FeedAppropriateEndTag
-        )*
+        (alpha when FeedAppropriateEndTag)*
         _EndTagEnd when IsAppropriateEndTagFed >CreateEndTagToken >SetAppropriateEndTagName
     ) @err(AppendSlice) @err(EmitString) @err(Reconsume);
 }%%
