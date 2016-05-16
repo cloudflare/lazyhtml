@@ -16,17 +16,11 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
-    _NUL = 0 @AppendReplacementCharacter;
-
     _SafeText = (any+ >StartSafe >StartSlice %EmitSlice %eof(EmitSlice))?;
 
     _String = (any+ >StartSlice %AppendSlice %eof(AppendSlice))? >StartString >eof(StartString);
 
-    _Name = (
-        upper @AppendLowerCasedCharacter |
-        _NUL |
-        ^(upper | 0)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
-    )* %2;
+    _Name = (any+ >StartSlice %AppendSlice %eof(AppendSlice))?;
 
     _EndTagEnd = (
         TagNameSpace |

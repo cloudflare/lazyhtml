@@ -43,14 +43,6 @@
         this.string += '=';
     }
 
-    action AppendLowerCasedCharacter {
-        this.string += String.fromCharCode(fc + 0x20);
-    }
-
-    action AppendReplacementCharacter {
-        this.string += '\uFFFD';
-    }
-
     action StartSlice {
         this.startSlice = p;
     }
@@ -161,15 +153,8 @@
     }
 
     action AppendAttribute {
-        AppendAttribute: {
-            for (var i = 0; i < this.startTagToken.attributes.length; i++) {
-                if (this.startTagToken.attributes[i].name === this.string) {
-                    break AppendAttribute;
-                }
-            }
-            this.attribute.name = this.string;
-            this.startTagToken.attributes.push(this.attribute);
-        }
+        this.attribute.name = this.string;
+        this.startTagToken.attributes.push(this.attribute);
     }
 
     action IsCDataAllowed { this.allowCData }
@@ -192,71 +177,5 @@
 
     action SetDocTypeSystemIdentifier {
         this.docTypeToken.systemId = this.string;
-    }
-
-    action StartNumericEntity {
-        this.numericEntity = 0;
-    }
-
-    action AppendHexDigit09ToNumericEntity {
-        this.numericEntity = this.numericEntity * 16 + (fc & 0xF);
-    }
-
-    action AppendHexDigitAFToNumericEntity {
-        this.numericEntity = this.numericEntity * 16 + ((fc + 9) & 0xF);
-    }
-
-    action AppendDecDigitToNumericEntity {
-        this.numericEntity = this.numericEntity * 10 + (fc & 0xF);
-    }
-
-    action AppendNumericEntity {
-        this.string += getNumericEntity(this.numericEntity);
-    }
-
-    action StartNamedEntity {
-        this.namedEntityOffset = 1;
-    }
-
-    action UnmatchNamedEntity {
-        this.namedEntityMatch = 0;
-    }
-
-    action FeedNamedEntity {
-        var min = 0;
-        var max = namedEntityHandlers[this.namedEntityOffset++] - 1;
-        var ch = fc;
-
-        while (min <= max) {
-            var i = (min + max) >> 1;
-            var curPos = this.namedEntityOffset + i * 3;
-            var curCh = namedEntityHandlers[curPos];
-
-            if (curCh < ch) {
-                min = i + 1;
-            } else if (curCh > ch) {
-                max = i - 1;
-            } else {
-                var action = namedEntityHandlers[++curPos];
-                if (action > 0) {
-                    this.namedEntityMatch = action;
-                    this.namedEntityPos = p;
-                }
-                this.namedEntityOffset = namedEntityHandlers[++curPos];
-                break;
-            }
-        }
-
-        if (min > max || namedEntityHandlers[this.namedEntityOffset] === 0) {
-            this.namedEntityOffset = 0;
-        }
-    }
-
-    action AppendNamedEntity() {
-        if (this.namedEntityMatch > 0) {
-            $AppendSliceBeforeTheMark
-            this.string += namedEntityValues[this.namedEntityMatch];
-            this.startSlice = this.namedEntityPos + 1;
-        }
     }
 }%%

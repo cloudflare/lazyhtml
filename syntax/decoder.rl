@@ -101,4 +101,10 @@
         _NUL |
         ^(0 | CR)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
     )+;
+
+    Name := (
+        upper @AppendLowerCasedCharacter |
+        _NUL |
+        ^(upper | 0)+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
+    )+;
 }%%

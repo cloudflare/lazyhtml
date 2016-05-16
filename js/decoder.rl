@@ -11,6 +11,10 @@
         string += '\uFFFD';
     }
 
+    action AppendLowerCasedCharacter {
+        string += String.fromCharCode(fc + 0x20);
+    }
+
     action StartSlice {
         startSlice = p;
     }
@@ -125,7 +129,8 @@ var states = exports.states = {
     CData: en_CData,
     Comment: en_Safe,
     AttrValue: en_AttrValue,
-    Safe: en_Safe
+    Safe: en_Safe,
+    Name: en_Name
 };
 
 exports.decode = function (cs, data) {

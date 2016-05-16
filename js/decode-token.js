@@ -6,12 +6,12 @@ module.exports = function decodeToken(token) {
     switch (token.type) {
         case 'StartTag':
             token.attributes.forEach(attr => {
-                // attr.name = decode(states.Name, attr.name);
+                attr.name = decode(states.Name, attr.name);
                 attr.value = decode(states.AttrValue, attr.value);
             });
             /* falls through */
         case 'EndTag':
-            // token.name = decode(states.Name, token.name);
+            token.name = decode(states.Name, token.name);
             break;
 
         case 'Character':
@@ -25,7 +25,7 @@ module.exports = function decodeToken(token) {
             break;
 
         case 'DocType':
-            // token.name = decode(states.Name, token.name);
+            token.name = decode(states.Name, token.name);
             token.publicId = decode(states.Safe, token.publicId);
             token.systemId = decode(states.Safe, token.systemId);
             break;

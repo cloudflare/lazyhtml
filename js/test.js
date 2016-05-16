@@ -76,7 +76,9 @@ function tokenize(input, { lastStartTag, initialState }) {
                         'StartTag',
                         token.name,
                         token.attributes.reduce((attrs, { name, value }) => {
-                            attrs[name] = value;
+                            if (!(name in attrs)) {
+                                attrs[name] = value;
+                            }
                             return attrs;
                         }, Object.create(null))
                     ].concat(token.selfClosing ? [true] : []));
