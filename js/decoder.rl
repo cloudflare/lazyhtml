@@ -123,7 +123,8 @@ var states = exports.states = {
     Data: en_Data,
     RCData: en_RCData,
     CData: en_CData,
-    Comment: en_Comment
+    Comment: en_Comment,
+    AttrValue: en_AttrValue
 };
 
 exports.decode = function (cs, data) {

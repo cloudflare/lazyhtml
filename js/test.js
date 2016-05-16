@@ -78,7 +78,7 @@ function tokenize(input, { lastStartTag, initialState }) {
                         'StartTag',
                         token.name,
                         token.attributes.reduce((attrs, { name, value }) => {
-                            attrs[name] = value;
+                            attrs[name] = decode(decoderStates.AttrValue, value);
                             return attrs;
                         }, Object.create(null))
                     ].concat(token.selfClosing ? [true] : []));

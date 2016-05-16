@@ -9,27 +9,6 @@
     write data nofinal noprefix;
 }%%
 
-var fs = require('fs');
-
-function convertBuffer(nodeBuffer) {
-    return nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
-}
-
-var entitiesDir = __dirname + '/../entities';
-
-var namedEntityValues = JSON.parse('[' + fs.readFileSync(entitiesDir + '/values.txt', 'utf-8') + ']');
-var namedEntityHandlers = new Uint16Array(convertBuffer(fs.readFileSync(entitiesDir + '/handlers.dat')));
-var numericEntities = new Uint16Array(convertBuffer(fs.readFileSync(entitiesDir + '/numeric.dat')));
-
-function getNumericEntity(code) {
-    if (code < 256) {
-        code = numericEntities[code];
-    } else if (code >= 0xD800 && code <= 0xDFFF || code > 0x10FFFF) {
-        code = 0xFFFD;
-    }
-    return String.fromCodePoint(code);
-}
-
 var states = exports.states = {
     error,
     Data: en_Data,
@@ -131,22 +110,6 @@ exports.HtmlTokenizer = class HtmlTokenizer {
                 writable: true,
                 value: 0
             },
-            numericEntity: {
-                writable: true,
-                value: 0
-            },
-            namedEntityOffset: {
-                writable: true,
-                value: 0
-            },
-            namedEntityMatch: {
-                writable: true,
-                value: 0
-            },
-            namedEntityPos: {
-                writable: true,
-                value: 0
-            },
             appropriateEndTagOffset: {
                 writable: true,
                 value: 0
@@ -210,7 +173,6 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         if (bufferStart >= 0) {
             this.buffer = data.slice(bufferStart);
             this.mark -= bufferStart;
-            this.namedEntityPos -= bufferStart;
             this.startSlice = 0;
         }
     }

@@ -48,6 +48,12 @@ const tokenizer = new HtmlTokenizer({
         if (args.decode) {
             console.log('Post-processing (decoding)...');
             switch (token.type) {
+                case 'StartTag':
+                    token.attributes.forEach(attr => {
+                        attr.value = decode(decoderStates.AttrValue, value);
+                    });
+                    break;
+
                 case 'Character':
                     if (token.kind) {
                         token.value = decode(decoderStates[token.kind], token.value);
