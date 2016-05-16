@@ -15,9 +15,11 @@ function convertBuffer(nodeBuffer) {
     return nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
 }
 
-var namedEntityValues = JSON.parse('[' + fs.readFileSync(__dirname + '/entities/values.txt', 'utf-8') + ']');
-var namedEntityHandlers = new Uint16Array(convertBuffer(fs.readFileSync(__dirname + '/entities/handlers.dat')));
-var numericEntities = new Uint16Array(convertBuffer(fs.readFileSync(__dirname + '/entities/numeric.dat')));
+var entitiesDir = __dirname + '/../entities';
+
+var namedEntityValues = JSON.parse('[' + fs.readFileSync(entitiesDir + '/values.txt', 'utf-8') + ']');
+var namedEntityHandlers = new Uint16Array(convertBuffer(fs.readFileSync(entitiesDir + '/handlers.dat')));
+var numericEntities = new Uint16Array(convertBuffer(fs.readFileSync(entitiesDir + '/numeric.dat')));
 
 function getNumericEntity(code) {
     if (code < 256) {
@@ -112,6 +114,10 @@ exports.HtmlTokenizer = class HtmlTokenizer {
             attribute: {
                 writable: true,
                 value: null
+            },
+            charTokenKind: {
+                writable: true,
+                value: ''
             },
             string: {
                 writable: true,

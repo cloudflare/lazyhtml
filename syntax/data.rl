@@ -1,13 +1,7 @@
 %%{
     machine html;
 
-    Data := ((
-        _CRLF $2 |
-        (
-            _Entity |
-            ^('&' | CR)
-        )+ $1 %0 >StartSlice %AppendSlice %eof(AppendSlice)
-    )+ %2 >StartString %EmitString <eof(EmitString))? :> '<' @StartString @StartSlice @To_TagOpen;
+    Data := (any+ >StartData >StartSlice %EmitSlice <eof(EmitSlice))? :> '<' @StartString @StartSlice @To_TagOpen;
 
     TagOpen := (
         (

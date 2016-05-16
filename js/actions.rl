@@ -7,6 +7,10 @@
 
     action IsMatchingQuote { fc === this.quote }
 
+    action StartData {
+        this.charTokenKind = 'Data';
+    }
+
     action StartString {
         this.string = '';
     }
@@ -63,6 +67,16 @@
     action AppendSlice() {
         this.string += data.slice(this.startSlice, p);
         $DiscardSlice
+    }
+
+    action EmitSlice() {
+        this.emitToken({
+            type: 'Character',
+            kind: this.charTokenKind,
+            value: data.slice(this.startSlice, p)
+        });
+        $DiscardSlice
+        this.charTokenKind = '';
     }
 
     action EmitString() {

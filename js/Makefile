@@ -4,6 +4,9 @@ CFLAGS += -g $(shell pkg-config --cflags json-c)
 LDFLAGS += $(shell pkg-config --libs json-c)
 
 tokenizer.js: tokenizer.rl actions.rl $(wildcard ../syntax/*.rl)
+decoder.js: decoder.rl actions.rl ../syntax/decoder.rl
+
+tokenizer.js decoder.js:
 	cd .. && $(RAGEL) $(RAGELFLAGS) -s js/$< | grep -v "^compiling"
 
 .PHONY: test
