@@ -121,6 +121,7 @@ function getNumericEntity(code) {
 
 var states = exports.states = {
     Data: en_Data,
+    RCData: en_RCData,
     CData: en_CData,
     Comment: en_Comment
 };
@@ -133,5 +134,8 @@ exports.decode = function (cs, data) {
     var namedEntityMatch, namedEntityOffset, namedEntityPos;
     %%write init nocs;
     %%write exec;
+    if (cs === error) {
+        throw new Error('Decoding error at ' + p);
+    }
     return string;
 };

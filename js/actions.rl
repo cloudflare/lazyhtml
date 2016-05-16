@@ -11,6 +11,10 @@
         this.charTokenKind = 'Data';
     }
 
+    action StartRCData {
+        this.charTokenKind = 'RCData';
+    }
+
     action StartCData {
         this.charTokenKind = 'CData';
     }
