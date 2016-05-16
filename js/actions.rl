@@ -39,10 +39,6 @@
         this.endTagToken.name = this.lastStartTagName;
     }
 
-    action AppendEqualsCharacter {
-        this.string += '=';
-    }
-
     action StartSlice {
         this.startSlice = p;
     }
