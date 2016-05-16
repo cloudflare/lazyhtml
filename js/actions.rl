@@ -11,6 +11,10 @@
         this.charTokenKind = 'Data';
     }
 
+    action StartCData {
+        this.charTokenKind = 'CData';
+    }
+
     action StartString {
         this.string = '';
     }
@@ -67,6 +71,16 @@
     action AppendSlice() {
         this.string += data.slice(this.startSlice, p);
         $DiscardSlice
+    }
+
+    action EmitSliceBeforeTheMark() {
+        this.emitToken({
+            type: 'Character',
+            kind: this.charTokenKind,
+            value: data.slice(this.startSlice, this.mark)
+        });
+        $DiscardSlice
+        this.charTokenKind = '';
     }
 
     action EmitSlice() {

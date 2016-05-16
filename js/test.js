@@ -91,7 +91,7 @@ function tokenize(input, { lastStartTag, initialState }) {
                 }
 
                 case 'Comment': {
-                    tokens.push(['Comment', token.value]);
+                    tokens.push(['Comment', decode(decoderStates.Comment, token.value)]);
                     break;
                 }
 
