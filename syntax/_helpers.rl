@@ -32,5 +32,5 @@
         '/' >StartAppropriateEndTag
         (alpha when FeedAppropriateEndTag)*
         _EndTagEnd when IsAppropriateEndTagFed >CreateEndTagToken >SetAppropriateEndTagName
-    ) @err(AppendSlice) @err(EmitString) @err(Reconsume);
+    ) @err(MarkPosition) @err(EmitSlice) @err(Reconsume);
 }%%

@@ -69,18 +69,10 @@
         this.emitToken({
             type: 'Character',
             kind: this.charTokenKind,
-            value: data.slice(this.startSlice, p)
+            value: data.slice(this.startSlice, this.mark)
         });
         $DiscardSlice
         this.charTokenKind = '';
-    }
-
-    action EmitString() {
-        $DiscardSlice
-        this.emitToken({
-            type: 'Character',
-            value: this.string
-        });
     }
 
     action CreateStartTagToken {
