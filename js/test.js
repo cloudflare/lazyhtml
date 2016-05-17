@@ -152,4 +152,4 @@ fs.readdirSync(testsDir).forEach(name => {
     }
 });
 
-testFile(`${__dirname}/script-data.test`);
+testFile(`${__dirname}/../script-data.test`);
