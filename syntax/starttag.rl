@@ -7,7 +7,7 @@
         '>' @EmitStartTagToken @To_Data
     );
 
-    StartTagName := _Name %SetStartTagName :> _StartTagEnd;
+    StartTagName := any* >StartSlice %SetStartTagName :> _StartTagEnd;
 
     BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |

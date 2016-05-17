@@ -1,7 +1,7 @@
 %%{
     machine html;
 
-    EndTagName := _Name :> _EndTagEnd >SetEndTagName;
+    EndTagName := any* >StartSlice :> _EndTagEnd >SetEndTagName;
 
     EndTagNameContents := (
         start: (TagNameSpace | '/')* <: (

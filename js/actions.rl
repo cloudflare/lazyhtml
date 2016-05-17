@@ -79,12 +79,12 @@
         this.startTagToken = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
     }
 
-    action SetStartTagName {
-        this.startTagToken.name = this.string;
+    action SetStartTagName() {
+        this.startTagToken.name = data.slice(this.startSlice, p);
     }
 
     action SetEndTagName {
-        this.endTagToken.name = this.string;
+        this.endTagToken.name = data.slice(this.startSlice, p);
     }
 
     action EmitStartTagToken() {
@@ -143,19 +143,22 @@
         this.docTypeToken = { type: 'DocType', name: null, forceQuirks: false, publicId: null, systemId: null };
     }
 
-    action SetDocTypeName {
-        this.docTypeToken.name = this.string;
+    action SetDocTypeName() {
+        this.docTypeToken.name = data.slice(this.startSlice, p);
+        $DiscardSlice
     }
 
     action SetForceQuirksFlag {
         this.docTypeToken.forceQuirks = true;
     }
 
-    action SetDocTypePublicIdentifier {
-        this.docTypeToken.publicId = this.string;
+    action SetDocTypePublicIdentifier() {
+        this.docTypeToken.publicId = data.slice(this.startSlice, p);
+        $DiscardSlice
     }
 
-    action SetDocTypeSystemIdentifier {
-        this.docTypeToken.systemId = this.string;
+    action SetDocTypeSystemIdentifier() {
+        this.docTypeToken.systemId = data.slice(this.startSlice, p);
+        $DiscardSlice
     }
 }%%

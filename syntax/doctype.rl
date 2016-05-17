@@ -6,7 +6,7 @@
         any >0 @Reconsume @To_DocTypeName
     ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    DocTypeName := _Name %SetDocTypeName %eof(SetDocTypeName) :> (
+    DocTypeName := any* >StartSlice %SetDocTypeName %eof(SetDocTypeName) :> (
         TagNameSpace |
         '>'
     ) @Reconsume @To_AfterDocTypeName @eof(SetForceQuirksFlag) @eof(EmitDocType);
@@ -22,7 +22,7 @@
         any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    DocTypePublicIdentifierQuoted := _String %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
+    DocTypePublicIdentifierQuoted := any* >StartSlice %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
         _EndQuote @To_BetweenDocTypePublicAndSystemIdentifiers |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
@@ -40,7 +40,7 @@
         any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
 
-    DocTypeSystemIdentifierQuoted := _String %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
+    DocTypeSystemIdentifierQuoted := any* >StartSlice %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
         _EndQuote @To_AfterDocTypeSystemIdentifier |
         '>' @SetForceQuirksFlag @EmitDocType @To_Data
     ) @eof(SetForceQuirksFlag) @eof(EmitDocType);

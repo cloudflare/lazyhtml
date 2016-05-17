@@ -20,8 +20,6 @@
 
     _String = (any+ >StartSlice %AppendSlice %eof(AppendSlice))? >StartString >eof(StartString);
 
-    _Name = (any+ >StartSlice %AppendSlice %eof(AppendSlice))?;
-
     _EndTagEnd = (
         TagNameSpace |
         '/' |
