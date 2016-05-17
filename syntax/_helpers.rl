@@ -16,7 +16,7 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
-    _SafeText = (any+ >StartSafe >StartSlice %EmitSlice %eof(EmitSlice))?;
+    _SafeText = (any+ >StartSafe >StartSlice %MarkPosition %EmitSlice)?;
 
     _String = (any+ >StartSlice %AppendSlice %eof(AppendSlice))? >StartString >eof(StartString);
 

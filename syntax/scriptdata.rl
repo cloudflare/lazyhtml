@@ -3,17 +3,19 @@
 
     ScriptData := (
         _SafeText
-    ) :> '<' @StartString @StartSlice @To_ScriptDataLessThanSign;
+    ) :> (
+        '<' @StartString @StartSlice @To_ScriptDataLessThanSign
+    )?;
 
     ScriptDataLessThanSign := (
         _SpecialEndTag |
         '!--' @To_ScriptDataEscapedDashDash
     ) @err(AppendSlice) @err(EmitString) @err(Reconsume) @err(To_ScriptData);
 
-    ScriptDataEscaped := _SafeText :> (
+    ScriptDataEscaped := _SafeText :> ((
         '-' @To_ScriptDataEscapedDash |
         '<' @To_ScriptDataEscapedLessThanSign
-    ) >StartString >StartSlice;
+    ) >StartString >StartSlice)?;
 
     ScriptDataEscapedDash := (
         (
@@ -36,10 +38,10 @@
         (/script/i TagNameEnd) @AppendSlice @EmitString @Reconsume @To_ScriptDataDoubleEscaped
     ) @err(AppendSlice) @err(EmitString) @err(Reconsume) @err(To_ScriptDataEscaped);
 
-    ScriptDataDoubleEscaped := _SafeText :> (
+    ScriptDataDoubleEscaped := _SafeText :> ((
         '-' @To_ScriptDataDoubleEscapedDash |
         '<' @To_ScriptDataDoubleEscapedLessThanSign
-    ) >StartString >StartSlice;
+    ) >StartString >StartSlice)?;
 
     ScriptDataDoubleEscapedDash := (
         (

@@ -15,5 +15,5 @@
             '>' >1 -> final |
             any >0 -> start
         )
-    ) >StartCData >StartSlice @EmitSliceBeforeTheMark @eof(EmitSlice) @To_Data;
+    ) >StartCData >StartSlice @EmitSlice @eof(MarkPosition) @eof(EmitSlice) @To_Data;
 }%%

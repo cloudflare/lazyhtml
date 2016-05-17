@@ -1,7 +1,9 @@
 %%{
     machine html;
 
-    Data := (any+ >StartData >StartSlice %EmitSlice <eof(EmitSlice))? :> '<' @StartString @StartSlice @To_TagOpen;
+    Data := (any+ >StartData >StartSlice %MarkPosition %EmitSlice)? :> (
+        '<' @StartString @StartSlice @To_TagOpen
+    )?;
 
     TagOpen := (
         (

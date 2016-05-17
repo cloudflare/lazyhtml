@@ -65,16 +65,6 @@
         $DiscardSlice
     }
 
-    action EmitSliceBeforeTheMark() {
-        this.emitToken({
-            type: 'Character',
-            kind: this.charTokenKind,
-            value: data.slice(this.startSlice, this.mark)
-        });
-        $DiscardSlice
-        this.charTokenKind = '';
-    }
-
     action EmitSlice() {
         this.emitToken({
             type: 'Character',
