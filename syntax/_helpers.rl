@@ -18,8 +18,6 @@
 
     _SafeText = (any+ >StartSafe >StartSlice %MarkPosition %EmitSlice)?;
 
-    _String = (any+ >StartSlice %AppendSlice %eof(AppendSlice))? >StartString >eof(StartString);
-
     _EndTagEnd = (
         TagNameSpace |
         '/' |

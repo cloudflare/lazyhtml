@@ -23,10 +23,6 @@
         this.charTokenKind = 'Safe';
     }
 
-    action StartString {
-        this.string = '';
-    }
-
     action StartAppropriateEndTag {
         this.appropriateEndTagOffset = 0;
     }
@@ -53,16 +49,6 @@
 
     action DiscardSlice {
         this.startSlice = -1;
-    }
-
-    action AppendSliceBeforeTheMark() {
-        this.string += data.slice(this.startSlice, this.mark);
-        $DiscardSlice
-    }
-
-    action AppendSlice() {
-        this.string += data.slice(this.startSlice, p);
-        $DiscardSlice
     }
 
     action EmitSlice() {
@@ -103,11 +89,11 @@
     }
 
     action EmitComment() {
-        $DiscardSlice
         this.emitToken({
             type: 'Comment',
-            value: this.string
+            value: data.slice(this.startSlice, this.mark)
         });
+        $DiscardSlice
     }
 
     action EmitDocType() {

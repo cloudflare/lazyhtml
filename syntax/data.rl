@@ -2,7 +2,7 @@
     machine html;
 
     Data := (any+ >StartData >StartSlice %MarkPosition %EmitSlice)? :> (
-        '<' @StartString @StartSlice @To_TagOpen
+        '<' @StartSlice @To_TagOpen
     )?;
 
     TagOpen := (
@@ -15,7 +15,7 @@
         any >0 @MarkPosition @EmitSlice @Reconsume @To_Data
     ) @eof(MarkPosition) @eof(EmitSlice);
 
-    _BogusComment = _String :> '>' @EmitComment @To_Data @eof(EmitComment);
+    _BogusComment = any* >StartSlice %MarkPosition %EmitComment :> ('>' @To_Data)?;
 
     BogusComment := _BogusComment;
 
