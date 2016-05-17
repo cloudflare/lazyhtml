@@ -126,12 +126,14 @@
         };
     }
 
-    action SetAttributeValue {
-        this.attribute.value = this.string;
+    action SetAttributeValue() {
+        this.attribute.value = data.slice(this.startSlice, p);
+        $DiscardSlice
     }
 
-    action AppendAttribute {
-        this.attribute.name = this.string;
+    action AppendAttribute() {
+        this.attribute.name = data.slice(this.startSlice, p);
+        $DiscardSlice
         this.startTagToken.attributes.push(this.attribute);
     }
 

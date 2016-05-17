@@ -11,10 +11,10 @@
 
     BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |
-        any >0 @CreateAttribute @StartString @StartSlice @To_AttributeName
+        any >0 @CreateAttribute @StartSlice @To_AttributeName
     );
 
-    AttributeName := any* %AppendSlice %AppendAttribute :> (
+    AttributeName := any* %AppendAttribute :> (
         TagNameEnd @Reconsume @To_AfterAttributeName |
         '=' @To_BeforeAttributeValue
     );
@@ -24,7 +24,7 @@
             _StartTagEnd |
             '=' @To_BeforeAttributeValue
         ) >1 |
-        any >0 @CreateAttribute @StartString @StartSlice @To_AttributeName
+        any >0 @CreateAttribute @StartSlice @To_AttributeName
     );
 
     BeforeAttributeValue := TagNameSpace* <: (
@@ -32,7 +32,7 @@
         any >0 @Reconsume @To_AttributeValueUnquoted
     );
 
-    _AttrValue = (any+ >StartString >StartSlice %AppendSlice %SetAttributeValue)?;
+    _AttrValue = (any+ >StartSlice %SetAttributeValue)?;
 
     AttributeValueQuoted := _AttrValue :> _EndQuote @To_AfterAttributeValueQuoted;
 
