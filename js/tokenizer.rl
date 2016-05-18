@@ -86,10 +86,6 @@ exports.HtmlTokenizer = class HtmlTokenizer {
                 writable: true,
                 value: null
             },
-            charTokenKind: {
-                writable: true,
-                value: ''
-            },
             startSlice: {
                 writable: true,
                 value: -1

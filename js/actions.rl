@@ -8,19 +8,35 @@
     action IsMatchingQuote { fc === this.quote }
 
     action StartData {
-        this.charTokenKind = 'Data';
+        this.token = {
+            type: 'Character',
+            kind: 'Data',
+            value: ''
+        };
     }
 
     action StartRCData {
-        this.charTokenKind = 'RCData';
+        this.token = {
+            type: 'Character',
+            kind: 'RCData',
+            value: ''
+        };
     }
 
     action StartCData {
-        this.charTokenKind = 'CData';
+        this.token = {
+            type: 'Character',
+            kind: 'CData',
+            value: ''
+        };
     }
 
     action StartSafe {
-        this.charTokenKind = 'Safe';
+        this.token = {
+            type: 'Character',
+            kind: 'Safe',
+            value: ''
+        };
     }
 
     action StartAppropriateEndTag {
@@ -61,13 +77,15 @@
     }
 
     action EmitSlice() {
-        this.token = {
-            type: 'Character',
-            kind: this.charTokenKind,
-            value: data.slice(this.startSlice, this.mark >= 0 ? this.mark : p)
-        };
+        if (!this.token) {
+            this.token = {
+                type: 'Character',
+                kind: '',
+                value: ''
+            }
+        }
+        this.token.value = data.slice(this.startSlice, this.mark >= 0 ? this.mark : p);
         $EmitToken
-        this.charTokenKind = '';
     }
 
     action CreateStartTagToken {
@@ -79,7 +97,7 @@
         $DiscardSlice
     }
 
-    action SetEndTagName {
+    action SetEndTagName() {
         this.token.name = data.slice(this.startSlice, p);
         $DiscardSlice
     }
