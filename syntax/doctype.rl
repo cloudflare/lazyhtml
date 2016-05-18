@@ -2,17 +2,17 @@
     machine html;
 
     DocType := TagNameSpace* <: (
-        '>' >1 @SetForceQuirksFlag @EmitDocType @To_Data |
+        '>' >1 @SetForceQuirksFlag @EmitToken @To_Data |
         any >0 @Reconsume @To_DocTypeName
-    ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitDocType);
+    ) >CreateDocType >eof(CreateDocType) @eof(SetForceQuirksFlag) @eof(EmitToken);
 
     DocTypeName := any* >StartSlice %SetDocTypeName %eof(SetDocTypeName) :> (
         TagNameSpace |
         '>'
-    ) @Reconsume @To_AfterDocTypeName @eof(SetForceQuirksFlag) @eof(EmitDocType);
+    ) @Reconsume @To_AfterDocTypeName @eof(SetForceQuirksFlag) @eof(EmitToken);
 
     AfterDocTypeName := TagNameSpace* (
-        '>' @EmitDocType @To_Data |
+        '>' @EmitToken @To_Data |
         /PUBLIC/i @To_BeforeDocTypePublicIdentifier |
         /SYSTEM/i @To_BeforeDocTypeSystemIdentifier
     ) @err(SetForceQuirksFlag) @err(Reconsume) @err(To_BogusDocType);
@@ -20,34 +20,34 @@
     BeforeDocTypePublicIdentifier := TagNameSpace* <: (
         _StartQuote >1 @To_DocTypePublicIdentifierQuoted |
         any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
+    ) @eof(SetForceQuirksFlag) @eof(EmitToken);
 
     DocTypePublicIdentifierQuoted := any* >StartSlice %SetDocTypePublicIdentifier %eof(SetDocTypePublicIdentifier) :> (
         _EndQuote @To_BetweenDocTypePublicAndSystemIdentifiers |
-        '>' @SetForceQuirksFlag @EmitDocType @To_Data
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
+        '>' @SetForceQuirksFlag @EmitToken @To_Data
+    ) @eof(SetForceQuirksFlag) @eof(EmitToken);
 
     BetweenDocTypePublicAndSystemIdentifiers := TagNameSpace* <: (
         (
             _StartQuote @To_DocTypeSystemIdentifierQuoted |
-            '>' @EmitDocType @To_Data
+            '>' @EmitToken @To_Data
         ) >1 |
         any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
+    ) @eof(SetForceQuirksFlag) @eof(EmitToken);
 
     BeforeDocTypeSystemIdentifier := TagNameSpace* <: (
         _StartQuote >1 @To_DocTypeSystemIdentifierQuoted |
         any >0 @SetForceQuirksFlag @Reconsume @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
+    ) @eof(SetForceQuirksFlag) @eof(EmitToken);
 
     DocTypeSystemIdentifierQuoted := any* >StartSlice %SetDocTypeSystemIdentifier %eof(SetDocTypeSystemIdentifier) :> (
         _EndQuote @To_AfterDocTypeSystemIdentifier |
-        '>' @SetForceQuirksFlag @EmitDocType @To_Data
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
+        '>' @SetForceQuirksFlag @EmitToken @To_Data
+    ) @eof(SetForceQuirksFlag) @eof(EmitToken);
 
     AfterDocTypeSystemIdentifier := TagNameSpace* <: (
         any @Reconsume @To_BogusDocType
-    ) @eof(SetForceQuirksFlag) @eof(EmitDocType);
+    ) @eof(SetForceQuirksFlag) @eof(EmitToken);
 
-    BogusDocType := any* :> '>' @EmitDocType @To_Data @eof(EmitDocType);
+    BogusDocType := any* :> '>' @EmitToken @To_Data @eof(EmitToken);
 }%%

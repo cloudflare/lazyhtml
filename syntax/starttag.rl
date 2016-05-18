@@ -4,7 +4,7 @@
     _StartTagEnd = (
         TagNameSpace @To_BeforeAttributeName |
         '/' @To_SelfClosingTag |
-        '>' @EmitStartTagToken @To_Data
+        '>' @SetLastStartTagName @EmitToken @To_Data
     );
 
     StartTagName := any* >StartSlice %SetStartTagName :> _StartTagEnd;
@@ -44,7 +44,7 @@
     );
 
     SelfClosingTag := (
-        '>' >1 @SetSelfClosingFlag @EmitStartTagToken @To_Data |
+        '>' >1 @SetSelfClosingFlag @SetLastStartTagName @EmitToken @To_Data |
         any >0 @Reconsume @To_BeforeAttributeName
     );
 }%%

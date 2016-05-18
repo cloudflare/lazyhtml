@@ -5,16 +5,16 @@
 
     EndTagNameContents := (
         start: (TagNameSpace | '/')* <: (
-            '>' @EmitEndTagToken @To_Data |
+            '>' @EmitToken @To_Data |
             any+ >0 :> (
                 '/' -> start |
-                '>' @EmitEndTagToken @To_Data |
+                '>' @EmitToken @To_Data |
                 '=' TagNameSpace* <: (
                     _StartQuote >1 any* :> _EndQuote -> start |
-                    '>' >1 @EmitEndTagToken @To_Data |
+                    '>' >1 @EmitToken @To_Data |
                     any+ >0 :> (
                         TagNameSpace -> start |
-                        '>' @EmitEndTagToken @To_Data
+                        '>' @EmitToken @To_Data
                     )
                 )
             )

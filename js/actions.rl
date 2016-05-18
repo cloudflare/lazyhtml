@@ -55,14 +55,18 @@
         this.startSlice = -1;
     }
 
+    action EmitToken() {
+        $DiscardSlice
+        this.emitToken(this.token);
+    }
+
     action EmitSlice() {
-        this.emitToken({
+        this.token = {
             type: 'Character',
             kind: this.charTokenKind,
             value: data.slice(this.startSlice, this.mark >= 0 ? this.mark : p)
-        });
-        $DiscardSlice
-        $UnmarkPosition
+        };
+        $EmitToken
         this.charTokenKind = '';
     }
 
@@ -72,21 +76,16 @@
 
     action SetStartTagName() {
         this.token.name = data.slice(this.startSlice, p);
+        $DiscardSlice
     }
 
     action SetEndTagName {
         this.token.name = data.slice(this.startSlice, p);
+        $DiscardSlice
     }
 
-    action EmitStartTagToken() {
-        $DiscardSlice
+    action SetLastStartTagName {
         this.lastStartTagName = this.token.name;
-        this.emitToken(this.token);
-    }
-
-    action EmitEndTagToken() {
-        $DiscardSlice
-        this.emitToken(this.token);
     }
 
     action SetSelfClosingFlag {
@@ -94,17 +93,12 @@
     }
 
     action EmitComment() {
-        this.emitToken({
+        this.token = {
             type: 'Comment',
             value: data.slice(this.startSlice, this.mark)
-        });
-        $DiscardSlice
+        };
+        $EmitToken
         $UnmarkPosition
-    }
-
-    action EmitDocType() {
-        $DiscardSlice
-        this.emitToken(this.token);
     }
 
     action CreateEndTagToken {
