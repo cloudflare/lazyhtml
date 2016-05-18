@@ -78,15 +78,7 @@ exports.HtmlTokenizer = class HtmlTokenizer {
                 writable: true,
                 value: 0
             },
-            docTypeToken: {
-                writable: true,
-                value: null
-            },
-            startTagToken: {
-                writable: true,
-                value: null
-            },
-            endTagToken: {
+            token: {
                 writable: true,
                 value: null
             },

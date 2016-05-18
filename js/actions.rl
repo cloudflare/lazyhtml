@@ -32,7 +32,7 @@
     action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && this.lastStartTagName.charCodeAt(this.appropriateEndTagOffset++) === (fc | 0x20) }
 
     action SetAppropriateEndTagName {
-        this.endTagToken.name = this.lastStartTagName;
+        this.token.name = this.lastStartTagName;
     }
 
     action StartSlice {
@@ -67,30 +67,30 @@
     }
 
     action CreateStartTagToken {
-        this.startTagToken = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
+        this.token = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
     }
 
     action SetStartTagName() {
-        this.startTagToken.name = data.slice(this.startSlice, p);
+        this.token.name = data.slice(this.startSlice, p);
     }
 
     action SetEndTagName {
-        this.endTagToken.name = data.slice(this.startSlice, p);
+        this.token.name = data.slice(this.startSlice, p);
     }
 
     action EmitStartTagToken() {
         $DiscardSlice
-        this.lastStartTagName = this.startTagToken.name;
-        this.emitToken(this.startTagToken);
+        this.lastStartTagName = this.token.name;
+        this.emitToken(this.token);
     }
 
     action EmitEndTagToken() {
         $DiscardSlice
-        this.emitToken(this.endTagToken);
+        this.emitToken(this.token);
     }
 
     action SetSelfClosingFlag {
-        this.startTagToken.selfClosing = true;
+        this.token.selfClosing = true;
     }
 
     action EmitComment() {
@@ -104,11 +104,11 @@
 
     action EmitDocType() {
         $DiscardSlice
-        this.emitToken(this.docTypeToken);
+        this.emitToken(this.token);
     }
 
     action CreateEndTagToken {
-        this.endTagToken = { type: 'EndTag', name: '' };
+        this.token = { type: 'EndTag', name: '' };
     }
 
     action CreateAttribute {
@@ -126,31 +126,31 @@
     action AppendAttribute() {
         this.attribute.name = data.slice(this.startSlice, p);
         $DiscardSlice
-        this.startTagToken.attributes.push(this.attribute);
+        this.token.attributes.push(this.attribute);
     }
 
     action IsCDataAllowed { this.allowCData }
 
     action CreateDocType {
-        this.docTypeToken = { type: 'DocType', name: null, forceQuirks: false, publicId: null, systemId: null };
+        this.token = { type: 'DocType', name: null, forceQuirks: false, publicId: null, systemId: null };
     }
 
     action SetDocTypeName() {
-        this.docTypeToken.name = data.slice(this.startSlice, p);
+        this.token.name = data.slice(this.startSlice, p);
         $DiscardSlice
     }
 
     action SetForceQuirksFlag {
-        this.docTypeToken.forceQuirks = true;
+        this.token.forceQuirks = true;
     }
 
     action SetDocTypePublicIdentifier() {
-        this.docTypeToken.publicId = data.slice(this.startSlice, p);
+        this.token.publicId = data.slice(this.startSlice, p);
         $DiscardSlice
     }
 
     action SetDocTypeSystemIdentifier() {
-        this.docTypeToken.systemId = data.slice(this.startSlice, p);
+        this.token.systemId = data.slice(this.startSlice, p);
         $DiscardSlice
     }
 }%%
