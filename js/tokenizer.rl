@@ -104,7 +104,7 @@ exports.HtmlTokenizer = class HtmlTokenizer {
             },
             mark: {
                 writable: true,
-                value: 0
+                value: -1
             },
             appropriateEndTagOffset: {
                 writable: true,

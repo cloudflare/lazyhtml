@@ -10,7 +10,7 @@
     ScriptDataLessThanSign := (
         _SpecialEndTag |
         '!--' @To_ScriptDataEscapedDashDash
-    ) @err(MarkPosition) @err(EmitSlice) @err(Reconsume) @err(To_ScriptData);
+    ) @err(EmitSlice) @err(Reconsume) @err(To_ScriptData);
 
     ScriptDataEscaped := _SafeText :> ((
         '-' @To_ScriptDataEscapedDash |
@@ -20,23 +20,23 @@
     ScriptDataEscapedDash := (
         (
             '-' @To_ScriptDataEscapedDashDash |
-            '<' @MarkPosition @EmitSlice @StartSlice @To_ScriptDataEscapedLessThanSign
+            '<' @EmitSlice @StartSlice @To_ScriptDataEscapedLessThanSign
         ) >1 |
-        any >0 @MarkPosition @EmitSlice @Reconsume @To_ScriptDataEscaped
-    ) @eof(MarkPosition) @eof(EmitSlice);
+        any >0 @EmitSlice @Reconsume @To_ScriptDataEscaped
+    ) @eof(EmitSlice);
 
     ScriptDataEscapedDashDash := '-'* <: (
         (
             '<' @To_ScriptDataEscapedLessThanSign |
-            '>' @MarkPosition @EmitSlice @Reconsume @To_ScriptData
+            '>' @EmitSlice @Reconsume @To_ScriptData
         ) >1 |
-        any >0 @MarkPosition @EmitSlice @Reconsume @To_ScriptDataEscaped
-    ) @eof(MarkPosition) @eof(EmitSlice);
+        any >0 @EmitSlice @Reconsume @To_ScriptDataEscaped
+    ) @eof(EmitSlice);
 
     ScriptDataEscapedLessThanSign := (
         _SpecialEndTag |
-        (/script/i TagNameEnd) @MarkPosition @EmitSlice @Reconsume @To_ScriptDataDoubleEscaped
-    ) @err(MarkPosition) @err(EmitSlice) @err(Reconsume) @err(To_ScriptDataEscaped);
+        (/script/i TagNameEnd) @EmitSlice @Reconsume @To_ScriptDataDoubleEscaped
+    ) @err(EmitSlice) @err(Reconsume) @err(To_ScriptDataEscaped);
 
     ScriptDataDoubleEscaped := _SafeText :> ((
         '-' @To_ScriptDataDoubleEscapedDash |
@@ -48,18 +48,18 @@
             '-' @To_ScriptDataDoubleEscapedDashDash |
             '<' @To_ScriptDataDoubleEscapedLessThanSign
         ) >1 |
-        any >0 @MarkPosition @EmitSlice @Reconsume @To_ScriptDataDoubleEscaped
-    ) @eof(MarkPosition) @eof(EmitSlice);
+        any >0 @EmitSlice @Reconsume @To_ScriptDataDoubleEscaped
+    ) @eof(EmitSlice);
 
     ScriptDataDoubleEscapedDashDash := '-'* <: (
         (
             '<' @To_ScriptDataDoubleEscapedLessThanSign |
-            '>' @MarkPosition @EmitSlice @Reconsume @To_ScriptData
+            '>' @EmitSlice @Reconsume @To_ScriptData
         ) >1 |
-        any >0 @MarkPosition @EmitSlice @Reconsume @To_ScriptDataDoubleEscaped
-    ) @eof(MarkPosition) @eof(EmitSlice);
+        any >0 @EmitSlice @Reconsume @To_ScriptDataDoubleEscaped
+    ) @eof(EmitSlice);
 
     ScriptDataDoubleEscapedLessThanSign := (
-        '/' /script/i TagNameEnd @MarkPosition @EmitSlice @Reconsume @To_ScriptDataEscaped
-    ) @err(MarkPosition) @err(EmitSlice) @err(Reconsume) @err(To_ScriptDataDoubleEscaped);
+        '/' /script/i TagNameEnd @EmitSlice @Reconsume @To_ScriptDataEscaped
+    ) @err(EmitSlice) @err(Reconsume) @err(To_ScriptDataDoubleEscaped);
 }%%

@@ -43,6 +43,10 @@
         this.mark = p;
     }
 
+    action UnmarkPosition {
+        this.mark = -1;
+    }
+
     action AdvanceMarkedPosition {
         this.mark++;
     }
@@ -55,9 +59,10 @@
         this.emitToken({
             type: 'Character',
             kind: this.charTokenKind,
-            value: data.slice(this.startSlice, this.mark)
+            value: data.slice(this.startSlice, this.mark >= 0 ? this.mark : p)
         });
         $DiscardSlice
+        $UnmarkPosition
         this.charTokenKind = '';
     }
 
@@ -94,6 +99,7 @@
             value: data.slice(this.startSlice, this.mark)
         });
         $DiscardSlice
+        $UnmarkPosition
     }
 
     action EmitDocType() {
