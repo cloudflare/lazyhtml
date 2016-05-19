@@ -67,13 +67,9 @@
         this.mark++;
     }
 
-    action DiscardSlice {
-        this.startSlice = -1;
-    }
-
     action EmitToken() {
-        $DiscardSlice
         this.emitToken(this.token);
+        this.tokenStart = p;
     }
 
     action EmitSlice() {
@@ -92,14 +88,12 @@
         this.token = { type: 'StartTag', name: '', selfClosing: false, attributes: [] };
     }
 
-    action SetStartTagName() {
+    action SetStartTagName {
         this.token.name = data.slice(this.startSlice, p);
-        $DiscardSlice
     }
 
-    action SetEndTagName() {
+    action SetEndTagName {
         this.token.name = data.slice(this.startSlice, p);
-        $DiscardSlice
     }
 
     action SetLastStartTagName {
@@ -130,14 +124,12 @@
         };
     }
 
-    action SetAttributeValue() {
+    action SetAttributeValue {
         this.attribute.value = data.slice(this.startSlice, p);
-        $DiscardSlice
     }
 
-    action AppendAttribute() {
+    action AppendAttribute {
         this.attribute.name = data.slice(this.startSlice, p);
-        $DiscardSlice
         this.token.attributes.push(this.attribute);
     }
 
@@ -147,22 +139,19 @@
         this.token = { type: 'DocType', name: null, forceQuirks: false, publicId: null, systemId: null };
     }
 
-    action SetDocTypeName() {
+    action SetDocTypeName {
         this.token.name = data.slice(this.startSlice, p);
-        $DiscardSlice
     }
 
     action SetForceQuirksFlag {
         this.token.forceQuirks = true;
     }
 
-    action SetDocTypePublicIdentifier() {
+    action SetDocTypePublicIdentifier {
         this.token.publicId = data.slice(this.startSlice, p);
-        $DiscardSlice
     }
 
-    action SetDocTypeSystemIdentifier() {
+    action SetDocTypeSystemIdentifier {
         this.token.systemId = data.slice(this.startSlice, p);
-        $DiscardSlice
     }
 }%%

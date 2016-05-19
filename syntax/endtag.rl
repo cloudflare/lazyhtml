@@ -1,7 +1,7 @@
 %%{
     machine html;
 
-    EndTagName := any* >StartSlice :> _EndTagEnd >SetEndTagName;
+    EndTagName := any* :> _EndTagEnd >SetEndTagName;
 
     EndTagNameContents := (
         start: (TagNameSpace | '/')* <: (
@@ -23,7 +23,7 @@
 
     EndTagOpen := (
         (
-            alpha @CreateEndTagToken @Reconsume @To_EndTagName |
+            alpha @CreateEndTagToken @StartSlice @To_EndTagName |
             '>' @To_Data
         ) >1 |
         any >0 @Reconsume @To_BogusComment

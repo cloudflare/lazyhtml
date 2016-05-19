@@ -9,11 +9,11 @@
         cdata_end: (
             ']' >1 -> cdata_end_right_bracket |
             any >0 @UnmarkPosition -> start
-        ),
+        ) @eof(UnmarkPosition),
 
         cdata_end_right_bracket: ']'* $AdvanceMarkedPosition <: (
             '>' >1 -> final |
             any >0 @UnmarkPosition -> start
-        )
-    ) >StartCData >StartSlice @EmitSlice @UnmarkPosition @eof(EmitSlice) @eof(UnmarkPosition) @To_Data;
+        ) @eof(UnmarkPosition)
+    ) >StartCData >StartSlice @EmitSlice @UnmarkPosition <>eof(EmitSlice) @To_Data;
 }%%

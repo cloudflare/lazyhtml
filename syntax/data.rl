@@ -9,7 +9,7 @@
         (
             '!' @To_MarkupDeclarationOpen |
             '/' @To_EndTagOpen |
-            alpha @CreateStartTagToken @Reconsume @To_StartTagName |
+            alpha @CreateStartTagToken @StartSlice @To_StartTagName |
             '?' @Reconsume @To_BogusComment
         ) >1 |
         any >0 @EmitSlice @Reconsume @To_Data

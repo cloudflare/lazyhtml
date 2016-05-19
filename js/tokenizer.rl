@@ -74,6 +74,10 @@ exports.HtmlTokenizer = class HtmlTokenizer {
                 enumerable: true,
                 value: options.onTrace
             },
+            tokenStart: {
+                writable: true,
+                value: 0
+            },
             quote: {
                 writable: true,
                 value: 0
@@ -153,12 +157,11 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         if (this.cs === error) {
             throw new Error('Tokenization error at ' + p);
         }
-        var bufferStart = this.startSlice;
-        if (bufferStart >= 0) {
-            this.buffer = data.slice(bufferStart);
-            this.mark -= bufferStart;
-            this.startSlice = 0;
-        }
+        var bufferStart = this.tokenStart;
+        this.buffer = data.slice(bufferStart);
+        this.tokenStart = 0;
+        this.startSlice -= bufferStart;
+        this.mark -= bufferStart;
     }
 };
 
