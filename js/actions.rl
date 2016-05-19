@@ -67,21 +67,28 @@
         this.mark++;
     }
 
-    action EmitToken() {
-        this.emitToken(this.token);
-        this.tokenStart = p + 1;
+    action EmitToken {
+        this.emitToken(this.token, data.slice(this.tokenStart, this.tokenStart = p + 1));
+        this.token = null;
+    }
+
+    action EndText {
+        this.token.value = data.slice(this.startSlice, this.mark >= 0 ? this.mark : p);
+    }
+
+    action AsRawSlice {
+        this.token = {
+            type: 'Character',
+            kind: '',
+            value: ''
+        };
     }
 
     action EmitSlice() {
-        if (!this.token) {
-            this.token = {
-                type: 'Character',
-                kind: '',
-                value: ''
-            }
-        }
-        this.token.value = data.slice(this.startSlice, this.mark >= 0 ? this.mark : p);
+        $EndText
+        p--;
         $EmitToken
+        p++;
     }
 
     action CreateStartTagToken {

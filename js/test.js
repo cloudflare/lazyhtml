@@ -55,15 +55,16 @@ const stateMappings = {
 };
 
 function tokenize(input, { lastStartTag, initialState }) {
-    const tokens = [];
     if (initialState !== undefined && !(initialState in stateMappings)) {
         throw new Error(`Requested unexpected state ${initialState}`);
     }
+    const tokens = [];
+    let raw = '';
     const tokenizer = new HtmlTokenizer({
         lastStartTagName: lastStartTag,
         initialState: initialState && stateMappings[initialState],
-        onToken(token) {
-            // console.log(token);
+        onToken(token, rawSlice) {
+            raw += rawSlice;
             decodeToken(token);
             switch (token.type) {
                 case 'Character': {
@@ -112,7 +113,8 @@ function tokenize(input, { lastStartTag, initialState }) {
         tokenizer.feed(char, false);
     }
     tokenizer.feed('', true);
-    return tokens;
+    raw += tokenizer.buffer;
+    return { tokens, raw };
 }
 
 function testFile(path) {
@@ -134,11 +136,13 @@ function testFile(path) {
                 }
                 output = squashCharTokens(output);
                 initialStates.forEach(initialState => {
+                    const actual = tokenize(input, { lastStartTag, initialState });
                     t.deepEqual(
-                        squashCharTokens(tokenize(input, { lastStartTag, initialState })),
+                        squashCharTokens(actual.tokens),
                         output,
-                        initialState
+                        `${initialState} tokens`
                     );
+                    t.equal(actual.raw, input, `${initialState} raw`)
                 });
                 t.end();
             });

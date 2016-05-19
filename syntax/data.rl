@@ -12,8 +12,8 @@
             alpha @CreateStartTagToken @StartSlice @To_StartTagName |
             '?' @Reconsume @To_BogusComment
         ) >1 |
-        any >0 @EmitSlice @Reconsume @To_Data
-    ) @eof(EmitSlice);
+        any >0 @AsRawSlice @EmitSlice @Reconsume @To_Data
+    ) @eof(AsRawSlice) @eof(EmitSlice);
 
     _BogusComment = any* >StartSlice %MarkPosition %EmitComment :> ('>' @To_Data)?;
 
