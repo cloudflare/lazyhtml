@@ -69,7 +69,7 @@
 
     action EmitToken() {
         this.emitToken(this.token);
-        this.tokenStart = p;
+        this.tokenStart = p + 1;
     }
 
     action EmitSlice() {
