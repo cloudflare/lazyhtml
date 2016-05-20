@@ -60,18 +60,31 @@ function tokenize(input, { lastStartTag, initialState }) {
     }
     const tokens = [];
     let raw = '';
+    let charToken = null;
     const tokenizer = new HtmlTokenizer({
         lastStartTagName: lastStartTag,
         initialState: initialState && stateMappings[initialState],
         onToken(token, rawSlice) {
             raw += rawSlice;
+
+            if (charToken && token.type === 'Character' && token.kind === charToken.kind) {
+                charToken.value += token.value;
+                return;
+            }
+
+            if (charToken) {
+                decodeToken(charToken);
+                tokens.push(['Character', charToken.value]);
+                charToken = null;
+            }
+
+            if (token.type === 'Character') {
+                charToken = token;
+                return;
+            }
+
             decodeToken(token);
             switch (token.type) {
-                case 'Character': {
-                    tokens.push(['Character', token.value]);
-                    break;
-                }
-
                 case 'StartTag': {
                     tokens.push([
                         'StartTag',
@@ -113,6 +126,10 @@ function tokenize(input, { lastStartTag, initialState }) {
         tokenizer.feed(char, false);
     }
     tokenizer.feed('', true);
+    if (charToken) {
+        decodeToken(charToken);
+        tokens.push(['Character', charToken.value]);
+    }
     raw += tokenizer.buffer;
     return { tokens, raw };
 }
