@@ -12,7 +12,7 @@ const decodeToken = require('./decode-token');
 
 if (args.help || !args._.length) {
     console.info(
-    `Usage: ${chalk.yellow('node trace [--state=Data] [--cdata] [--tag=xmp] [--decode] [--chunk=1024]')} ${chalk.green('"<html>"')}\n` +
+    `Usage: ${chalk.yellow('node trace [--state=Data] [--cdata] [--tag=xmp] [--decode] [--empty] [--chunk=1024]')} ${chalk.green('"<html>"')}\n` +
     `Unicode sequences in form of "\\u12AB" are supported and converted into corresponding characters.`
     );
     process.exit(1);
@@ -66,7 +66,9 @@ const { slice } = String.prototype;
 
 String.prototype.slice = function (from, to) {
     const result = slice.apply(this, arguments);
-    console.log(`Sliced input at ${chalk.green(from)}..${chalk.green(to)}: ${chalk.yellow(toStr(result))}`);
+    if (result || args.empty) {
+        console.log(`Sliced input at ${chalk.green(from)}..${chalk.green(to)}: ${chalk.yellow(toStr(result))}`);
+    }
     return result;
 };
 

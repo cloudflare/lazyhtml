@@ -157,6 +157,18 @@ exports.HtmlTokenizer = class HtmlTokenizer {
         if (this.cs === error) {
             throw new Error('Tokenization error at ' + p);
         }
+        if (this.token && this.token.type === 'Character') {
+            var middle = this.mark >= 0 ? this.mark : p;
+            this.token.value = data.slice(this.startSlice, middle);
+            this.emitToken(this.token, data.slice(this.tokenStart, middle));
+            this.tokenStart = middle;
+            this.startSlice = middle;
+            this.token = {
+                type: 'Character',
+                kind: this.token.kind,
+                value: ''
+            };
+        }
         var bufferStart = this.tokenStart;
         this.buffer = data.slice(bufferStart);
         this.tokenStart = 0;
