@@ -32,8 +32,7 @@
     action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && *(state->appropriate_end_tag_offset++) == (fc | 0x20) }
 
     action SetAppropriateEndTagName {
-        assert(state->token.type == token_end_tag);
-        state->token.end_tag.name = state->last_start_tag_name;
+        get_token(state, end_tag)->name = state->last_start_tag_name;
     }
 
     action StartSlice {
@@ -62,8 +61,7 @@
     }
 
     action EndText {
-        assert(state->token.type == token_character);
-        set_string(&state->token.character.value, state->start_slice, state->mark != NULL ? state->mark : p);
+        set_string(&get_token(state, character)->value, state->start_slice, state->mark != NULL ? state->mark : p);
     }
 
     action AsRawSlice {
@@ -78,50 +76,44 @@
     }
 
     action CreateStartTagToken {
-        state->token.type = token_start_tag;
-        reset_string(&state->token.start_tag.name);
-        state->token.start_tag.self_closing = false;
-        state->token.start_tag.attributes.count = 0;
+        TokenStartTag *start_tag = create_token(state, start_tag);
+        reset_string(&start_tag->name);
+        start_tag->self_closing = false;
+        start_tag->attributes.count = 0;
     }
 
     action SetStartTagName {
-        assert(state->token.type == token_start_tag);
-        set_string(&state->token.start_tag.name, state->start_slice, p);
+        set_string(&get_token(state, start_tag)->name, state->start_slice, p);
     }
 
     action SetEndTagName {
-        assert(state->token.type == token_end_tag);
-        set_string(&state->token.end_tag.name, state->start_slice, p);
+        set_string(&get_token(state, end_tag)->name, state->start_slice, p);
     }
 
     action SetLastStartTagName {
-        assert(state->token.type == token_start_tag);
-        state->last_start_tag_name = state->token.start_tag.name;
+        state->last_start_tag_name = get_token(state, start_tag)->name;
     }
 
     action SetSelfClosingFlag {
-        assert(state->token.type == token_start_tag);
-        state->token.start_tag.self_closing = true;
+        get_token(state, start_tag)->self_closing = true;
     }
 
     action EmitComment() {
-        state->token.type = token_comment;
-        set_string(&state->token.comment.value, state->start_slice, state->mark);
+        set_string(&create_token(state, comment)->value, state->start_slice, state->mark);
         $EmitToken
         $UnmarkPosition
     }
 
     action CreateEndTagToken {
-        state->token.type = token_end_tag;
-        reset_string(&state->token.end_tag.name);
+        reset_string(&create_token(state, end_tag)->name);
     }
 
     action CreateAttribute {
-        assert(state->token.type == token_start_tag);
-        assert(state->token.start_tag.attributes.count < MAX_ATTR_COUNT);
-        state->attribute = &state->token.start_tag.attributes.items[state->token.start_tag.attributes.count];
-        reset_string(&state->attribute->name);
-        reset_string(&state->attribute->value);
+        TokenAttributes *attributes = &get_token(state, start_tag)->attributes;
+        assert(attributes->count < MAX_ATTR_COUNT);
+        Attribute *attr = state->attribute = &attributes->items[attributes->count];
+        reset_string(&attr->name);
+        reset_string(&attr->value);
     }
 
     action SetAttributeValue {
@@ -130,41 +122,36 @@
     }
 
     action AppendAttribute {
-        assert(state->token.type == token_start_tag);
-        assert(&state->token.start_tag.attributes.items[state->token.start_tag.attributes.count] == state->attribute);
-        set_string(&state->attribute->name, state->start_slice, p);
-        state->token.start_tag.attributes.count++;
+        TokenAttributes *attributes = &get_token(state, start_tag)->attributes;
+        Attribute *attr = state->attribute;
+        assert(&attributes->items[attributes->count] == attr);
+        set_string(&attr->name, state->start_slice, p);
+        attributes->count++;
     }
 
     action IsCDataAllowed { state->allow_cdata }
 
     action CreateDocType {
-        state->token.type = token_doc_type;
-        state->token.doc_type.name.has_value = false;
-        state->token.doc_type.public_id.has_value = false;
-        state->token.doc_type.system_id.has_value = false;
-        state->token.doc_type.force_quirks = false;
+        TokenDocType *doc_type = create_token(state, doc_type);
+        reset_opt_string(&doc_type->name);
+        reset_opt_string(&doc_type->public_id);
+        reset_opt_string(&doc_type->system_id);
+        doc_type->force_quirks = false;
     }
 
     action SetDocTypeName {
-        assert(state->token.type == token_doc_type);
-        state->token.doc_type.name.has_value = true;
-        set_string(&state->token.doc_type.name.value, state->start_slice, p);
+        set_opt_string(&get_token(state, doc_type)->name, state->start_slice, p);
     }
 
     action SetForceQuirksFlag {
-        state->token.doc_type.force_quirks = true;
+        get_token(state, doc_type)->force_quirks = true;
     }
 
     action SetDocTypePublicIdentifier {
-        assert(state->token.type == token_doc_type);
-        state->token.doc_type.public_id.has_value = true;
-        set_string(&state->token.doc_type.public_id.value, state->start_slice, p);
+        set_opt_string(&get_token(state, doc_type)->public_id, state->start_slice, p);
     }
 
     action SetDocTypeSystemIdentifier {
-        assert(state->token.type == token_doc_type);
-        state->token.doc_type.system_id.has_value = true;
-        set_string(&state->token.doc_type.system_id.value, state->start_slice, p);
+        set_opt_string(&get_token(state, doc_type)->system_id, state->start_slice, p);
     }
 }%%

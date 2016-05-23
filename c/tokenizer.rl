@@ -91,6 +91,10 @@ typedef struct {
     TokenizerString raw;
 } Token;
 
+#define get_token(state, wanted_type) (assert(state->token.type == token_##wanted_type), &state->token.wanted_type)
+
+#define create_token(state, wanted_type) (state->token.type = token_##wanted_type, &state->token.wanted_type)
+
 typedef void (*TokenHandler)(const Token *token);
 
 typedef struct TokenizerState {
@@ -125,10 +129,19 @@ static void reset_string(TokenizerString *dest) {
     dest->length = 0;
 }
 
+static void set_opt_string(TokenizerOptionalString *dest, const char *start, const char *end) {
+    dest->has_value = true;
+    set_string(&dest->value, start, end);
+}
+
+static void reset_opt_string(TokenizerOptionalString *dest) {
+    dest->has_value = false;
+}
+
 static void token_init_character(TokenizerState *state, TokenCharacterKind kind) {
-    state->token.type = token_character;
-    state->token.character.kind = kind;
-    reset_string(&state->token.character.value);
+    TokenCharacter *character = create_token(state, character);
+    character->kind = kind;
+    reset_string(&character->value);
 }
 
 void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
