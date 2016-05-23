@@ -44,7 +44,7 @@
     }
 
     action UnmarkPosition {
-        state->mark = NULL;
+        state->mark = 0;
     }
 
     action AdvanceMarkedPosition {
@@ -61,7 +61,7 @@
     }
 
     action EndText {
-        set_string(&get_token(state, character)->value, state->start_slice, state->mark != NULL ? state->mark : p);
+        set_string(&get_token(state, character)->value, state->start_slice, state->mark != 0 ? state->mark : p);
     }
 
     action AsRawSlice {
@@ -110,7 +110,7 @@
 
     action CreateAttribute {
         TokenAttributes *attributes = &get_token(state, start_tag)->attributes;
-        assert(attributes->count < MAX_ATTR_COUNT);
+        assert(attributes->count < sizeof(attributes->items) / sizeof(attributes->items[0]));
         Attribute *attr = state->attribute = &attributes->items[attributes->count];
         reset_string(&attr->name);
         reset_string(&attr->value);

@@ -1,13 +1,16 @@
 RAGEL = ragel
-RAGELFLAGS += --reduce-frontend -G2
-CFLAGS += -g $(shell pkg-config --cflags json-c) -Wno-parentheses-equality
-LDFLAGS += $(shell pkg-config --libs json-c)
+RAGELFLAGS = --reduce-frontend -G2
+CFLAGS = -g
+LDFLAGS =
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 	cd .. && $(RAGEL) $(RAGELFLAGS) -s c/$< | grep -v "^compiling"
 
-tokenizer: tokenizer.c
-	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
+tokenizer.o: tokenizer.c tokenizer.h
+	$(CC) $(CFLAGS) -c -Wno-parentheses-equality $< -o $@
+
+trace: trace.c tokenizer.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $+ -o $@
 
 .PHONY: clean
 clean:
