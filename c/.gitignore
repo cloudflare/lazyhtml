@@ -2,4 +2,4 @@
 /tokenizer
 /*.dSYM
 /*.o
-/*.
+/trace
