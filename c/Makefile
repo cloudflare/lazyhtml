@@ -1,6 +1,6 @@
 RAGEL = ragel
 RAGELFLAGS += --reduce-frontend -G2
-CFLAGS += -g $(shell pkg-config --cflags json-c)
+CFLAGS += -g $(shell pkg-config --cflags json-c) -Wno-parentheses-equality
 LDFLAGS += $(shell pkg-config --libs json-c)
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
