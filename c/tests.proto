@@ -9,7 +9,7 @@ message Suite {
         }
 
         message OptionalString {
-            optional string value = 2;
+            optional bytes value = 2;
         }
 
         message DOCTYPE {
@@ -35,11 +35,11 @@ message Suite {
         }
 
         message Comment {
-            required bytes data = 1;
+            required bytes value = 1;
         }
 
         message Character {
-            required bytes data = 1;
+            required bytes value = 1;
         }
 
         message Token {

@@ -54,7 +54,6 @@ void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     state->emit_token = options->on_token;
     state->last_start_tag_name = options->last_start_tag_name;
     state->token.type = token_none;
-    reset_string(&state->token.raw);
     state->token.extra = options->extra;
     state->quote = 0;
     state->attribute = 0;
@@ -70,6 +69,8 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
     const char *p = start;
     const char *const pe = chunk != 0 ? start + chunk->length : 0;
     const char *const eof = pe;
+
+    state->token.raw = *chunk;
 
     %%write exec;
 
