@@ -9,7 +9,6 @@ message Suite {
         }
 
         message OptionalString {
-            required bool has_value = 1;
             optional string value = 2;
         }
 
@@ -21,26 +20,26 @@ message Suite {
         }
 
         message Attribute {
-            required string name = 1;
-            required string value = 2;
+            required bytes name = 1;
+            required bytes value = 2;
         }
 
         message StartTag {
-            required string name = 1;
+            required bytes name = 1;
             repeated Attribute attributes = 2;
             required bool self_closing = 3;
         }
 
         message EndTag {
-            required string name = 1;
+            required bytes name = 1;
         }
 
         message Comment {
-            required string data = 1;
+            required bytes data = 1;
         }
 
         message Character {
-            required string data = 1;
+            required bytes data = 1;
         }
 
         message Token {
@@ -53,11 +52,11 @@ message Suite {
             }
         }
 
-        required string description = 1;
-        required string input = 2;
+        required bytes description = 1;
+        required bytes input = 2;
         repeated Token output = 3;
         repeated State initial_states = 4;
-        required string last_start_tag = 5;
+        required bytes last_start_tag = 5;
     }
 
     repeated Test tests = 1;

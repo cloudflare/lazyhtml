@@ -2,7 +2,7 @@
 
 const test = require('tape-catch');
 const { readFileSync } = require('fs');
-const { Suite } = require('protocol-buffers')(readFileSync(`${__dirname}/../tokenizer-tests.proto`));
+const { Suite } = require('protocol-buffers')(readFileSync(`${__dirname}/tests.proto`));
 const { HtmlTokenizer, states } = require('./tokenizer');
 const decodeToken = require('./decode-token');
 
@@ -24,45 +24,19 @@ function pairsToMap(pairs) {
 }
 
 function fromOpt(maybe) {
-    return maybe.has_value ? maybe.value : null;
+    return maybe.hasValue ? maybe.value : null;
 }
 
 function fromTestToken(token) {
     const type = Object.keys(token)[0];
     token = token[type];
-    switch (type) {
-        case 'start_tag': return {
-            type: 'StartTag',
-            name: token.name,
-            attributes: pairsToMap(token.attributes),
-            selfClosing: token.self_closing
-        };
-
-        case 'end_tag': return {
-            type: 'EndTag',
-            name: token.name
-        };
-
-        case 'comment': return {
-            type: 'Comment',
-            value: token.data
-        };
-
-        case 'character': return {
-            type: 'Character',
-            value: token.data
-        };
-
-        case 'doc_type': return {
-            type: 'DocType',
-            name: fromOpt(token.name),
-            publicId: fromOpt(token.public_id),
-            systemId: fromOpt(token.system_id),
-            forceQuirks: token.force_quirks
-        };
-
-        default: throw new TypeError(`Unknown token type: ${type}`);
+    Object.assign(token, { type });
+    if (type === 'DocType') {
+        token.name = fromOpt(token.name);
+        token.publicId = fromOpt(token.publicId);
+        token.systemId = fromOpt(token.systemId);
     }
+    return token;
 }
 
 function tokenize(input, { lastStartTag, initialState }) {
@@ -126,8 +100,8 @@ tests.forEach(({
     description,
     input,
     output,
-    initial_states: initialStates,
-    last_start_tag: lastStartTag
+    initialStates,
+    lastStartTag
 }) => {
     if (description.includes('entity')) return;
     test(description, t => {

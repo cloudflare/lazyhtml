@@ -1,69 +1,45 @@
 'use strict';
 
 const { readdirSync, readFileSync, writeFileSync } = require('fs');
-const { Suite } = require('protocol-buffers')(readFileSync(`${__dirname}/tokenizer-tests.proto`));
+const { Suite } = require('protocol-buffers')(readFileSync(`${__dirname}/js/tests.proto`));
 
 function unescape(str) {
     return str.replace(/\\u([0-9a-f]{4})/i, (_, code) => String.fromCharCode(parseInt(code, 16)));
 }
 
-function convertStartTag([ , name, attributes, self_closing = false ]) {
-    return {
-        name,
-        attributes: Object.keys(attributes).map(name => ({ name, value: attributes[name] })),
-        self_closing
-    }
-}
-
-function convertEndTag([, name]) {
-    return { name };
-}
-
-function convertComment([, data]) {
-    return { data };
-}
-
-function convertCharacter([, data]) {
-    return { data };
-}
-
 function convertOptString(value) {
-    return value === null ? { has_value: false } : { has_value: true, value };
+    return { hasValue: value !== null, value };
 }
 
-function convertDocType([, name, publicId, systemId, isCorrect]) {
-    return {
+const convert = {
+    StartTag: (name, attributes, selfClosing = false) => ({
+        name,
+        attributes,
+        selfClosing
+    }),
+
+    EndTag: (name) => ({ name }),
+
+    Comment: (value) => ({ value }),
+
+    Character: (value) => ({ value }),
+
+    DocType: (name, publicId, systemId, isCorrect) => ({
         name: convertOptString(name),
-        public_id: convertOptString(publicId),
-        system_id: convertOptString(systemId),
-        force_quirks: !isCorrect
-    };
-}
+        publicId: convertOptString(publicId),
+        systemId: convertOptString(systemId),
+        forceQuirks: !isCorrect
+    })
+};
 
 function convertToken(token) {
-    switch (token[0]) {
-        case 'StartTag': return {
-            start_tag: convertStartTag(token)
-        };
-
-        case 'EndTag': return {
-            end_tag: convertEndTag(token)
-        };
-
-        case 'Character': return {
-            character: convertCharacter(token)
-        };
-
-        case 'Comment': return {
-            comment: convertComment(token)
-        };
-
-        case 'DOCTYPE': return {
-            doc_type: convertDocType(token)
-        };
-
-        default: throw new TypeError(`Unknown token type: ${token[0]}`);
+    let [type, ...extra] = token;
+    if (type === 'DOCTYPE') {
+        type = 'DocType';
     }
+    return {
+        [type]: convert[type](...extra)
+    };
 }
 
 function convertState(state) {
@@ -106,8 +82,8 @@ function convertTest({
             }, [])
             .map(convertToken)
         ),
-        initial_states: initialStates.map(convertState),
-        last_start_tag: lastStartTag
+        initialStates: initialStates.map(convertState),
+        lastStartTag
     };
 }
 
