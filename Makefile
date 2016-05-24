@@ -13,6 +13,9 @@ RL_FILES := $(wildcard syntax/*.rl)
 	dot -Tpng $< -o $@
 	open $@
 
+tests.dat: tokenizer-tests.proto .git/modules/html5lib-tests/HEAD
+    node convert-tests.js
+
 .PHONY: clean
 clean:
 	rm -rf *.dot *.png

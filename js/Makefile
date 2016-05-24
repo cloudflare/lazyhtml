@@ -10,7 +10,7 @@ tokenizer.js decoder.js:
 	cd .. && $(RAGEL) $(RAGELFLAGS) -s js/$< | grep -v "^compiling"
 
 .PHONY: test
-test: test.js tokenizer.js decoder.js
+test: test.js tokenizer.js decoder.js ../tests.dat
 	npm test
 
 .PHONY: bench
