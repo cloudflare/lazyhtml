@@ -3,3 +3,5 @@
 /*.dSYM
 /*.o
 /trace
+/test
+/tests.pb-c.*

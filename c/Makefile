@@ -12,6 +12,14 @@ tokenizer.o: tokenizer.c tokenizer.h
 trace: trace.c tokenizer.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $+ -o $@
 
+tests.pb-c.c: tests.proto
+	protoc-c --c_out=$(@D) --proto_path=$(<D) $<
+
+tests.pb-c.h: tests.pb-c.c
+
+test: test.c tests.pb-c.c tokenizer.o
+	$(CC) $(CFLAGS) $(shell pkg-config --cflags 'libprotobuf-c >= 1.0.0') $(LDFLAGS) $(shell pkg-config --libs 'libprotobuf-c >= 1.0.0') $+ -o $@
+
 .PHONY: clean
 clean:
 	rm -rf *.dot *.png tokenizer.c tokenizer

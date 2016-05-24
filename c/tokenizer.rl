@@ -69,7 +69,7 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
     const char *const start = chunk != 0 ? chunk->data : 0;
     const char *p = start;
     const char *const pe = chunk != 0 ? start + chunk->length : 0;
-    const char *const eof = 0;
+    const char *const eof = pe;
 
     %%write exec;
 
