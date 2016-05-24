@@ -17,6 +17,7 @@ const int html_state_Data = en_Data;
 const int html_state_RCData = en_RCData;
 const int html_state_RawText = en_RawText;
 const int html_state_PlainText = en_PlainText;
+const int html_state_ScriptData = en_ScriptData;
 
 #define get_token(state, wanted_type) (assert(state->token.type == token_##wanted_type), &state->token.wanted_type)
 
@@ -54,6 +55,7 @@ void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     state->last_start_tag_name = options->last_start_tag_name;
     state->token.type = token_none;
     reset_string(&state->token.raw);
+    state->token.extra = options->extra;
     state->quote = 0;
     state->attribute = 0;
     state->start_slice = 0;

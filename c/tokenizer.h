@@ -5,6 +5,7 @@ extern const int html_state_Data;
 extern const int html_state_RCData;
 extern const int html_state_RawText;
 extern const int html_state_PlainText;
+extern const int html_state_ScriptData;
 
 typedef struct {
     const char *data;
@@ -79,6 +80,7 @@ typedef struct {
         TokenDocType doc_type;
     };
     TokenizerString raw;
+    void *extra;
 } Token;
 
 typedef void (*TokenHandler)(const Token *token);
@@ -103,6 +105,7 @@ typedef struct TokenizerOpts {
     TokenizerString last_start_tag_name;
     int initial_state;
     TokenizerString buffer;
+    void *extra;
 } TokenizerOpts;
 
 void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options);
