@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "tests.pb-c.h"
 #include "tokenizer.h"
 
@@ -91,7 +92,20 @@ static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
 
                 case PROTOBUF_C_TYPE_BYTES: {
                     const ProtobufCBinaryData *rec = value;
-                    fprintf(file, "'%.*s'", (int) rec->len, rec->data);
+                    fprintf(file, "'");
+                    const size_t len = rec->len;
+                    const char *data = (const char *) rec->data;
+                    for (int i = 0; i < len; i++) {
+                        const char c = data[i];
+                        if (iscntrl(c)) {
+                            fprintf(file, "\\x%02X", c);
+                        } else if (c == '\'') {
+                            fprintf(file, "\\\'");
+                        } else {
+                            fprintf(file, "%c", c);
+                        }
+                    }
+                    fprintf(file, "'");
                     value = rec + 1;
                     break;
                 }
