@@ -12,7 +12,7 @@ message Suite {
             optional bytes value = 2;
         }
 
-        message DOCTYPE {
+        message DocType {
             required OptionalString name = 1;
             required OptionalString public_id = 2;
             required OptionalString system_id = 3;
@@ -44,7 +44,7 @@ message Suite {
 
         message Token {
             oneof token {
-                DOCTYPE doc_type = 1;
+                DocType doc_type = 1;
                 StartTag start_tag = 2;
                 EndTag end_tag = 3;
                 Comment comment = 4;
