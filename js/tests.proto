@@ -8,15 +8,10 @@ message Suite {
             ScriptData = 5;
         }
 
-        message OptionalString {
-            required bool hasValue = 1;
-            optional string value = 2;
-        }
-
         message DOCTYPE {
-            required OptionalString name = 1;
-            required OptionalString publicId = 2;
-            required OptionalString systemId = 3;
+            repeated string name = 1;
+            repeated string publicId = 2;
+            repeated string systemId = 3;
             required bool forceQuirks = 4;
         }
 

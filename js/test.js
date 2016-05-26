@@ -24,7 +24,7 @@ function pairsToMap(pairs) {
 }
 
 function fromOpt(maybe) {
-    return maybe.hasValue ? maybe.value : null;
+    return maybe.length === 1 ? maybe[0] : null;
 }
 
 function fromTestToken(token) {

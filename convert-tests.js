@@ -8,7 +8,7 @@ function unescape(str) {
 }
 
 function convertOptString(value) {
-    return { hasValue: value !== null, value };
+    return value != null ? [value] : [];
 }
 
 const convert = {

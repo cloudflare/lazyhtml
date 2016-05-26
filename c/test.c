@@ -37,18 +37,17 @@ static ProtobufCBinaryData to_test_string(const TokenizerString src) {
     return dest;
 }
 
-static Suite__Test__OptionalString to_opt_test_string(const TokenizerOptionalString src) {
-    Suite__Test__OptionalString dest = SUITE__TEST__OPTIONAL_STRING__INIT;
-    if ((dest.has_value = src.has_value)) {
-        dest.value = to_test_string(src.value);
+static void to_opt_test_string(const TokenizerOptionalString src, protobuf_c_boolean *has_value, ProtobufCBinaryData *value) {
+    if ((*has_value = src.has_value)) {
+        *value = to_test_string(src.value);
     }
-    return dest;
 }
 
 static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
     const ProtobufCMessageDescriptor *desc = msg->descriptor;
     fprintf(file, "%s { ", desc->short_name);
     const unsigned int n_fields = desc->n_fields;
+    const unsigned int n_distinct_fields = desc->n_field_ranges;
     const ProtobufCFieldDescriptor* fields = desc->fields;
     const char *mem = (const char *) msg;
     for (int i = 0; i < n_fields; i++) {
@@ -64,7 +63,7 @@ static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
             for (; i < n_fields && fields[i].quantifier_offset == field->quantifier_offset; i++);
             i--;
         }
-        if (n_fields > 1) {
+        if (n_distinct_fields > 1) {
             fprintf(file, "%s = ", field->name);
         }
         if (field->label == PROTOBUF_C_LABEL_OPTIONAL && !*((bool *) (mem + field->quantifier_offset))) {
@@ -144,8 +143,6 @@ static bool tokens_match(const Token *src, const Suite__Test__Token *expected) {
         actual.token_case = SUITE__TEST__TOKEN__TOKEN_##CAP_TYPE;\
         actual.NAME = &NAME;
 
-    Suite__Test__OptionalString name, public_id, system_id;
-
     const unsigned int n_attributes = src->type == token_start_tag ? src->start_tag.attributes.count : 0;
     Suite__Test__Attribute attributes[n_attributes];
     Suite__Test__Attribute *attribute_pointers[n_attributes];
@@ -159,12 +156,9 @@ static bool tokens_match(const Token *src, const Suite__Test__Token *expected) {
             break;
 
         case_token(DocType, doc_type, DOC_TYPE)
-            name = to_opt_test_string(src->doc_type.name);
-            public_id = to_opt_test_string(src->doc_type.public_id);
-            system_id = to_opt_test_string(src->doc_type.system_id);
-            doc_type.name = &name;
-            doc_type.public_id = &public_id;
-            doc_type.system_id = &system_id;
+            to_opt_test_string(src->doc_type.name, &doc_type.has_name, &doc_type.name);
+            to_opt_test_string(src->doc_type.public_id, &doc_type.has_public_id, &doc_type.public_id);
+            to_opt_test_string(src->doc_type.system_id, &doc_type.has_system_id, &doc_type.system_id);
             doc_type.force_quirks = src->doc_type.force_quirks;
             break;
 
