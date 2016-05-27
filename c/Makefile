@@ -17,8 +17,10 @@ tests.pb-c.c: tests.proto
 
 tests.pb-c.h: tests.pb-c.c
 
+.PHONY: test
 test: test.c tests.pb-c.c tokenizer.o
 	$(CC) $(CFLAGS) $(shell pkg-config --cflags 'libprotobuf-c >= 1.0.0') $(LDFLAGS) $(shell pkg-config --libs 'libprotobuf-c >= 1.0.0') $+ -o $@
+	./$@ | ../js/node_modules/.bin/tap-summary
 
 .PHONY: clean
 clean:

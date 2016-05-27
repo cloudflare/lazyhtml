@@ -43,6 +43,23 @@ static void to_opt_test_string(const TokenizerOptionalString src, protobuf_c_boo
     }
 }
 
+static void fprint_escaped_str(FILE *file, const ProtobufCBinaryData str) {
+    const size_t len = (size_t) str.len;
+    const char *const data = (const char *) str.data;
+    fprintf(file, "'");
+    for (int i = 0; i < len; i++) {
+        const char c = data[i];
+        if (iscntrl(c)) {
+            fprintf(file, "\\x%02X", c);
+        } else if (c == '\'') {
+            fprintf(file, "\\\'");
+        } else {
+            fprintf(file, "%c", c);
+        }
+    }
+    fprintf(file, "'");
+}
+
 static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
     const ProtobufCMessageDescriptor *desc = msg->descriptor;
     fprintf(file, "%s { ", desc->short_name);
@@ -55,6 +72,9 @@ static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
             fprintf(file, ", ");
         }
         const ProtobufCFieldDescriptor* field = &fields[i];
+        if (n_distinct_fields > 1) {
+            fprintf(file, "%s = ", field->name);
+        }
         if (field->flags & PROTOBUF_C_FIELD_FLAG_ONEOF) {
             unsigned int quantifier = *((unsigned int *) (mem + field->quantifier_offset));
             i += quantifier - 1;
@@ -62,11 +82,7 @@ static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
             field = &fields[i];
             for (; i < n_fields && fields[i].quantifier_offset == field->quantifier_offset; i++);
             i--;
-        }
-        if (n_distinct_fields > 1) {
-            fprintf(file, "%s = ", field->name);
-        }
-        if (field->label == PROTOBUF_C_LABEL_OPTIONAL && !*((bool *) (mem + field->quantifier_offset))) {
+        } else if (field->label == PROTOBUF_C_LABEL_OPTIONAL && !*((bool *) (mem + field->quantifier_offset))) {
             fprintf(file, "(none)");
             continue;
         }
@@ -91,20 +107,7 @@ static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
 
                 case PROTOBUF_C_TYPE_BYTES: {
                     const ProtobufCBinaryData *rec = value;
-                    fprintf(file, "'");
-                    const size_t len = rec->len;
-                    const char *data = (const char *) rec->data;
-                    for (int i = 0; i < len; i++) {
-                        const char c = data[i];
-                        if (iscntrl(c)) {
-                            fprintf(file, "\\x%02X", c);
-                        } else if (c == '\'') {
-                            fprintf(file, "\\\'");
-                        } else {
-                            fprintf(file, "%c", c);
-                        }
-                    }
-                    fprintf(file, "'");
+                    fprint_escaped_str(file, *rec);
                     value = rec + 1;
                     break;
                 }
@@ -135,7 +138,38 @@ static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
     fprintf(file, " }");
 }
 
-static bool tokens_match(const Token *src, const Suite__Test__Token *expected) {
+typedef struct {
+    bool error;
+    const char *raw_pos;
+    unsigned int expected_pos;
+    const unsigned int expected_length;
+    const Suite__Test *test;
+    Suite__Test__State initial_state;
+} State;
+
+static void fprint_fail(FILE *file, const State *state, const char *msg) {
+    fprintf(
+        file,
+        "not ok - %s\n"
+        "  ---\n"
+        "    input: ",
+        msg
+    );
+    fprint_escaped_str(file, state->test->input);
+    fprintf(
+        file,
+        "\n"
+        "    state: %s\n"
+        ,
+        protobuf_c_enum_descriptor_get_value(&suite__test__state__descriptor, state->initial_state)->name
+    );
+}
+
+static void fprint_fail_end(FILE *file) {
+    fprintf(file, "  ...\n");
+}
+
+static bool tokens_match(const State *state, const Token *src, const Suite__Test__Token *expected) {
     Suite__Test__Token actual = SUITE__TEST__TOKEN__INIT;
 
     #define case_token(TYPE, NAME, CAP_TYPE) case token_##NAME:;\
@@ -201,23 +235,21 @@ static bool tokens_match(const Token *src, const Suite__Test__Token *expected) {
     }
 
     if (!same) {
-        fprintf(stderr, "Actual: ");
-        fprint_msg(stderr, &actual.base);
-        fprintf(stderr, "\nExpected: ");
-        fprint_msg(stderr, &expected->base);
-        fprintf(stderr, "\n");
+        fprint_fail(stdout, state, "Token mismatch");
+
+        fprintf(stdout, "    actual: ");
+        fprint_msg(stdout, &actual.base);
+        fprintf(stdout, "\n");
+
+        fprintf(stdout, "    expected: ");
+        fprint_msg(stdout, &expected->base);
+        fprintf(stdout, "\n");
+
+        fprint_fail_end(stdout);
     }
 
     return same;
 }
-
-typedef struct {
-    const char *error;
-    const char *raw_pos;
-    unsigned int expected_pos;
-    const unsigned int expected_length;
-    Suite__Test__Token **const expected;
-} State;
 
 static void on_token(const Token *token) {
     State *state = (State *) token->extra;
@@ -225,71 +257,81 @@ static void on_token(const Token *token) {
         return;
     }
     if (token->raw.data != state->raw_pos) {
-        state->error = "Raw position mismatch";
+        fprint_fail(stdout, state, "Raw position mismatch");
+        fprintf(stdout, "  actual: %p\n", token->raw.data);
+        fprintf(stdout, "  expected: %p\n", state->raw_pos);
+        fprint_fail_end(stdout);
+        state->error = true;
+        return;
+    }
+    if (state->expected_pos >= state->expected_length) {
+        fprint_fail(stdout, state, "Extraneous tokens");
+        fprintf(stdout, "  actual: %u\n", state->expected_pos);
+        fprintf(stdout, "  expected: %u\n", state->expected_length);
+        fprint_fail_end(stdout);
+        state->error = true;
+        return;
+    }
+    Suite__Test__Token *expected = state->test->output[state->expected_pos++];
+    if (!tokens_match(state, token, expected)) {
+        state->error = true;
         return;
     }
     state->raw_pos = token->raw.data + token->raw.length;
-    if (state->expected_pos >= state->expected_length) {
-        state->error = "Extraneous tokens";
-        return;
-    }
-    Suite__Test__Token *expected = state->expected[state->expected_pos++];
-    if (!tokens_match(token, expected)) {
-        state->error = "Token mismatch";
-        return;
-    }
 }
 
 static void run_test(const Suite__Test *test) {
-    if (strnstr((char *) test->description.data, "entity", test->description.len) != NULL || strnstr((char *) test->description.data, "NUL", test->description.len) != NULL) {
-        // TODO: add decoding support
-        return;
-    }
-
-    State custom_state = {
-        .expected_length = test->n_output,
-        .expected = test->output
-    };
-    TokenizerOpts options = {
-        .on_token = on_token,
-        .last_start_tag_name = to_tok_string(test->last_start_tag),
-        .extra = &custom_state
-    };
-    TokenizerState state;
-    TokenizerString input = to_tok_string(test->input);
-    for (int i = 0; i < test->n_initial_states; i++) {
-        options.initial_state = to_tok_state(test->initial_states[i]);
-        html_tokenizer_init(&state, &options);
-        custom_state.error = 0;
-        custom_state.raw_pos = input.data;
-        custom_state.expected_pos = 0;
-        html_tokenizer_feed(&state, &input);
-        // html_tokenizer_feed(&state, NULL);
-        if (!custom_state.error && state.cs == html_state_error) {
-            custom_state.error = "Tokenization error";
-        }
-        if (!custom_state.error && custom_state.expected_pos < custom_state.expected_length) {
-            custom_state.error = "Not enough tokens";
-        }
-        if (custom_state.error) {
-            printf(
-                "not ok - %.*s\n"
-                "  ---\n"
-                "  message: '%s'\n"
-                "  severity: fail\n"
-                "  "
-                "  ...\n",
-                (int ) test->description.len,
-                (char *) test->description.data,
-                custom_state.error
-            );
-        }
-    }
     printf(
-        "ok - %.*s\n",
+        "# %.*s\n",
         (int ) test->description.len,
         (char *) test->description.data
     );
+    bool needs_decoding = false;
+    for (int i = 0; i < test->input.len; i++) {
+        char c = (char) test->input.data[i];
+        if (c == '&' || c == '\0' || c == '\r') {
+            // TODO: add decoding support
+            needs_decoding = true;
+            break;
+        }
+    }
+    if (!needs_decoding) {
+        State custom_state = {
+            .expected_length = test->n_output,
+            .test = test
+        };
+        TokenizerOpts options = {
+            .on_token = on_token,
+            .last_start_tag_name = to_tok_string(test->last_start_tag),
+            .extra = &custom_state
+        };
+        TokenizerState state;
+        TokenizerString input = to_tok_string(test->input);
+        for (int i = 0; i < test->n_initial_states; i++) {
+            custom_state.initial_state = test->initial_states[i];
+            custom_state.error = false;
+            custom_state.raw_pos = input.data;
+            custom_state.expected_pos = 0;
+            options.initial_state = to_tok_state(custom_state.initial_state);
+            html_tokenizer_init(&state, &options);
+            html_tokenizer_feed(&state, &input);
+            // html_tokenizer_feed(&state, NULL);
+            if (custom_state.error) return;
+            if (state.cs == html_state_error) {
+                fprint_fail(stdout, &custom_state, "Tokenization error");
+                fprint_fail_end(stdout);
+                return;
+            }
+            if (custom_state.expected_pos < custom_state.expected_length) {
+                fprint_fail(stdout, &custom_state, "Not enough tokens");
+                fprintf(stdout, "  actual: %u\n", custom_state.expected_pos);
+                fprintf(stdout, "  expected: %u\n", custom_state.expected_length);
+                fprint_fail_end(stdout);
+                return;
+            }
+        }
+    }
+    printf("ok\n");
 }
 
 static void run_suite(const Suite *suite) {
