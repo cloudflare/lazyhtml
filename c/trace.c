@@ -106,6 +106,6 @@ int main(const int argc, const char *const argv[]) {
         .data = argv[1]
     };
     assert(html_tokenizer_feed(&state, &str) != html_state_error);
-    assert(html_tokenizer_feed(&state, NULL) != html_state_error);
+    // assert(html_tokenizer_feed(&state, NULL) != html_state_error);
     return 0;
 }
