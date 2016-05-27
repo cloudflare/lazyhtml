@@ -147,6 +147,8 @@ typedef struct {
     const unsigned int expected_length;
     const Suite__Test *test;
     Suite__Test__State initial_state;
+    char char_token_buf[256];
+    char *char_token_buf_pos;
 } State;
 
 static void fprint_fail(FILE *file, const State *state, const char *msg) {
@@ -171,7 +173,17 @@ static void fprint_fail_end(FILE *file) {
     fprintf(file, "  ...\n");
 }
 
-static bool tokens_match(const State *state, const Token *src, const Suite__Test__Token *expected) {
+static bool tokens_match(const State *state, const Token *src) {
+    if (state->expected_pos >= state->expected_length) {
+        fprint_fail(stdout, state, "Extraneous tokens");
+        fprintf(stdout, "  actual:   %u\n", state->expected_pos);
+        fprintf(stdout, "  expected: %u\n", state->expected_length);
+        fprint_fail_end(stdout);
+        return false;
+    }
+
+    const Suite__Test__Token *expected = state->test->output[state->expected_pos];
+
     Suite__Test__Token actual = SUITE__TEST__TOKEN__INIT;
 
     #define case_token(TYPE, NAME, CAP_TYPE) case token_##NAME:;\
@@ -258,28 +270,51 @@ static void on_token(const Token *token) {
     if (state->error) {
         return;
     }
-    if (token->raw.data != state->raw_pos) {
-        fprint_fail(stdout, state, "Raw position mismatch");
-        fprintf(stdout, "  actual:   %p\n", token->raw.data);
-        fprintf(stdout, "  expected: %p\n", state->raw_pos);
-        fprint_fail_end(stdout);
-        state->error = true;
+    if (token->type != token_none) {
+        if (token->raw.data != state->raw_pos) {
+            fprint_fail(stdout, state, "Raw position mismatch");
+            fprintf(stdout, "  actual:   %ld\n", token->raw.data - (char *) state->test->input.data);
+            fprintf(stdout, "  expected: %ld\n", state->raw_pos - (char *) state->test->input.data);
+            fprint_fail_end(stdout);
+            state->error = true;
+            return;
+        }
+        state->raw_pos = token->raw.data + token->raw.length;
+    }
+    if (token->type == token_character) {
+        if (!state->char_token_buf_pos) {
+            state->char_token_buf_pos = state->char_token_buf;
+        }
+        const TokenizerString *value = &token->character.value;
+        assert(state->char_token_buf_pos - state->char_token_buf + token->character.value.length < sizeof(state->char_token_buf));
+        memcpy(state->char_token_buf_pos, value->data, token->character.value.length);
+        state->char_token_buf_pos += token->character.value.length;
         return;
     }
-    if (state->expected_pos >= state->expected_length) {
-        fprint_fail(stdout, state, "Extraneous tokens");
-        fprintf(stdout, "  actual:   %u\n", state->expected_pos);
-        fprintf(stdout, "  expected: %u\n", state->expected_length);
-        fprint_fail_end(stdout);
-        state->error = true;
+    if (state->char_token_buf_pos) {
+        const Token char_token = {
+            .type = token_character,
+            .character = {
+                .value = {
+                    .data = state->char_token_buf,
+                    .length = state->char_token_buf_pos - state->char_token_buf
+                }
+            }
+        };
+        state->char_token_buf_pos = NULL;
+        if ((state->error = !tokens_match(state, &char_token))) {
+            return;
+        }
+        state->expected_pos++;
+    }
+    if (token->type == token_none) {
+        // Artificial token for EOF to finalize chartoken
         return;
     }
-    Suite__Test__Token *expected = state->test->output[state->expected_pos++];
-    if (!tokens_match(state, token, expected)) {
-        state->error = true;
+    if ((state->error = !tokens_match(state, token))) {
         return;
     }
-    state->raw_pos = token->raw.data + token->raw.length;
+    state->expected_pos++;
 }
 
 static void run_test(const Suite__Test *test) {
@@ -304,6 +339,10 @@ static void run_test(const Suite__Test *test) {
         .last_start_tag_name = to_tok_string(test->last_start_tag),
         .extra = &custom_state
     };
+    const Token EOF_Token = {
+        .type = token_none,
+        .extra = &custom_state
+    };
     TokenizerState state;
     TokenizerString input = to_tok_string(test->input);
     for (int i = 0; i < test->n_initial_states; i++) {
@@ -311,9 +350,11 @@ static void run_test(const Suite__Test *test) {
         custom_state.error = false;
         custom_state.raw_pos = input.data;
         custom_state.expected_pos = 0;
+        custom_state.char_token_buf_pos = NULL;
         options.initial_state = to_tok_state(custom_state.initial_state);
         html_tokenizer_init(&state, &options);
         html_tokenizer_feed(&state, &input);
+        on_token(&EOF_Token);
         // html_tokenizer_feed(&state, NULL);
         if (custom_state.error) return;
         if (state.cs == html_state_error) {
