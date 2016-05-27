@@ -325,7 +325,7 @@ static void run_test(const Suite__Test *test) {
     );
     for (int i = 0; i < test->input.len; i++) {
         char c = (char) test->input.data[i];
-        if (c == '&' || c == '\0' || c == '\r' || c == 'A' || c == 'B' || c == 'Y' || c == 'Z') {
+        if (c == '&' || c == '\0' || c == '\r' || c == 'A' || c == 'B' || (c >= 'X' && c <= 'Z')) {
             printf("ok # skip Decoding is unsupported yet\n");
             return;
         }
