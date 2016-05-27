@@ -72,17 +72,19 @@ static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
             fprintf(file, ", ");
         }
         const ProtobufCFieldDescriptor* field = &fields[i];
-        if (n_distinct_fields > 1) {
-            fprintf(file, "%s = ", field->name);
-        }
-        if (field->flags & PROTOBUF_C_FIELD_FLAG_ONEOF) {
+        bool is_oneof = field->flags & PROTOBUF_C_FIELD_FLAG_ONEOF;
+        if (is_oneof) {
             unsigned int quantifier = *((unsigned int *) (mem + field->quantifier_offset));
             i += quantifier - 1;
             assert(i >= 0 && i < n_fields);
             field = &fields[i];
             for (; i < n_fields && fields[i].quantifier_offset == field->quantifier_offset; i++);
             i--;
-        } else if (field->label == PROTOBUF_C_LABEL_OPTIONAL && !*((bool *) (mem + field->quantifier_offset))) {
+        }
+        if (n_distinct_fields > 1) {
+            fprintf(file, "%s = ", field->name);
+        }
+        if (!is_oneof && field->label == PROTOBUF_C_LABEL_OPTIONAL && !*((bool *) (mem + field->quantifier_offset))) {
             fprintf(file, "(none)");
             continue;
         }
@@ -237,7 +239,7 @@ static bool tokens_match(const State *state, const Token *src, const Suite__Test
     if (!same) {
         fprint_fail(stdout, state, "Token mismatch");
 
-        fprintf(stdout, "    actual: ");
+        fprintf(stdout, "    actual:   ");
         fprint_msg(stdout, &actual.base);
         fprintf(stdout, "\n");
 
@@ -258,7 +260,7 @@ static void on_token(const Token *token) {
     }
     if (token->raw.data != state->raw_pos) {
         fprint_fail(stdout, state, "Raw position mismatch");
-        fprintf(stdout, "  actual: %p\n", token->raw.data);
+        fprintf(stdout, "  actual:   %p\n", token->raw.data);
         fprintf(stdout, "  expected: %p\n", state->raw_pos);
         fprint_fail_end(stdout);
         state->error = true;
@@ -266,7 +268,7 @@ static void on_token(const Token *token) {
     }
     if (state->expected_pos >= state->expected_length) {
         fprint_fail(stdout, state, "Extraneous tokens");
-        fprintf(stdout, "  actual: %u\n", state->expected_pos);
+        fprintf(stdout, "  actual:   %u\n", state->expected_pos);
         fprintf(stdout, "  expected: %u\n", state->expected_length);
         fprint_fail_end(stdout);
         state->error = true;
@@ -321,7 +323,7 @@ static void run_test(const Suite__Test *test) {
         }
         if (custom_state.expected_pos < custom_state.expected_length) {
             fprint_fail(stdout, &custom_state, "Not enough tokens");
-            fprintf(stdout, "  actual: %u\n", custom_state.expected_pos);
+            fprintf(stdout, "  actual:   %u\n", custom_state.expected_pos);
             fprintf(stdout, "  expected: %u\n", custom_state.expected_length);
             fprint_fail_end(stdout);
             return;
