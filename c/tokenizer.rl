@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <strings.h>
 #include "tokenizer.h"
 
 %%{
@@ -53,26 +54,85 @@ void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     state->allow_cdata = options->allow_cdata;
     state->emit_token = options->on_token;
     state->last_start_tag_name = options->last_start_tag_name;
-    state->token.type = token_none;
-    state->token.extra = options->extra;
     state->quote = 0;
     state->attribute = 0;
     state->start_slice = 0;
     state->mark = 0;
     state->appropriate_end_tag_offset = 0;
-    state->buffer = options->buffer;
+    state->buffer = state->buffer_pos = options->buffer;
+    state->buffer_end = options->buffer + options->buffer_size;
+    state->token.type = token_none;
+    state->token.extra = options->extra;
+    state->token.raw.data = state->buffer;
     state->cs = options->initial_state;
 }
 
 int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
-    const char *const start = chunk != 0 ? chunk->data : 0;
-    const char *p = start;
-    const char *const pe = chunk != 0 ? start + chunk->length : 0;
-    const char *const eof = pe;
+    const char *p = state->buffer_pos;
 
-    state->token.raw = *chunk;
+    if (chunk != NULL) {
+        char *new_buffer_pos = state->buffer_pos + chunk->length;
+        assert(new_buffer_pos <= state->buffer_end);
+        memcpy(state->buffer_pos, chunk->data, chunk->length);
+        state->buffer_pos = new_buffer_pos;
+    }
+
+    const char *const pe = state->buffer_pos;
+    const char *const eof = chunk == NULL ? pe : 0;
 
     %%write exec;
+
+    const int shift = state->token.raw.data - state->buffer;
+
+    if (shift != 0) {
+        memmove(state->buffer, state->token.raw.data, pe - state->token.raw.data);
+        state->token.raw.data = state->buffer;
+        state->buffer_pos -= shift;
+        state->start_slice -= shift;
+
+        if (state->mark != NULL) {
+            state->mark -= shift;
+        }
+
+        switch (state->token.type) {
+            case token_character: {
+                state->token.character.value.data -= shift;
+                break;
+            }
+
+            case token_comment: {
+                state->token.comment.value.data -= shift;
+                break;
+            }
+
+            case token_doc_type: {
+                state->token.doc_type.name.value.data -= shift;
+                state->token.doc_type.public_id.value.data -= shift;
+                state->token.doc_type.system_id.value.data -= shift;
+                break;
+            }
+
+            case token_end_tag: {
+                state->token.end_tag.name.data -= shift;
+                break;
+            }
+
+            case token_start_tag: {
+                state->token.start_tag.name.data -= shift;
+                TokenAttributes *attrs = &state->token.start_tag.attributes;
+                for (int i = 0; i < attrs->count; i++) {
+                    Attribute *attr = &attrs->items[i];
+                    attr->name.data -= shift;
+                    attr->value.data -= shift;
+                }
+                break;
+            }
+
+            case token_none: {
+                break;
+            }
+        }
+    }
 
     return state->cs;
 }

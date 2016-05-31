@@ -95,7 +95,9 @@ typedef struct TokenizerState {
     const char *start_slice;
     const char *mark;
     const char *appropriate_end_tag_offset;
-    TokenizerString buffer;
+    char *buffer;
+    char *buffer_pos;
+    const char *buffer_end;
     int cs;
 } TokenizerState;
 
@@ -104,7 +106,8 @@ typedef struct TokenizerOpts {
     TokenHandler on_token;
     TokenizerString last_start_tag_name;
     int initial_state;
-    TokenizerString buffer;
+    char *buffer;
+    unsigned int buffer_size;
     void *extra;
 } TokenizerOpts;
 
