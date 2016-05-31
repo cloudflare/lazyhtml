@@ -220,13 +220,24 @@ static bool tokens_match(const State *state, const Token *src) {
 
         case_token(StartTag, start_tag, START_TAG)
             start_tag.name = to_test_string(src->start_tag.name);
-            start_tag.n_attributes = n_attributes;
+            start_tag.n_attributes = 0;
             for (int i = 0; i < n_attributes; i++) {
-                Suite__Test__Attribute *attr = attribute_pointers[i] = &attributes[i];
+                Suite__Test__Attribute *attr = attribute_pointers[start_tag.n_attributes] = &attributes[start_tag.n_attributes];
                 suite__test__attribute__init(attr);
                 const Attribute *src_attr = &src->start_tag.attributes.items[i];
-                attr->name = to_test_string(src_attr->name);
+                const ProtobufCBinaryData name = attr->name = to_test_string(src_attr->name);
                 attr->value = to_test_string(src_attr->value);
+                bool duplicate_name = false;
+                for (int j = 0; j < start_tag.n_attributes; j++) {
+                    ProtobufCBinaryData other_name = attributes[j].name;
+                    if (name.len == other_name.len && memcmp(name.data, other_name.data, name.len) == 0) {
+                        duplicate_name = true;
+                        break;
+                    }
+                }
+                if (!duplicate_name) {
+                    start_tag.n_attributes++;
+                }
             }
             start_tag.attributes = &attribute_pointers[0];
             start_tag.self_closing = src->start_tag.self_closing;
