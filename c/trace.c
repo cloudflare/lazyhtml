@@ -84,7 +84,12 @@ static void on_token(const Token *token) {
         case token_none:
             break;
     }
-    printf("}\n");
+    if (token->type != token_none) {
+        printf(", ");
+    }
+    printf(".raw = ");
+    print_string(&token->raw);
+    printf(" }\n");
 }
 
 int main(const int argc, const char *const argv[]) {
