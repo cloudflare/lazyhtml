@@ -177,7 +177,7 @@ static bool tokens_match(const State *state, const Token *src) {
     if (state->expected_pos >= state->expected_length) {
         fprint_fail(stdout, state, "Extraneous tokens");
         fprintf(stdout, "  actual:   %u\n", state->expected_pos);
-        fprintf(stdout, "  expected: %u\n", state->expected_length);
+        fprintf(stdout, "  expected: %u\n", state->expected_length - 1);
         fprint_fail_end(stdout);
         return false;
     }
@@ -364,8 +364,8 @@ static void run_test(const Suite__Test *test) {
         }
         if (custom_state.expected_pos < custom_state.expected_length) {
             fprint_fail(stdout, &custom_state, "Not enough tokens");
-            fprintf(stdout, "  actual:   %u\n", custom_state.expected_pos);
-            fprintf(stdout, "  expected: %u\n", custom_state.expected_length);
+            fprintf(stdout, "    actual:   %u\n", custom_state.expected_pos);
+            fprintf(stdout, "    expected: %u\n", custom_state.expected_length);
             fprint_fail_end(stdout);
             return;
         }
