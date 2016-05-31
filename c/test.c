@@ -228,18 +228,30 @@ static bool tokens_match(const State *state, const Token *src) {
                 const ProtobufCBinaryData name = attr->name = to_test_string(src_attr->name);
                 attr->value = to_test_string(src_attr->value);
                 bool duplicate_name = false;
+                int insert_before = -1;
                 for (int j = 0; j < start_tag.n_attributes; j++) {
                     ProtobufCBinaryData other_name = attributes[j].name;
-                    if (name.len == other_name.len && memcmp(name.data, other_name.data, name.len) == 0) {
+                    int cmp_result = memcmp(name.data, other_name.data, name.len < other_name.len ? name.len : other_name.len);
+                    if (name.len == other_name.len && cmp_result == 0) {
                         duplicate_name = true;
                         break;
+                    }
+                    if (cmp_result < 0) {
+                        insert_before = j;
                     }
                 }
                 if (!duplicate_name) {
                     start_tag.n_attributes++;
+                    if (insert_before >= 0) {
+                        const Suite__Test__Attribute attr = attributes[start_tag.n_attributes - 1];
+                        for (int j = start_tag.n_attributes - 2; j >= insert_before; j--) {
+                            attributes[j + 1] = attributes[j];
+                        }
+                        attributes[insert_before] = attr;
+                    }
                 }
             }
-            start_tag.attributes = &attribute_pointers[0];
+            start_tag.attributes = attribute_pointers;
             start_tag.self_closing = src->start_tag.self_closing;
             break;
     }

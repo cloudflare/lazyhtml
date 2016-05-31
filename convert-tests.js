@@ -14,7 +14,10 @@ function convertOptString(value) {
 const convert = {
     StartTag: (name, attributes, selfClosing = false) => ({
         name,
-        attributes,
+        attributes: Object.keys(attributes).sort().reduce((map, key) => {
+            map[key] = attributes[key];
+            return map;
+        }, Object.create(null)),
         selfClosing
     }),
 
