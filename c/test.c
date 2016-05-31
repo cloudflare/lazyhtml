@@ -427,12 +427,13 @@ int main() {
 
     Suite *suite = suite__unpack(NULL, numbytes, buffer);
 
+    free(buffer);
+
     assert(suite);
 
     run_suite(suite);
 
     suite__free_unpacked(suite, NULL);
 
-    free(buffer);
     return 0;
 }
