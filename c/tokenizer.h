@@ -85,7 +85,7 @@ typedef struct {
 
 typedef void (*TokenHandler)(const Token *token);
 
-typedef struct TokenizerState {
+typedef struct {
     bool allow_cdata;
     TokenHandler emit_token;
     TokenizerString last_start_tag_name;
@@ -101,7 +101,7 @@ typedef struct TokenizerState {
     int cs;
 } TokenizerState;
 
-typedef struct TokenizerOpts {
+typedef struct {
     bool allow_cdata;
     TokenHandler on_token;
     TokenizerString last_start_tag_name;
