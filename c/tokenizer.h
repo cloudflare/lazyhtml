@@ -1,3 +1,6 @@
+#ifndef HTML_TOKENIZER_H
+#define HTML_TOKENIZER_H
+
 #include <stdbool.h>
 
 extern const int html_state_error;
@@ -113,3 +116,5 @@ typedef struct {
 
 void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options);
 int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk);
+
+#endif
