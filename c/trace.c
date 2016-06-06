@@ -146,7 +146,7 @@ int main(const int argc, const char *const argv[]) {
     const TokenizerOpts options = {
         .allow_cdata = false,
         .on_token = on_token,
-        .last_start_tag_name = NULL,
+        .last_start_tag_name = { .length = 0 },
         .initial_state = initial_state,
         .buffer = buffer,
         .buffer_size = buffer_size
