@@ -92,25 +92,78 @@ static void on_token(const Token *token) {
     printf(" }\n");
 }
 
+static int min(int a, int b) {
+    return a < b ? a : b;
+}
+
 int main(const int argc, const char *const argv[]) {
     assert(argc >= 2);
     TokenizerState state;
+    const char *data = NULL;
+    unsigned int chunk_size = 1024;
+    unsigned int buffer_size = 1024;
+    int initial_state = html_state_Data;
+    for (int i = 1; i < argc; i++) {
+        const char *arg = argv[i];
+        if (strncmp(arg, "--", sizeof("--") - 1) == 0) {
+            arg += sizeof("--") - 1;
+            if (sscanf(arg, "chunk=%u", &chunk_size) > 0) {
+                continue;
+            }
+            if (sscanf(arg, "buffer=%u", &buffer_size) > 0) {
+                continue;
+            }
+            if (strncmp(arg, "state=", sizeof("state=") - 1) == 0) {
+                arg += sizeof("state=") - 1;
+                if (strcasecmp(arg, "Data") == 0) {
+                    initial_state = html_state_Data;
+                    continue;
+                }
+                if (strcasecmp(arg, "PlainText") == 0) {
+                    initial_state = html_state_PlainText;
+                    continue;
+                }
+                if (strcasecmp(arg, "RCData") == 0) {
+                    initial_state = html_state_RCData;
+                    continue;
+                }
+                if (strcasecmp(arg, "RawText") == 0) {
+                    initial_state = html_state_RawText;
+                    continue;
+                }
+                if (strcasecmp(arg, "ScriptData") == 0) {
+                    initial_state = html_state_ScriptData;
+                    continue;
+                }
+            }
+        }
+        data = arg;
+    }
+    assert(data != NULL);
+    assert(chunk_size <= 1024);
+    assert(buffer_size <= 1024);
+    char buffer[buffer_size];
     const TokenizerOpts options = {
         .allow_cdata = false,
         .on_token = on_token,
-        .last_start_tag_name = NULL,
-        .initial_state = html_state_Data,
-        .buffer = {
-            .length = 0,
-            .data = NULL
-        }
+        .last_start_tag_name = { .length = 0 },
+        .initial_state = initial_state,
+        .buffer = buffer,
+        .buffer_size = buffer_size
     };
     html_tokenizer_init(&state, &options);
-    const TokenizerString str = {
-        .length = strlen(argv[1]),
-        .data = argv[1]
-    };
-    assert(html_tokenizer_feed(&state, &str) != html_state_error);
-    // assert(html_tokenizer_feed(&state, NULL) != html_state_error);
+    const unsigned int total_len = strlen(data);
+    for (int i = 0; i < total_len; i += chunk_size) {
+        const TokenizerString str = {
+            .data = data + i,
+            .length = min(chunk_size, total_len - i)
+        };
+        printf("// Feeding chunk '%.*s'\n", (int) str.length, str.data);
+        html_tokenizer_feed(&state, &str);
+        assert(state.cs != html_state_error);
+        printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - state.token.raw.data), state.token.raw.data);
+    }
+    html_tokenizer_feed(&state, NULL);
+    assert(state.cs != html_state_error);
     return 0;
 }

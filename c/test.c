@@ -37,7 +37,7 @@ static ProtobufCBinaryData to_test_string(const TokenizerString src) {
     return dest;
 }
 
-static void to_opt_test_string(const TokenizerOptionalString src, protobuf_c_boolean *has_value, ProtobufCBinaryData *value) {
+static void to_opt_test_string(const TokenizerOptionalString src, volatile protobuf_c_boolean *has_value, volatile ProtobufCBinaryData *value) {
     if ((*has_value = src.has_value)) {
         *value = to_test_string(src.value);
     }
@@ -60,7 +60,7 @@ static void fprint_escaped_str(FILE *file, const ProtobufCBinaryData str) {
     fprintf(file, "'");
 }
 
-static void fprint_msg(FILE *file, const ProtobufCMessage *msg) {
+static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
     const ProtobufCMessageDescriptor *desc = msg->descriptor;
     fprintf(file, "%s { ", desc->short_name);
     const unsigned int n_fields = desc->n_fields;
@@ -147,7 +147,7 @@ typedef struct {
     const unsigned int expected_length;
     const Suite__Test *test;
     Suite__Test__State initial_state;
-    char char_token_buf[256];
+    char char_token_buf[1024];
     char *char_token_buf_pos;
 } State;
 
@@ -182,14 +182,14 @@ static bool tokens_match(const State *state, const Token *src) {
         return false;
     }
 
-    const Suite__Test__Token *expected = state->test->output[state->expected_pos];
+    const ProtobufCMessage *expected = &state->test->output[state->expected_pos]->base;
 
-    Suite__Test__Token actual = SUITE__TEST__TOKEN__INIT;
+    volatile Suite__Test__Token actual = SUITE__TEST__TOKEN__INIT;
 
     #define case_token(TYPE, NAME, CAP_TYPE) case token_##NAME:;\
-        Suite__Test__##TYPE NAME = SUITE__TEST__##CAP_TYPE##__INIT;\
+        volatile Suite__Test__##TYPE NAME = SUITE__TEST__##CAP_TYPE##__INIT;\
         actual.token_case = SUITE__TEST__TOKEN__TOKEN_##CAP_TYPE;\
-        actual.NAME = &NAME;
+        actual.NAME = (Suite__Test__##TYPE *) &NAME;
 
     const unsigned int n_attributes = src->type == token_start_tag ? src->start_tag.attributes.count : 0;
     Suite__Test__Attribute attributes[n_attributes];
@@ -256,8 +256,8 @@ static bool tokens_match(const State *state, const Token *src) {
             break;
     }
 
-    size_t actual_len = protobuf_c_message_get_packed_size(&actual.base);
-    size_t expected_len = protobuf_c_message_get_packed_size(&expected->base);
+    size_t actual_len = protobuf_c_message_get_packed_size((ProtobufCMessage *) &actual);
+    size_t expected_len = protobuf_c_message_get_packed_size((ProtobufCMessage *) expected);
 
     bool same = actual_len == expected_len;
 
@@ -265,8 +265,8 @@ static bool tokens_match(const State *state, const Token *src) {
         uint8_t actual_buf[actual_len];
         uint8_t expected_buf[expected_len];
 
-        protobuf_c_message_pack(&actual.base, actual_buf);
-        protobuf_c_message_pack(&expected->base, expected_buf);
+        protobuf_c_message_pack((ProtobufCMessage *) &actual, actual_buf);
+        protobuf_c_message_pack(expected, expected_buf);
 
         same = memcmp(actual_buf, expected_buf, actual_len) == 0;
     }
@@ -275,11 +275,11 @@ static bool tokens_match(const State *state, const Token *src) {
         fprint_fail(stdout, state, "Token mismatch");
 
         fprintf(stdout, "    actual:   ");
-        fprint_msg(stdout, &actual.base);
+        fprint_msg(stdout, (ProtobufCMessage *) &actual);
         fprintf(stdout, "\n");
 
         fprintf(stdout, "    expected: ");
-        fprint_msg(stdout, &expected->base);
+        fprint_msg(stdout, expected);
         fprintf(stdout, "\n");
 
         fprint_fail_end(stdout);
@@ -293,17 +293,15 @@ static void on_token(const Token *token) {
     if (state->error) {
         return;
     }
-    if (token->type != token_none) {
-        if (token->raw.data != state->raw_pos) {
-            fprint_fail(stdout, state, "Raw position mismatch");
-            fprintf(stdout, "  actual:   %ld\n", token->raw.data - (char *) state->test->input.data);
-            fprintf(stdout, "  expected: %ld\n", state->raw_pos - (char *) state->test->input.data);
-            fprint_fail_end(stdout);
-            state->error = true;
-            return;
-        }
-        state->raw_pos = token->raw.data + token->raw.length;
-    }
+    // if (token->raw.data != state->raw_pos) {
+    //     fprint_fail(stdout, state, "Raw position mismatch");
+    //     fprintf(stdout, "  actual:   %ld\n", token->raw.data - (char *) state->test->input.data);
+    //     fprintf(stdout, "  expected: %ld\n", state->raw_pos - (char *) state->test->input.data);
+    //     fprint_fail_end(stdout);
+    //     state->error = true;
+    //     return;
+    // }
+    // state->raw_pos = token->raw.data + token->raw.length;
     if (token->type == token_character) {
         if (!state->char_token_buf_pos) {
             state->char_token_buf_pos = state->char_token_buf;
@@ -357,9 +355,12 @@ static void run_test(const Suite__Test *test) {
         .expected_length = test->n_output,
         .test = test
     };
+    char buffer[1024];
     TokenizerOpts options = {
         .on_token = on_token,
         .last_start_tag_name = to_tok_string(test->last_start_tag),
+        .buffer = buffer,
+        .buffer_size = sizeof(buffer),
         .extra = &custom_state
     };
     const Token EOF_Token = {
@@ -376,9 +377,15 @@ static void run_test(const Suite__Test *test) {
         custom_state.char_token_buf_pos = NULL;
         options.initial_state = to_tok_state(custom_state.initial_state);
         html_tokenizer_init(&state, &options);
-        html_tokenizer_feed(&state, &input);
+        for (int j = 0; j < input.length; j++) {
+            const TokenizerString ch = {
+                .length = 1,
+                .data = &input.data[j]
+            };
+            html_tokenizer_feed(&state, &ch);
+        }
+        html_tokenizer_feed(&state, NULL);
         on_token(&EOF_Token);
-        // html_tokenizer_feed(&state, NULL);
         if (custom_state.error) return;
         if (state.cs == html_state_error) {
             fprint_fail(stdout, &custom_state, "Tokenization error");
@@ -422,7 +429,8 @@ int main() {
 
     fseek(infile, 0L, SEEK_SET);
 
-    assert(fread(buffer, sizeof(char), numbytes, infile) == numbytes);
+    int readbytes = fread(buffer, sizeof(char), numbytes, infile);
+    assert(readbytes == numbytes);
     fclose(infile);
 
     Suite *suite = suite__unpack(NULL, numbytes, buffer);

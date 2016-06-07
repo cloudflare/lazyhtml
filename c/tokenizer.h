@@ -1,3 +1,6 @@
+#ifndef HTML_TOKENIZER_H
+#define HTML_TOKENIZER_H
+
 #include <stdbool.h>
 
 extern const int html_state_error;
@@ -85,7 +88,7 @@ typedef struct {
 
 typedef void (*TokenHandler)(const Token *token);
 
-typedef struct TokenizerState {
+typedef struct {
     bool allow_cdata;
     TokenHandler emit_token;
     TokenizerString last_start_tag_name;
@@ -95,18 +98,23 @@ typedef struct TokenizerState {
     const char *start_slice;
     const char *mark;
     const char *appropriate_end_tag_offset;
-    TokenizerString buffer;
+    char *buffer;
+    char *buffer_pos;
+    const char *buffer_end;
     int cs;
 } TokenizerState;
 
-typedef struct TokenizerOpts {
+typedef struct {
     bool allow_cdata;
     TokenHandler on_token;
     TokenizerString last_start_tag_name;
     int initial_state;
-    TokenizerString buffer;
+    char *buffer;
+    unsigned int buffer_size;
     void *extra;
 } TokenizerOpts;
 
 void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options);
 int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk);
+
+#endif
