@@ -159,9 +159,11 @@ int main(const int argc, const char *const argv[]) {
             .length = min(chunk_size, total_len - i)
         };
         printf("// Feeding chunk '%.*s'\n", (int) str.length, str.data);
-        assert(html_tokenizer_feed(&state, &str) != html_state_error);
+        html_tokenizer_feed(&state, &str);
+        assert(state.cs != html_state_error);
         printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - state.token.raw.data), state.token.raw.data);
     }
-    assert(html_tokenizer_feed(&state, NULL) != html_state_error);
+    html_tokenizer_feed(&state, NULL);
+    assert(state.cs != html_state_error);
     return 0;
 }

@@ -7,7 +7,7 @@ tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 	cd .. && $(RAGEL) $(RAGELFLAGS) -s c/$< | grep -v "^compiling"
 
 tokenizer.o: tokenizer.c tokenizer.h
-	$(CC) $(CFLAGS) -c -Wno-parentheses-equality $< -o $@
+	$(CC) $(CFLAGS) -c -Wno-parentheses-equality -Wno-unused-const-variable $< -o $@
 
 trace: trace.c tokenizer.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $+ -o $@

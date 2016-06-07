@@ -429,7 +429,8 @@ int main() {
 
     fseek(infile, 0L, SEEK_SET);
 
-    assert(fread(buffer, sizeof(char), numbytes, infile) == numbytes);
+    int readbytes = fread(buffer, sizeof(char), numbytes, infile);
+    assert(readbytes == numbytes);
     fclose(infile);
 
     Suite *suite = suite__unpack(NULL, numbytes, buffer);
