@@ -52,9 +52,9 @@ static void on_token(const Token *token) {
             print_string(&token->start_tag.name);
             printf(", .self_closing = %s, .attributes = { ", token->start_tag.self_closing ? "true" : "false");
             const TokenAttributes *attributes = &token->start_tag.attributes;
-            const unsigned int count = attributes->count;
+            const size_t count = attributes->count;
             const Attribute *items = attributes->items;
-            for (int i = 0; i < count; i++) {
+            for (size_t i = 0; i < count; i++) {
                 if (i > 0) {
                     printf(", ");
                 }
@@ -152,8 +152,8 @@ int main(const int argc, const char *const argv[]) {
         .buffer_size = buffer_size
     };
     html_tokenizer_init(&state, &options);
-    const unsigned int total_len = strlen(data);
-    for (int i = 0; i < total_len; i += chunk_size) {
+    const unsigned long total_len = strlen(data);
+    for (unsigned long i = 0; i < total_len; i += chunk_size) {
         const TokenizerString str = {
             .data = data + i,
             .length = min(chunk_size, total_len - i)

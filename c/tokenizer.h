@@ -1,6 +1,7 @@
 #ifndef HTML_TOKENIZER_H
 #define HTML_TOKENIZER_H
 
+#include <stddef.h>
 #include <stdbool.h>
 
 extern const int html_state_error;
@@ -12,7 +13,7 @@ extern const int html_state_ScriptData;
 
 typedef struct {
     const char *data;
-    unsigned int length;
+    size_t length;
 } TokenizerString;
 
 typedef struct {
@@ -51,9 +52,11 @@ typedef struct {
     TokenizerString value;
 } Attribute;
 
+#define MAX_ATTR_COUNT 256
+
 typedef struct {
-    unsigned int count;
-    Attribute items[256];
+    size_t count;
+    Attribute items[MAX_ATTR_COUNT];
 } TokenAttributes;
 
 typedef struct {
@@ -110,7 +113,7 @@ typedef struct {
     TokenizerString last_start_tag_name;
     int initial_state;
     char *buffer;
-    unsigned int buffer_size;
+    size_t buffer_size;
     void *extra;
 } TokenizerOpts;
 

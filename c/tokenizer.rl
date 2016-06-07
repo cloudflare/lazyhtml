@@ -123,7 +123,7 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
                 case token_start_tag: {
                     token->start_tag.name.data -= shift;
                     TokenAttributes *attrs = &token->start_tag.attributes;
-                    for (int i = 0; i < attrs->count; i++) {
+                    for (size_t i = 0; i < attrs->count; i++) {
                         Attribute *attr = &attrs->items[i];
                         attr->name.data -= shift;
                         attr->value.data -= shift;

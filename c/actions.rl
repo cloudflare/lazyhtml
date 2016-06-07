@@ -113,7 +113,7 @@
 
     action CreateAttribute {
         TokenAttributes *attributes = &get_token(state, start_tag)->attributes;
-        assert(attributes->count < sizeof(attributes->items) / sizeof(attributes->items[0]));
+        assert(attributes->count < MAX_ATTR_COUNT);
         Attribute *attr = state->attribute = &attributes->items[attributes->count];
         reset_string(&attr->name);
         reset_string(&attr->value);

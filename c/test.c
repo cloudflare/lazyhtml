@@ -44,11 +44,9 @@ static void to_opt_test_string(const TokenizerOptionalString src, volatile proto
 }
 
 static void fprint_escaped_str(FILE *file, const ProtobufCBinaryData str) {
-    const size_t len = (size_t) str.len;
-    const char *const data = (const char *) str.data;
     fprintf(file, "'");
-    for (int i = 0; i < len; i++) {
-        const char c = data[i];
+    for (size_t i = 0; i < str.len; i++) {
+        const char c = str.data[i];
         if (iscntrl(c)) {
             fprintf(file, "\\x%02X", c);
         } else if (c == '\'') {
@@ -67,7 +65,7 @@ static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
     const unsigned int n_distinct_fields = desc->n_field_ranges;
     const ProtobufCFieldDescriptor* fields = desc->fields;
     const char *mem = (const char *) msg;
-    for (int i = 0; i < n_fields; i++) {
+    for (unsigned int i = 0; i < n_fields; i++) {
         if (i > 0) {
             fprintf(file, ", ");
         }
@@ -95,7 +93,7 @@ static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
             value = *((void **) value);
             fprintf(file, "[ ");
         }
-        for (int j = 0; j < n_values; j++) {
+        for (unsigned int j = 0; j < n_values; j++) {
             if (j > 0) {
                 fprintf(file, ", ");
             }
@@ -191,7 +189,7 @@ static bool tokens_match(const State *state, const Token *src) {
         actual.token_case = SUITE__TEST__TOKEN__TOKEN_##CAP_TYPE;\
         actual.NAME = (Suite__Test__##TYPE *) &NAME;
 
-    const unsigned int n_attributes = src->type == token_start_tag ? src->start_tag.attributes.count : 0;
+    const size_t n_attributes = src->type == token_start_tag ? src->start_tag.attributes.count : 0;
     Suite__Test__Attribute attributes[n_attributes];
     Suite__Test__Attribute *attribute_pointers[n_attributes];
 
@@ -221,7 +219,7 @@ static bool tokens_match(const State *state, const Token *src) {
         case_token(StartTag, start_tag, START_TAG)
             start_tag.name = to_test_string(src->start_tag.name);
             start_tag.n_attributes = 0;
-            for (int i = 0; i < n_attributes; i++) {
+            for (size_t i = 0; i < n_attributes; i++) {
                 Suite__Test__Attribute *attr = attribute_pointers[start_tag.n_attributes] = &attributes[start_tag.n_attributes];
                 suite__test__attribute__init(attr);
                 const Attribute *src_attr = &src->start_tag.attributes.items[i];
@@ -229,7 +227,7 @@ static bool tokens_match(const State *state, const Token *src) {
                 attr->value = to_test_string(src_attr->value);
                 bool duplicate_name = false;
                 int insert_before = -1;
-                for (int j = 0; j < start_tag.n_attributes; j++) {
+                for (size_t j = 0; j < start_tag.n_attributes; j++) {
                     ProtobufCBinaryData other_name = attributes[j].name;
                     int cmp_result = memcmp(name.data, other_name.data, name.len < other_name.len ? name.len : other_name.len);
                     if (name.len == other_name.len && cmp_result == 0) {
@@ -341,10 +339,10 @@ static void on_token(const Token *token) {
 static void run_test(const Suite__Test *test) {
     printf(
         "# %.*s\n",
-        (int ) test->description.len,
+        (int) test->description.len,
         (char *) test->description.data
     );
-    for (int i = 0; i < test->input.len; i++) {
+    for (size_t i = 0; i < test->input.len; i++) {
         char c = (char) test->input.data[i];
         if (c == '&' || c == '\0' || c == '\r' || c == 'A' || c == 'B' || (c >= 'X' && c <= 'Z')) {
             printf("ok # skip Decoding is unsupported yet\n");
@@ -369,7 +367,7 @@ static void run_test(const Suite__Test *test) {
     };
     TokenizerState state;
     TokenizerString input = to_tok_string(test->input);
-    for (int i = 0; i < test->n_initial_states; i++) {
+    for (size_t i = 0; i < test->n_initial_states; i++) {
         custom_state.initial_state = test->initial_states[i];
         custom_state.error = false;
         custom_state.raw_pos = input.data;
@@ -377,7 +375,7 @@ static void run_test(const Suite__Test *test) {
         custom_state.char_token_buf_pos = NULL;
         options.initial_state = to_tok_state(custom_state.initial_state);
         html_tokenizer_init(&state, &options);
-        for (int j = 0; j < input.length; j++) {
+        for (size_t j = 0; j < input.length; j++) {
             const TokenizerString ch = {
                 .length = 1,
                 .data = &input.data[j]
@@ -421,7 +419,7 @@ int main() {
     assert(infile);
 
     fseek(infile, 0L, SEEK_END);
-    unsigned int numbytes = ftell(infile);
+    long numbytes = ftell(infile);
 
     uint8_t *buffer = malloc(numbytes);
 
@@ -429,8 +427,8 @@ int main() {
 
     fseek(infile, 0L, SEEK_SET);
 
-    int readbytes = fread(buffer, sizeof(char), numbytes, infile);
-    assert(readbytes == numbytes);
+    size_t readbytes = fread(buffer, sizeof(char), numbytes, infile);
+    assert((long) readbytes == numbytes);
     fclose(infile);
 
     Suite *suite = suite__unpack(NULL, numbytes, buffer);
