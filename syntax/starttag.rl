@@ -34,14 +34,9 @@
 
     _AttrValue = (any+ >StartSlice %SetAttributeValue)?;
 
-    AttributeValueQuoted := _AttrValue :> _EndQuote @To_AfterAttributeValueQuoted;
+    AttributeValueQuoted := _AttrValue :> _EndQuote @To_BeforeAttributeName;
 
     AttributeValueUnquoted := _AttrValue :> ((TagNameSpace | '>') & _StartTagEnd);
-
-    AfterAttributeValueQuoted := (
-        _StartTagEnd >1 |
-        any >0 @Reconsume @To_BeforeAttributeName
-    );
 
     SelfClosingTag := (
         '>' >1 @SetSelfClosingFlag @SetLastStartTagName @EmitToken @To_Data |

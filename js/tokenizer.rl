@@ -36,7 +36,6 @@ var states = exports.states = {
     BeforeAttributeValue: en_BeforeAttributeValue,
     AttributeValueQuoted: en_AttributeValueQuoted,
     AttributeValueUnquoted: en_AttributeValueUnquoted,
-    AfterAttributeValueQuoted: en_AfterAttributeValueQuoted,
     SelfClosingTag: en_SelfClosingTag,
     BogusComment: en_BogusComment,
     MarkupDeclarationOpen: en_MarkupDeclarationOpen,
