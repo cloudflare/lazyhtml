@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include "tokenizer.h"
+#include "parser-feedback.h"
 
 const char *TOKEN_TYPE_NAMES[] = {
     "None",
@@ -34,7 +35,7 @@ static void print_opt_string(const TokenizerOptionalString *str) {
     }
 }
 
-static void on_token(const Token *token) {
+static void on_token(Token *token, __attribute__((unused)) void *extra) {
     printf("%s { ", TOKEN_TYPE_NAMES[token->type]);
     switch (token->type) {
         case token_character:
@@ -103,6 +104,7 @@ int main(const int argc, const char *const argv[]) {
     unsigned int chunk_size = 1024;
     unsigned int buffer_size = 1024;
     int initial_state = html_state_Data;
+    bool with_feedback = false;
     for (int i = 1; i < argc; i++) {
         const char *arg = argv[i];
         if (strncmp(arg, "--", sizeof("--") - 1) == 0) {
@@ -111,6 +113,10 @@ int main(const int argc, const char *const argv[]) {
                 continue;
             }
             if (sscanf(arg, "buffer=%u", &buffer_size) > 0) {
+                continue;
+            }
+            if (strncmp(arg, "feedback", sizeof("feedback")) == 0) {
+                with_feedback = true;
                 continue;
             }
             if (strncmp(arg, "state=", sizeof("state=") - 1) == 0) {
@@ -152,6 +158,10 @@ int main(const int argc, const char *const argv[]) {
         .buffer_size = buffer_size
     };
     html_tokenizer_init(&state, &options);
+    ParserFeedbackState pf_state;
+    if (with_feedback) {
+        parser_feedback_inject(&pf_state, &state);
+    }
     const unsigned long total_len = strlen(data);
     for (unsigned long i = 0; i < total_len; i += chunk_size) {
         const TokenizerString str = {

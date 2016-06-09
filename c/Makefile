@@ -9,7 +9,15 @@ tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 tokenizer.o: tokenizer.c tokenizer.h
 	$(CC) $(CFLAGS) -c -Wno-parentheses-equality -Wno-unused-const-variable $< -o $@
 
-trace: trace.c tokenizer.o
+parser-feedback.o: parser-feedback.c parser-feedback.h
+tests.pb-c.o: tests.pb-c.c tests.pb-c.h
+test.o: test.c
+trace.o: trace.c
+
+parser-feedback.o tests.pb-c.o test.o trace.o:
+	$(CC) $(CFLAGS) -c $< -o $@
+
+trace: trace.o tokenizer.o parser-feedback.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $+ -o $@
 
 tests.pb-c.c: tests.proto
@@ -18,10 +26,10 @@ tests.pb-c.c: tests.proto
 tests.pb-c.h: tests.pb-c.c
 
 .PHONY: test
-test: test.c tests.pb-c.c tokenizer.o
+test: test.o tests.pb-c.o tokenizer.o
 	$(CC) $(CFLAGS) $(shell pkg-config --cflags 'libprotobuf-c >= 1.0.0') $(LDFLAGS) $(shell pkg-config --libs 'libprotobuf-c >= 1.0.0') $+ -o $@
 	./$@ | ../js/node_modules/.bin/tap-summary
 
 .PHONY: clean
 clean:
-	rm -rf *.dot *.png tokenizer.c tokenizer
+	rm -rf *.dot *.png *.o tokenizer.c tokenizer test

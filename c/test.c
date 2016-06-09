@@ -286,7 +286,7 @@ static bool tokens_match(const State *state, const Token *src) {
     return same;
 }
 
-static void on_token(const Token *token, void *extra) {
+static void on_token(Token *token, void *extra) {
     State *state = extra;
     if (state->error) {
         return;
@@ -336,7 +336,7 @@ static void on_token(const Token *token, void *extra) {
     state->expected_pos++;
 }
 
-static const Token EOF_Token = {
+static Token EOF_Token = {
     .type = token_none
 };
 
