@@ -61,6 +61,7 @@ typedef struct {
 } TokenAttributes;
 
 typedef enum {
+    // Regular elements
     HTML_TAG_A = 1,
     HTML_TAG_ABBR = 34898,
     HTML_TAG_ADDRESS = 1212749427,
@@ -170,7 +171,48 @@ typedef enum {
     HTML_TAG_UL = 684,
     HTML_TAG_VAR = 22578,
     HTML_TAG_VIDEO = 23367855,
-    HTML_TAG_WBR = 23634
+    HTML_TAG_WBR = 23634,
+
+    // Obsolete elements
+    HTML_TAG_APPLET = 50868404,
+    HTML_TAG_ACRONYM = 1193786157,
+    HTML_TAG_BGSOUND = 2402801092,
+    HTML_TAG_DIR = 4402,
+    HTML_TAG_FRAME = 6882725,
+    HTML_TAG_FRAMESET = 225533152436,
+    HTML_TAG_NOFRAMES = 497362711731,
+    HTML_TAG_ISINDEX = 10311110840,
+    HTML_TAG_LISTING = 13207479751,
+    HTML_TAG_NEXTID = 475812132,
+    HTML_TAG_NOEMBED = 15541373092,
+    HTML_TAG_PLAINTEXT = 18005893977876,
+    HTML_TAG_RB = 578,
+    HTML_TAG_RTC = 19075,
+    HTML_TAG_STRIKE = 659105125,
+    HTML_TAG_XMP = 25008,
+    HTML_TAG_BASEFONT = 70436208084,
+    HTML_TAG_BIG = 2343,
+    HTML_TAG_BLINK = 2500043,
+    HTML_TAG_CENTER = 106385586,
+    HTML_TAG_FONT = 212436,
+    HTML_TAG_MARQUEE = 14011651237,
+    HTML_TAG_MULTICOL = 469649100268,
+    HTML_TAG_NOBR = 474194,
+    HTML_TAG_SPACER = 654347442,
+    HTML_TAG_TT = 660,
+    HTML_TAG_IMAGE = 9864421,
+
+    // MathML text integration points
+    HTML_TAG_MI = 425,
+    HTML_TAG_MO = 431,
+    HTML_TAG_MN = 430,
+    HTML_TAG_MS = 435,
+    HTML_TAG_MTEXT = 14292756,
+
+    // SVG HTML integration points
+    HTML_TAG_DESC = 136803,
+    // HTML_TAG_TITLE // already exists,
+    // HTML_TAG_FOREIGNOBJECT // too long,
 } HtmlTagType;
 
 typedef struct {
@@ -235,5 +277,6 @@ typedef struct {
 
 void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options);
 int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk);
+bool html_name_equals(const TokenizerString actual, const char *expected);
 
 #endif

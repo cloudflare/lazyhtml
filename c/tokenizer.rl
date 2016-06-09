@@ -72,6 +72,26 @@ static HtmlTagType get_tag_type(const TokenizerString name) {
   return code;
 }
 
+bool html_name_equals(const TokenizerString actual, const char *expected) {
+    size_t len = actual.length;
+    const char *data = actual.data;
+
+    for (size_t i = 0; i < len; i++) {
+        char c = data[i];
+        char e = expected[i];
+
+        if (c >= 'A' && c <= 'Z') {
+            c |= 0x20;
+        }
+
+        if (e == 0 || c != e) {
+            return false;
+        }
+    }
+
+    return expected[len] == 0;
+}
+
 void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     %%write init nocs;
     state->allow_cdata = options->allow_cdata;
