@@ -49,6 +49,29 @@ static void token_init_character(TokenizerState *state, TokenCharacterKind kind)
     reset_string(&character->value);
 }
 
+static HtmlTagType get_tag_type(const TokenizerString name) {
+  if (name.length > 12) {
+      return 0;
+  }
+
+  uint64_t code = 0;
+
+  const char *data = name.data;
+  const char *const max = data + name.length;
+
+  for (; data < max; data++) {
+      char c = *data;
+
+      if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+	      code = (code << 5) | (c & 31);
+      } else {
+        return 0;
+      }
+  }
+
+  return code;
+}
+
 void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     %%write init nocs;
     state->allow_cdata = options->allow_cdata;

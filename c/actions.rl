@@ -86,11 +86,15 @@
     }
 
     action SetStartTagName {
-        set_string(&get_token(state, start_tag)->name, state->start_slice, p);
+        TokenStartTag *start_tag = get_token(state, start_tag);
+        set_string(&start_tag->name, state->start_slice, p);
+        start_tag->type = get_tag_type(start_tag->name);
     }
 
     action SetEndTagName {
-        set_string(&get_token(state, end_tag)->name, state->start_slice, p);
+        TokenEndTag *end_tag = get_token(state, end_tag);
+        set_string(&end_tag->name, state->start_slice, p);
+        end_tag->type = get_tag_type(end_tag->name);
     }
 
     action SetLastStartTagName {
