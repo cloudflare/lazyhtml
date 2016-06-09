@@ -1,6 +1,6 @@
 RAGEL = ragel
 RAGELFLAGS = --reduce-frontend --colm-backend -G2 -L
-CFLAGS = -g -O3 -Wall -Wextra -Werror -Wno-unused-const-variable
+CFLAGS = -g -O3 -Wall -Wextra -Werror
 LDFLAGS =
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
