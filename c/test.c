@@ -286,8 +286,8 @@ static bool tokens_match(const State *state, const Token *src) {
     return same;
 }
 
-static void on_token(const Token *token) {
-    State *state = (State *) token->extra;
+static void on_token(const Token *token, void *extra) {
+    State *state = extra;
     if (state->error) {
         return;
     }
@@ -336,6 +336,10 @@ static void on_token(const Token *token) {
     state->expected_pos++;
 }
 
+static const Token EOF_Token = {
+    .type = token_none
+};
+
 static void run_test(const Suite__Test *test) {
     printf(
         "# %.*s\n",
@@ -361,10 +365,6 @@ static void run_test(const Suite__Test *test) {
         .buffer_size = sizeof(buffer),
         .extra = &custom_state
     };
-    const Token EOF_Token = {
-        .type = token_none,
-        .extra = &custom_state
-    };
     TokenizerState state;
     TokenizerString input = to_tok_string(test->input);
     for (size_t i = 0; i < test->n_initial_states; i++) {
@@ -383,7 +383,7 @@ static void run_test(const Suite__Test *test) {
             html_tokenizer_feed(&state, &ch);
         }
         html_tokenizer_feed(&state, NULL);
-        on_token(&EOF_Token);
+        on_token(&EOF_Token, &custom_state);
         if (custom_state.error) return;
         if (state.cs == html_state_error) {
             fprint_fail(stdout, &custom_state, "Tokenization error");

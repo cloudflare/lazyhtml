@@ -105,8 +105,8 @@ void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     state->buffer = state->buffer_pos = options->buffer;
     state->buffer_end = options->buffer + options->buffer_size;
     state->token.type = token_none;
-    state->token.extra = options->extra;
     state->token.raw.data = state->buffer;
+    state->extra = options->extra;
     state->cs = options->initial_state;
 }
 
@@ -133,7 +133,8 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
             set_string(&token->character.value, state->start_slice, middle);
             token->raw.length = middle - token->raw.data;
             if (token->raw.length) {
-                state->emit_token(token);
+                state->emit_token(token, state->extra);
+                token->type = token_character; // restore just in case
             }
             token->raw.data = state->start_slice = middle;
         }

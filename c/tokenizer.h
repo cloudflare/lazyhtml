@@ -244,10 +244,9 @@ typedef struct {
         TokenDocType doc_type;
     };
     TokenizerString raw;
-    void *extra;
 } Token;
 
-typedef void (*TokenHandler)(const Token *token);
+typedef void (*TokenHandler)(Token *token, void *extra);
 
 typedef struct {
     bool allow_cdata;
@@ -263,6 +262,7 @@ typedef struct {
     char *buffer_pos;
     const char *buffer_end;
     int cs;
+    void *extra;
 } TokenizerState;
 
 typedef struct {

@@ -56,7 +56,7 @@
         bool isnt_eof = p != eof;
         token->raw.length = p - token->raw.data + isnt_eof;
         if (token->raw.length) {
-            state->emit_token(token);
+            state->emit_token(token, state->extra);
         }
         token->type = token_none;
         token->raw.data = p + isnt_eof;
