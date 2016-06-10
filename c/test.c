@@ -46,7 +46,7 @@ static void to_opt_test_string(const TokenizerOptionalString src, volatile proto
 static void fprint_escaped_str(FILE *file, const ProtobufCBinaryData str) {
     fprintf(file, "'");
     for (size_t i = 0; i < str.len; i++) {
-        const char c = str.data[i];
+        const unsigned char c = str.data[i];
         if (iscntrl(c)) {
             fprintf(file, "\\x%02X", c);
         } else if (c == '\'') {
@@ -113,9 +113,9 @@ static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
                 }
 
                 case PROTOBUF_C_TYPE_ENUM: {
-                    const unsigned int *rec = value;
-                    const ProtobufCEnumDescriptor *desc = field->descriptor;
-                    fprintf(file, "%s", protobuf_c_enum_descriptor_get_value(desc, *rec)->name);
+                    const int *rec = value;
+                    const ProtobufCEnumDescriptor *enum_desc = field->descriptor;
+                    fprintf(file, "%s", protobuf_c_enum_descriptor_get_value(enum_desc, *rec)->name);
                     value = rec + 1;
                     break;
                 }
@@ -139,12 +139,12 @@ static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
 }
 
 typedef struct {
+    Suite__Test__State initial_state;
     bool error;
     const char *raw_pos;
-    unsigned int expected_pos;
-    const unsigned int expected_length;
+    size_t expected_pos;
+    const size_t expected_length;
     const Suite__Test *test;
-    Suite__Test__State initial_state;
     char char_token_buf[1024];
     char *char_token_buf_pos;
 } State;
@@ -174,8 +174,8 @@ static void fprint_fail_end(FILE *file) {
 static bool tokens_match(const State *state, const Token *src) {
     if (state->expected_pos >= state->expected_length) {
         fprint_fail(stdout, state, "Extraneous tokens");
-        fprintf(stdout, "  actual:   %u\n", state->expected_pos);
-        fprintf(stdout, "  expected: %u\n", state->expected_length - 1);
+        fprintf(stdout, "  actual:   %zu\n", state->expected_pos);
+        fprintf(stdout, "  expected: %zu\n", state->expected_length - 1);
         fprint_fail_end(stdout);
         return false;
     }
@@ -226,7 +226,7 @@ static bool tokens_match(const State *state, const Token *src) {
                 const ProtobufCBinaryData name = attr->name = to_test_string(src_attr->name);
                 attr->value = to_test_string(src_attr->value);
                 bool duplicate_name = false;
-                int insert_before = -1;
+                long insert_before = -1;
                 for (size_t j = 0; j < start_tag.n_attributes; j++) {
                     ProtobufCBinaryData other_name = attributes[j].name;
                     int cmp_result = memcmp(name.data, other_name.data, name.len < other_name.len ? name.len : other_name.len);
@@ -235,17 +235,17 @@ static bool tokens_match(const State *state, const Token *src) {
                         break;
                     }
                     if (cmp_result < 0) {
-                        insert_before = j;
+                        insert_before = (long) j;
                     }
                 }
                 if (!duplicate_name) {
                     start_tag.n_attributes++;
                     if (insert_before >= 0) {
-                        const Suite__Test__Attribute attr = attributes[start_tag.n_attributes - 1];
-                        for (int j = start_tag.n_attributes - 2; j >= insert_before; j--) {
+                        const Suite__Test__Attribute new_attr = attributes[start_tag.n_attributes - 1];
+                        for (long j = (long) start_tag.n_attributes - 2; j >= insert_before; j--) {
                             attributes[j + 1] = attributes[j];
                         }
-                        attributes[insert_before] = attr;
+                        attributes[insert_before] = new_attr;
                     }
                 }
             }
@@ -305,7 +305,7 @@ static void on_token(Token *token, void *extra) {
             state->char_token_buf_pos = state->char_token_buf;
         }
         const TokenizerString *value = &token->character.value;
-        assert(state->char_token_buf_pos - state->char_token_buf + token->character.value.length < sizeof(state->char_token_buf));
+        assert((size_t) (state->char_token_buf_pos - state->char_token_buf) + token->character.value.length < sizeof(state->char_token_buf));
         memcpy(state->char_token_buf_pos, value->data, token->character.value.length);
         state->char_token_buf_pos += token->character.value.length;
         return;
@@ -316,7 +316,7 @@ static void on_token(Token *token, void *extra) {
             .character = {
                 .value = {
                     .data = state->char_token_buf,
-                    .length = state->char_token_buf_pos - state->char_token_buf
+                    .length = (size_t) (state->char_token_buf_pos - state->char_token_buf)
                 }
             }
         };
@@ -392,8 +392,8 @@ static void run_test(const Suite__Test *test) {
         }
         if (custom_state.expected_pos < custom_state.expected_length) {
             fprint_fail(stdout, &custom_state, "Not enough tokens");
-            fprintf(stdout, "    actual:   %u\n", custom_state.expected_pos);
-            fprintf(stdout, "    expected: %u\n", custom_state.expected_length);
+            fprintf(stdout, "    actual:   %zu\n", custom_state.expected_pos);
+            fprintf(stdout, "    expected: %zu\n", custom_state.expected_length);
             fprint_fail_end(stdout);
             return;
         }
@@ -402,13 +402,13 @@ static void run_test(const Suite__Test *test) {
 }
 
 static void run_suite(const Suite *suite) {
-    const int n = suite->n_tests;
+    const size_t n = suite->n_tests;
     printf(
         "TAP version 13\n"
-        "1..%u\n",
+        "1..%zu\n",
         n
     );
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         run_test(suite->tests[i]);
     }
 }
@@ -418,17 +418,17 @@ int main() {
 
     assert(infile);
 
-    fseek(infile, 0L, SEEK_END);
-    long numbytes = ftell(infile);
+    fseek(infile, 0, SEEK_END);
+    size_t numbytes = (size_t) ftell(infile);
 
     uint8_t *buffer = malloc(numbytes);
 
     assert(buffer);
 
-    fseek(infile, 0L, SEEK_SET);
+    rewind(infile);
 
     size_t readbytes = fread(buffer, sizeof(char), numbytes, infile);
-    assert((long) readbytes == numbytes);
+    assert(readbytes == numbytes);
     fclose(infile);
 
     Suite *suite = suite__unpack(NULL, numbytes, buffer);

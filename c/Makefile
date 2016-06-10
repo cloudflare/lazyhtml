@@ -11,10 +11,9 @@ tokenizer.o: tokenizer.c tokenizer.h
 
 parser-feedback.o: parser-feedback.c parser-feedback.h
 tests.pb-c.o: tests.pb-c.c tests.pb-c.h
-test.o: test.c
 trace.o: trace.c
 
-parser-feedback.o tests.pb-c.o test.o trace.o:
+parser-feedback.o tests.pb-c.o trace.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 trace: trace.o tokenizer.o parser-feedback.o
@@ -24,6 +23,9 @@ tests.pb-c.c: tests.proto
 	protoc-c --c_out=$(@D) --proto_path=$(<D) $<
 
 tests.pb-c.h: tests.pb-c.c
+
+test.o: test.c
+	$(CC) $(CFLAGS) -Wno-cast-qual -Wno-cast-align -c $< -o $@
 
 .PHONY: test
 test: test.o tests.pb-c.o tokenizer.o
