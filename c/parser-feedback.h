@@ -5,9 +5,9 @@
 #include "tokenizer.h"
 
 typedef enum {
-    NS_HTML,
-    NS_MATHML,
-    NS_SVG
+    NS_HTML = HTML_TAG_HTML,
+    NS_MATHML = HTML_TAG_MATH,
+    NS_SVG = HTML_TAG_SVG
 } Namespace;
 
 #define MAX_NS_DEPTH 20

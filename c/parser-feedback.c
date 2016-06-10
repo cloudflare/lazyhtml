@@ -158,10 +158,8 @@ static bool foreign_is_integration_point(Namespace ns, HtmlTagType type, const T
 static void handle_start_tag_token(ParserFeedbackState *state, TokenStartTag *tag) {
     HtmlTagType type = tag->type;
 
-    if (type == HTML_TAG_SVG)
-        enter_ns(state, NS_SVG);
-    else if (type == HTML_TAG_MATH)
-        enter_ns(state, NS_MATHML);
+    if (type == HTML_TAG_SVG || type == HTML_TAG_MATH)
+        enter_ns(state, type);
 
     Namespace ns = get_current_ns(state);
 
@@ -205,7 +203,7 @@ static void handle_end_tag_token(ParserFeedbackState *state, const TokenEndTag *
         Namespace ns = get_current_ns(state);
         HtmlTagType type = tag->type;
 
-        if ((type == HTML_TAG_SVG && ns == NS_SVG) || (type == HTML_TAG_MATH && ns == NS_MATHML)) {
+        if (type == ns) {
             leave_ns(state);
         }
     }
