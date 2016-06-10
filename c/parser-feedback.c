@@ -159,7 +159,7 @@ static void handle_start_tag_token(ParserFeedbackState *state, TokenStartTag *ta
     HtmlTagType type = tag->type;
 
     if (type == HTML_TAG_SVG || type == HTML_TAG_MATH)
-        enter_ns(state, type);
+        enter_ns(state, (Namespace) type);
 
     Namespace ns = get_current_ns(state);
 

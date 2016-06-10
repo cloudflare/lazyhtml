@@ -24,32 +24,32 @@ const int html_state_ScriptData = en_ScriptData;
 
 #define create_token(state, wanted_type) (state->token.type = token_##wanted_type, &state->token.wanted_type)
 
-static void set_string(TokenizerString *dest, const char *start, const char *end) {
-    assert(end >= start);
-    dest->length = end - start;
-    dest->data = start;
+inline __attribute__((always_inline)) static void set_string(TokenizerString *dest, const char *begin, const char *end) {
+    assert(end >= begin);
+    dest->length = (size_t) (end - begin);
+    dest->data = begin;
 }
 
-static void reset_string(TokenizerString *dest) {
+inline __attribute__((always_inline)) static void reset_string(TokenizerString *dest) {
     dest->length = 0;
 }
 
-static void set_opt_string(TokenizerOptionalString *dest, const char *start, const char *end) {
+inline __attribute__((always_inline)) static void set_opt_string(TokenizerOptionalString *dest, const char *begin, const char *end) {
     dest->has_value = true;
-    set_string(&dest->value, start, end);
+    set_string(&dest->value, begin, end);
 }
 
-static void reset_opt_string(TokenizerOptionalString *dest) {
+inline __attribute__((always_inline)) static void reset_opt_string(TokenizerOptionalString *dest) {
     dest->has_value = false;
 }
 
-static void token_init_character(TokenizerState *state, TokenCharacterKind kind) {
+inline __attribute__((always_inline)) static void token_init_character(TokenizerState *state, TokenCharacterKind kind) {
     TokenCharacter *character = create_token(state, character);
     character->kind = kind;
     reset_string(&character->value);
 }
 
-static HtmlTagType get_tag_type(const TokenizerString name) {
+inline __attribute__((always_inline, const, warn_unused_result)) static HtmlTagType get_tag_type(const TokenizerString name) {
   if (name.length > 12) {
       return 0;
   }
@@ -131,7 +131,7 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
         if (token->type == token_character) {
             const char *middle = state->mark != NULL ? state->mark : p;
             set_string(&token->character.value, state->start_slice, middle);
-            token->raw.length = middle - token->raw.data;
+            token->raw.length = (size_t) (middle - token->raw.data);
             if (token->raw.length) {
                 state->emit_token(token, state->extra);
                 token->type = token_character; // restore just in case
@@ -139,7 +139,7 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
             token->raw.data = state->start_slice = middle;
         }
 
-        const int shift = token->raw.data - state->buffer;
+        size_t shift = (size_t) (token->raw.data - state->buffer);
 
         if (shift != 0) {
             switch (token->type) {

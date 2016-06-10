@@ -54,7 +54,7 @@
     action EmitToken {
         Token* token = &state->token;
         bool isnt_eof = p != eof;
-        token->raw.length = p - token->raw.data + isnt_eof;
+        token->raw.length = ((size_t) (p - token->raw.data)) + isnt_eof;
         if (token->raw.length) {
             state->emit_token(token, state->extra);
         }

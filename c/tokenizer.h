@@ -13,8 +13,8 @@ extern const int html_state_PlainText;
 extern const int html_state_ScriptData;
 
 typedef struct {
-    const char *data;
     size_t length;
+    const char *data;
 } TokenizerString;
 
 typedef struct {
@@ -218,8 +218,8 @@ typedef enum {
 typedef struct {
     TokenizerString name;
     HtmlTagType type;
-    bool self_closing;
     TokenAttributes attributes;
+    bool self_closing;
 } TokenStartTag;
 
 typedef struct {
@@ -246,13 +246,14 @@ typedef struct {
     TokenizerString raw;
 } Token;
 
-typedef void (*TokenHandler)(Token *token, void *extra);
+typedef __attribute__((nonnull(1))) void (*TokenHandler)(Token *token, void *extra);
 
 typedef struct {
+    int cs;
+    char quote;
     bool allow_cdata;
     TokenHandler emit_token;
     TokenizerString last_start_tag_name;
-    char quote;
     Token token;
     Attribute *attribute;
     const char *start_slice;
@@ -261,22 +262,21 @@ typedef struct {
     char *buffer;
     char *buffer_pos;
     const char *buffer_end;
-    int cs;
     void *extra;
 } TokenizerState;
 
 typedef struct {
+    int initial_state;
     bool allow_cdata;
     TokenHandler on_token;
     TokenizerString last_start_tag_name;
-    int initial_state;
     char *buffer;
     size_t buffer_size;
     void *extra;
 } TokenizerOpts;
 
-void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options);
-int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk);
-bool html_name_equals(const TokenizerString actual, const char *expected);
+__attribute__((nonnull)) void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options);
+__attribute__((nonnull(1))) int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk);
+__attribute__((const, nonnull, warn_unused_result)) bool html_name_equals(const TokenizerString actual, const char *expected);
 
 #endif

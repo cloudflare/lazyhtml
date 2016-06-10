@@ -93,7 +93,7 @@ static void on_token(Token *token, __attribute__((unused)) void *extra) {
     printf(" }\n");
 }
 
-static int min(int a, int b) {
+static size_t min(size_t a, size_t b) {
     return a < b ? a : b;
 }
 
@@ -101,18 +101,18 @@ int main(const int argc, const char *const argv[]) {
     assert(argc >= 2);
     TokenizerState state;
     const char *data = NULL;
-    unsigned int chunk_size = 1024;
-    unsigned int buffer_size = 1024;
+    size_t chunk_size = 1024;
+    size_t buffer_size = 1024;
     int initial_state = html_state_Data;
     bool with_feedback = false;
     for (int i = 1; i < argc; i++) {
         const char *arg = argv[i];
         if (strncmp(arg, "--", sizeof("--") - 1) == 0) {
             arg += sizeof("--") - 1;
-            if (sscanf(arg, "chunk=%u", &chunk_size) > 0) {
+            if (sscanf(arg, "chunk=%zd", &chunk_size) > 0) {
                 continue;
             }
-            if (sscanf(arg, "buffer=%u", &buffer_size) > 0) {
+            if (sscanf(arg, "buffer=%zd", &buffer_size) > 0) {
                 continue;
             }
             if (strncmp(arg, "feedback", sizeof("feedback")) == 0) {
@@ -162,8 +162,8 @@ int main(const int argc, const char *const argv[]) {
     if (with_feedback) {
         parser_feedback_inject(&pf_state, &state);
     }
-    const unsigned long total_len = strlen(data);
-    for (unsigned long i = 0; i < total_len; i += chunk_size) {
+    const size_t total_len = strlen(data);
+    for (size_t i = 0; i < total_len; i += chunk_size) {
         const TokenizerString str = {
             .data = data + i,
             .length = min(chunk_size, total_len - i)
