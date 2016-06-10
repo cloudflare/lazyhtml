@@ -3,10 +3,8 @@
 
     action Reconsume { fhold; }
 
-    action To_CharacterReferenceInData { fgoto CharacterReferenceInData; }
     action To_TagOpen { fgoto TagOpen; }
     action To_Data { fgoto Data; }
-    action To_CharacterReferenceInRCData { fgoto CharacterReferenceInRCData; }
     action To_RCDataLessThanSign { fgoto RCDataLessThanSign; }
     action To_RCData { fgoto RCData; }
     action To_RawTextLessThanSign { fgoto RawTextLessThanSign; }
@@ -34,15 +32,9 @@
     action To_BeforeAttributeValue { fgoto BeforeAttributeValue; }
     action To_AttributeValueQuoted { fgoto AttributeValueQuoted; }
     action To_AttributeValueUnquoted { fgoto AttributeValueUnquoted; }
-    action To_AfterAttributeValueQuoted { fgoto AfterAttributeValueQuoted; }
-    action To_CharacterReferenceInAttributeValue { fgoto CharacterReferenceInAttributeValue; }
-    action To_CommentStart { fgoto CommentStart; }
     action To_DocType { fgoto DocType; }
     action To_CDataSection { fgoto CDataSection; }
-    action To_CDataSectionEnd { fgoto CDataSectionEnd; }
-    action To_CDataSectionEndRightBracket { fgoto CDataSectionEndRightBracket; }
     action To_Comment { fgoto Comment; }
-    action To_BeforeDocTypeName { fgoto BeforeDocTypeName; }
     action To_DocTypeName { fgoto DocTypeName; }
     action To_AfterDocTypeName { fgoto AfterDocTypeName; }
     action To_BeforeDocTypePublicIdentifier { fgoto BeforeDocTypePublicIdentifier; }
