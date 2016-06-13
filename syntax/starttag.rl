@@ -4,7 +4,7 @@
     _StartTagEnd = (
         TagNameSpace @To_BeforeAttributeName |
         '/' @To_SelfClosingTag |
-        '>' @SetLastStartTagName @EmitToken @To_Data
+        '>' @SetLastStartTagName @Next_Data @EmitToken
     );
 
     StartTagName := any* %SetStartTagName :> _StartTagEnd;
@@ -39,7 +39,7 @@
     AttributeValueUnquoted := _AttrValue :> ((TagNameSpace | '>') & _StartTagEnd);
 
     SelfClosingTag := (
-        '>' >1 @SetSelfClosingFlag @SetLastStartTagName @EmitToken @To_Data |
+        '>' >1 @SetSelfClosingFlag @SetLastStartTagName @Next_Data @EmitToken |
         any >0 @Reconsume @To_BeforeAttributeName
     );
 }%%

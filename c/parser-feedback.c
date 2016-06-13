@@ -28,8 +28,6 @@ static void leave_ns(ParserFeedbackState *state) {
 static void ensure_tokenizer_mode(TokenizerState *tokenizer, HtmlTagType tag_type) {
     int new_state;
 
-    // FIXME tokenizer ignores changes until the new chunk
-
     switch (tag_type) {
         case HTML_TAG_TEXTAREA:
         case HTML_TAG_TITLE:

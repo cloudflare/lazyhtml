@@ -3,6 +3,8 @@
 
     action Reconsume { fhold; }
 
+    action Next_Data { fnext Data; }
+
     action To_TagOpen { fgoto TagOpen; }
     action To_Data { fgoto Data; }
     action To_RCDataLessThanSign { fgoto RCDataLessThanSign; }
