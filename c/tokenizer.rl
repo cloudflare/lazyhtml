@@ -5,8 +5,6 @@
 %%{
     machine html;
 
-    access state->;
-
     include 'c/actions.rl';
     include 'syntax/index.rl';
 
@@ -123,72 +121,72 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
     const char *const pe = state->buffer_pos;
     const char *const eof = chunk == NULL ? pe : 0;
 
+    int cs = state->cs;
+
     %%write exec;
 
-    {
-        Token *const token = &state->token;
+    state->cs = cs;
 
-        if (token->type == token_character) {
-            const char *middle = state->mark != NULL ? state->mark : p;
-            set_string(&token->character.value, state->start_slice, middle);
-            token->raw.length = (size_t) (middle - token->raw.data);
-            if (token->raw.length) {
-                state->emit_token(token, state->extra);
-                token->type = token_character; // restore just in case
-            }
-            token->raw.data = state->start_slice = middle;
+    Token *const token = &state->token;
+
+    if (token->type == token_character) {
+        const char *middle = state->mark != NULL ? state->mark : p;
+        set_string(&token->character.value, state->start_slice, middle);
+        token->raw.length = (size_t) (middle - token->raw.data);
+        if (token->raw.length) {
+            state->emit_token(token, state->extra);
+            token->type = token_character; // restore just in case
+        }
+        token->raw.data = state->start_slice = middle;
+    }
+
+    size_t shift = (size_t) (token->raw.data - state->buffer);
+
+    switch (token->type) {
+        case token_character: {
+            break;
         }
 
-        size_t shift = (size_t) (token->raw.data - state->buffer);
-
-        if (shift != 0) {
-            switch (token->type) {
-                case token_character: {
-                    break;
-                }
-
-                case token_comment: {
-                    token->comment.value.data -= shift;
-                    break;
-                }
-
-                case token_doc_type: {
-                    token->doc_type.name.value.data -= shift;
-                    token->doc_type.public_id.value.data -= shift;
-                    token->doc_type.system_id.value.data -= shift;
-                    break;
-                }
-
-                case token_end_tag: {
-                    token->end_tag.name.data -= shift;
-                    break;
-                }
-
-                case token_start_tag: {
-                    token->start_tag.name.data -= shift;
-                    TokenAttributes *attrs = &token->start_tag.attributes;
-                    for (size_t i = 0; i < attrs->count; i++) {
-                        Attribute *attr = &attrs->items[i];
-                        attr->name.data -= shift;
-                        attr->value.data -= shift;
-                    }
-                    break;
-                }
-
-                case token_none: {
-                    break;
-                }
-            }
-
-            memmove(state->buffer, token->raw.data, pe - token->raw.data);
-            token->raw.data = state->buffer;
-            state->buffer_pos -= shift;
-            state->start_slice -= shift;
-
-            if (state->mark != NULL) {
-                state->mark -= shift;
-            }
+        case token_comment: {
+            token->comment.value.data -= shift;
+            break;
         }
+
+        case token_doc_type: {
+            token->doc_type.name.value.data -= shift;
+            token->doc_type.public_id.value.data -= shift;
+            token->doc_type.system_id.value.data -= shift;
+            break;
+        }
+
+        case token_end_tag: {
+            token->end_tag.name.data -= shift;
+            break;
+        }
+
+        case token_start_tag: {
+            token->start_tag.name.data -= shift;
+            TokenAttributes *attrs = &token->start_tag.attributes;
+            for (size_t i = 0; i < attrs->count; i++) {
+                Attribute *attr = &attrs->items[i];
+                attr->name.data -= shift;
+                attr->value.data -= shift;
+            }
+            break;
+        }
+
+        case token_none: {
+            break;
+        }
+    }
+
+    memmove(state->buffer, token->raw.data, pe - token->raw.data);
+    token->raw.data = state->buffer;
+    state->buffer_pos -= shift;
+    state->start_slice -= shift;
+
+    if (state->mark != NULL) {
+        state->mark -= shift;
     }
 
     return state->cs;
