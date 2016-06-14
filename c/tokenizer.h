@@ -253,7 +253,8 @@ typedef struct {
     char quote;
     bool allow_cdata;
     TokenHandler emit_token;
-    TokenizerString last_start_tag_name;
+    char last_start_tag_name_buf[20]; // all the tags that might need this, fit
+    const char *last_start_tag_name_end;
     Token token;
     Attribute *attribute;
     const char *start_slice;

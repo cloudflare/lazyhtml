@@ -49,6 +49,15 @@ inline __attribute__((always_inline)) static void token_init_character(Tokenizer
     reset_string(&character->value);
 }
 
+inline __attribute__((always_inline)) static void set_last_start_tag_name(TokenizerState *state, const TokenizerString name) {
+    size_t len = name.length;
+    if (len > sizeof(state->last_start_tag_name_buf)) {
+        len = sizeof(state->last_start_tag_name_buf);
+    }
+    memcpy(state->last_start_tag_name_buf, name.data, len);
+    state->last_start_tag_name_end = state->last_start_tag_name_buf + len;
+}
+
 inline __attribute__((always_inline, const, warn_unused_result)) static HtmlTagType get_tag_type(const TokenizerString name) {
   if (name.length > 12) {
       return 0;
@@ -96,7 +105,7 @@ void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     %%write init nocs;
     state->allow_cdata = options->allow_cdata;
     state->emit_token = options->on_token;
-    state->last_start_tag_name = options->last_start_tag_name;
+    set_last_start_tag_name(state, options->last_start_tag_name);
     state->quote = 0;
     state->attribute = 0;
     state->start_slice = 0;

@@ -24,15 +24,17 @@
     }
 
     action StartAppropriateEndTag {
-        state->appropriate_end_tag_offset = state->last_start_tag_name.data;
+        state->appropriate_end_tag_offset = state->last_start_tag_name_buf;
     }
 
-    action IsAppropriateEndTagFed { state->appropriate_end_tag_offset == state->last_start_tag_name.data + state->last_start_tag_name.length }
+    action IsAppropriateEndTagFed { state->appropriate_end_tag_offset == state->last_start_tag_name_end }
 
     action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && *(state->appropriate_end_tag_offset++) == (fc | 0x20) }
 
     action SetAppropriateEndTagName {
-        get_token(state, end_tag)->name = state->last_start_tag_name;
+        TokenizerString *end_tag_name = &get_token(state, end_tag)->name;
+        end_tag_name->data = state->last_start_tag_name_buf;
+        end_tag_name->length = (size_t) (state->last_start_tag_name_end - state->last_start_tag_name_buf);
     }
 
     action StartSlice {
@@ -98,7 +100,7 @@
     }
 
     action SetLastStartTagName {
-        state->last_start_tag_name = get_token(state, start_tag)->name;
+        set_last_start_tag_name(state, get_token(state, start_tag)->name);
     }
 
     action SetSelfClosingFlag {
