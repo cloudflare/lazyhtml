@@ -14,7 +14,10 @@ RL_FILES := $(wildcard syntax/*.rl)
 	open $@
 
 tests.dat: js/tests.proto .git/modules/html5lib-tests/HEAD
-	node convert-tests.js
+	node convert-tests.js html5lib-tests/tokenizer $@
+
+tests-with-feedback.dat: js/tests.proto
+	node convert-tests.js parser-feedback-tests $@
 
 .PHONY: clean
 clean:

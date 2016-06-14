@@ -90,17 +90,24 @@ function convertTest({
     };
 }
 
-const suite = {
-    tests: (
-        readdirSync(`${__dirname}/html5lib-tests/tokenizer`)
-        .filter(name => name.endsWith('.test'))
-        .map(name => `${__dirname}/html5lib-tests/tokenizer/${name}`)
-        .concat(`${__dirname}/script-data.test`)
-        .map(path => JSON.parse(readFileSync(path, 'utf-8')).tests)
-        .filter(Boolean)
-        .reduce((all, tests) => all.concat(tests), [])
-        .map(convertTest)
-    )
-};
+function convertSuite(inDir, outFile) {
+    const suite = {
+        tests: (
+            readdirSync(inDir)
+            .filter(name => name.endsWith('.test'))
+            .map(name => `${inDir}/${name}`)
+            .map(path => JSON.parse(readFileSync(path, 'utf-8')).tests)
+            .filter(Boolean)
+            .reduce((all, tests) => all.concat(tests), [])
+            .map(convertTest)
+        )
+    };
 
-writeFileSync(`${__dirname}/tests.dat`, Suite.encode(suite));
+    writeFileSync(`${outFile}`, Suite.encode(suite));
+}
+
+if (process.argv.length !== 4) {
+    throw new Error('Usage: node convert-tests.js [dir-with-tests] [output-file]');
+}
+
+convertSuite(process.argv[2], process.argv[3]);
