@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include "tests.pb-c.h"
 #include "tokenizer.h"
+#include "parser-feedback.h"
 
 static TokenizerString to_tok_string(const ProtobufCBinaryData data) {
     TokenizerString str = {
@@ -340,11 +341,12 @@ static Token EOF_Token = {
     .type = token_none
 };
 
-static void run_test(const Suite__Test *test) {
+static void run_test(const Suite__Test *test, bool with_feedback) {
     printf(
-        "# %.*s\n",
+        "# %.*s%s\n",
         (int) test->description.len,
-        (char *) test->description.data
+        (char *) test->description.data,
+        with_feedback ? " (with feedback)" : ""
     );
     for (size_t i = 0; i < test->input.len; i++) {
         char c = (char) test->input.data[i];
@@ -357,7 +359,7 @@ static void run_test(const Suite__Test *test) {
         .expected_length = test->n_output,
         .test = test
     };
-    char buffer[1024];
+    char buffer[2048];
     TokenizerOpts options = {
         .on_token = on_token,
         .last_start_tag_name = to_tok_string(test->last_start_tag),
@@ -366,6 +368,7 @@ static void run_test(const Suite__Test *test) {
         .extra = &custom_state
     };
     TokenizerState state;
+    ParserFeedbackState pf_state;
     TokenizerString input = to_tok_string(test->input);
     for (size_t i = 0; i < test->n_initial_states; i++) {
         custom_state.initial_state = test->initial_states[i];
@@ -375,10 +378,14 @@ static void run_test(const Suite__Test *test) {
         custom_state.char_token_buf_pos = NULL;
         options.initial_state = to_tok_state(custom_state.initial_state);
         html_tokenizer_init(&state, &options);
+        if (with_feedback) {
+            parser_feedback_inject(&pf_state, &state);
+        }
         for (size_t j = 0; j < input.length; j++) {
+            char c = input.data[j]; // to ensure that pointers are not saved to the original data
             const TokenizerString ch = {
                 .length = 1,
-                .data = &input.data[j]
+                .data = &c
             };
             html_tokenizer_feed(&state, &ch);
         }
@@ -401,20 +408,8 @@ static void run_test(const Suite__Test *test) {
     printf("ok\n");
 }
 
-static void run_suite(const Suite *suite) {
-    const size_t n = suite->n_tests;
-    printf(
-        "TAP version 13\n"
-        "1..%zu\n",
-        n
-    );
-    for (size_t i = 0; i < n; i++) {
-        run_test(suite->tests[i]);
-    }
-}
-
-int main() {
-    FILE *infile = fopen("../tests.dat", "rb");
+static void run_suite(const char *path, bool with_feedback) {
+    FILE *infile = fopen(path, "rb");
 
     assert(infile);
 
@@ -437,9 +432,24 @@ int main() {
 
     assert(suite);
 
-    run_suite(suite);
+    const size_t n = suite->n_tests;
+
+    printf(
+        "TAP version 13\n"
+        "1..%zu\n",
+        n
+    );
+
+    for (size_t i = 0; i < n; i++) {
+        run_test(suite->tests[i], with_feedback);
+    }
 
     suite__free_unpacked(suite, NULL);
+}
+
+int main() {
+    run_suite("../tests.dat", false);
+    run_suite("../tests-with-feedback.dat", true);
 
     return 0;
 }

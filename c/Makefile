@@ -28,7 +28,7 @@ test.o: test.c
 	$(CC) $(CFLAGS) -Wno-cast-qual -Wno-cast-align -c $< -o $@
 
 .PHONY: test
-test: test.o tests.pb-c.o tokenizer.o
+test: test.o tests.pb-c.o tokenizer.o parser-feedback.o
 	$(CC) $(CFLAGS) $(shell pkg-config --cflags 'libprotobuf-c >= 1.0.0') $(LDFLAGS) $(shell pkg-config --libs 'libprotobuf-c >= 1.0.0') $+ -o $@
 	./$@ | ../js/node_modules/.bin/tap-summary
 
