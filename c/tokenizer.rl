@@ -8,6 +8,8 @@
     include 'c/actions.rl';
     include 'syntax/index.rl';
 
+    access state->;
+
     write data nofinal noprefix;
 }%%
 
@@ -121,11 +123,7 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
     const char *const pe = state->buffer_pos;
     const char *const eof = chunk == NULL ? pe : 0;
 
-    int cs = state->cs;
-
     %%write exec;
-
-    state->cs = cs;
 
     Token *const token = &state->token;
 
