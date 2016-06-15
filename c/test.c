@@ -7,6 +7,7 @@
 #include "tokenizer.h"
 #include "parser-feedback.h"
 #include "concat-char-tokens.h"
+#include "decoder.h"
 
 static TokenizerString to_tok_string(const ProtobufCBinaryData data) {
     TokenizerString str = {
@@ -173,26 +174,6 @@ static void fprint_fail_end(FILE *file) {
     fprintf(file, "  ...\n");
 }
 
-static unsigned char toasciilower(unsigned char c) {
-    if (c >= 'A' && c <= 'Z') {
-        return (c | 0x20);
-    } else {
-        return c;
-    }
-}
-
-static int memcasecmp (const void *vs1, const void *vs2, size_t n) {
-    const unsigned char *s1 = vs1;
-    const unsigned char *s2 = vs2;
-    for (size_t i = 0; i < n; i++) {
-        int diff = toasciilower(s1[i]) - toasciilower(s2[i]);
-        if (diff != 0) {
-            return diff;
-        }
-    }
-    return 0;
-}
-
 static bool tokens_match(const State *state, const Token *src) {
     if (state->expected_pos >= state->expected_length) {
         fprint_fail(stdout, state, "Extraneous tokens");
@@ -251,7 +232,7 @@ static bool tokens_match(const State *state, const Token *src) {
                 long insert_before = -1;
                 for (size_t j = 0; j < start_tag.n_attributes; j++) {
                     ProtobufCBinaryData other_name = attributes[j].name;
-                    int cmp_result = memcasecmp(name.data, other_name.data, name.len < other_name.len ? name.len : other_name.len);
+                    int cmp_result = memcmp(name.data, other_name.data, name.len < other_name.len ? name.len : other_name.len);
                     if (name.len == other_name.len && cmp_result == 0) {
                         duplicate_name = true;
                         break;
@@ -288,7 +269,7 @@ static bool tokens_match(const State *state, const Token *src) {
         protobuf_c_message_pack((ProtobufCMessage *) &actual, actual_buf);
         protobuf_c_message_pack(expected, expected_buf);
 
-        same = memcasecmp(actual_buf, expected_buf, actual_len) == 0;
+        same = memcmp(actual_buf, expected_buf, actual_len) == 0;
     }
 
     if (!same) {
@@ -349,6 +330,7 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
     };
     ParserFeedbackState pf_state;
     ConcatCharTokensState cct_state;
+    DecoderState decoder_state;
     TokenizerString input = to_tok_string(test->input);
     for (size_t i = 0; i < test->n_initial_states; i++) {
         state.initial_state = test->initial_states[i];
@@ -357,10 +339,11 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         state.expected_pos = 0;
         options.initial_state = to_tok_state(state.initial_state);
         html_tokenizer_init(&state.tokenizer, &options);
+        decoder_inject(&state.tokenizer, &decoder_state);
+        concat_char_tokens_inject(&state.tokenizer, &cct_state);
         if (with_feedback) {
             parser_feedback_inject(&state.tokenizer, &pf_state);
         }
-        concat_char_tokens_inject(&state.tokenizer, &cct_state);
         for (size_t j = 0; j < input.length; j++) {
             char c = input.data[j]; // to ensure that pointers are not saved to the original data
             const TokenizerString ch = {
