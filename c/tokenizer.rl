@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <strings.h>
+#include <stdint.h>
 #include "tokenizer.h"
 
 %%{
@@ -59,26 +60,40 @@ inline __attribute__((always_inline)) static void set_last_start_tag_name(Tokeni
 }
 
 inline __attribute__((always_inline, const, warn_unused_result)) static HtmlTagType get_tag_type(const TokenizerString name) {
-  if (name.length > 12) {
-      return 0;
-  }
-
-  uint64_t code = 0;
-
-  const char *data = name.data;
-  const char *const max = data + name.length;
-
-  for (; data < max; data++) {
-      char c = *data;
-
-      if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-	      code = (code << 5) | (c & 31);
-      } else {
+    if (name.length > 12) {
         return 0;
-      }
-  }
+    }
 
-  return code;
+    uint64_t code = 0;
+
+    const char *data = name.data;
+    const char *const max = data + name.length;
+
+    for (; data < max; data++) {
+        char c = *data;
+
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+            code = (code << 5) | (c & 31);
+        } else {
+            return 0;
+        }
+    }
+
+    return code;
+}
+
+inline __attribute__((always_inline, nonnull)) static void emit(const TokenizerState *state, Token *token) {
+    TokenHandler *handler = state->handler;
+    assert(handler != NULL);
+    handler->callback(token, handler);
+}
+
+void html_tokenizer_emit(void *extra, Token *token) {
+    TokenHandler *handler = ((TokenHandler *) extra)->next;
+    if (handler == NULL) {
+        return;
+    }
+    handler->callback(token, handler);
 }
 
 bool html_name_equals(const TokenizerString actual, const char *expected) {
@@ -104,7 +119,8 @@ bool html_name_equals(const TokenizerString actual, const char *expected) {
 void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     %%write init nocs;
     state->allow_cdata = options->allow_cdata;
-    state->emit_token = options->on_token;
+    state->handler = NULL;
+    html_tokenizer_add_handler(state, &state->base_handler, options->on_token);
     set_last_start_tag_name(state, options->last_start_tag_name);
     state->quote = 0;
     state->attribute = 0;
@@ -115,8 +131,13 @@ void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     state->buffer_end = options->buffer + options->buffer_size;
     state->token.type = token_none;
     state->token.raw.data = state->buffer;
-    state->extra = options->extra;
     state->cs = options->initial_state;
+}
+
+void html_tokenizer_add_handler(TokenizerState *state, TokenHandler *handler, TokenCallback callback) {
+    handler->callback = callback;
+    handler->next = state->handler;
+    state->handler = handler;
 }
 
 int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
@@ -134,14 +155,25 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
 
     %%write exec;
 
+    if (state->cs == 0) {
+        return 0;
+    }
+
     Token *const token = &state->token;
+
+    if (p == eof) {
+        token->type = token_eof;
+        token->raw.length = 0;
+        emit(state, token);
+        return state->cs;
+    }
 
     if (token->type == token_character) {
         const char *middle = state->mark != NULL ? state->mark : p;
         set_string(&token->character.value, state->start_slice, middle);
         token->raw.length = (size_t) (middle - token->raw.data);
         if (token->raw.length) {
-            state->emit_token(token, state->extra);
+            emit(state, token);
             token->type = token_character; // restore just in case
         }
         token->raw.data = state->start_slice = middle;
@@ -150,10 +182,6 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
     size_t shift = (size_t) (token->raw.data - state->buffer);
 
     switch (token->type) {
-        case token_character: {
-            break;
-        }
-
         case token_comment: {
             token->comment.value.data -= shift;
             break;
@@ -182,7 +210,7 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
             break;
         }
 
-        case token_none: {
+        default: {
             break;
         }
     }

@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <assert.h>
 #include "parser-feedback.h"
 
 static Namespace get_current_ns(ParserFeedbackState *state) {
@@ -221,16 +222,13 @@ static void handle_token(Token *token, void *extra) {
         default:
             break;
     }
-    state->wrapped_handler(token, state->wrapped_extra);
+    html_tokenizer_emit(extra, token);
 }
 
-void parser_feedback_inject(ParserFeedbackState *state, TokenizerState *tokenizer) {
+void parser_feedback_inject(TokenizerState *tokenizer, ParserFeedbackState *state) {
     state->tokenizer = tokenizer;
     state->ns_depth = 0;
     state->skip_next_newline = false;
-    state->wrapped_extra = tokenizer->extra;
-    tokenizer->extra = state;
-    state->wrapped_handler = tokenizer->emit_token;
-    tokenizer->emit_token = handle_token;
     enter_ns(state, NS_HTML);
+    html_tokenizer_add_handler(tokenizer, &state->handler, handle_token);
 }

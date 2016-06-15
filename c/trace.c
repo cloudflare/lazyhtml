@@ -10,7 +10,8 @@ const char *TOKEN_TYPE_NAMES[] = {
     "Comment",
     "StartTag",
     "EndTag",
-    "DocType"
+    "DocType",
+    "EOF"
 };
 
 const char *TOKEN_CHARACTER_KIND_NAMES[] = {
@@ -41,11 +42,13 @@ static void on_token(Token *token, __attribute__((unused)) void *extra) {
         case token_character:
             printf(".kind = %s, .value = ", TOKEN_CHARACTER_KIND_NAMES[token->character.kind]);
             print_string(&token->character.value);
+            printf(", ");
             break;
 
         case token_comment:
             printf(".value = ");
             print_string(&token->comment.value);
+            printf(", ");
             break;
 
         case token_start_tag:
@@ -64,12 +67,13 @@ static void on_token(Token *token, __attribute__((unused)) void *extra) {
                 printf(" = ");
                 print_string(&attr->value);
             }
-            printf(" } ");
+            printf(" } , ");
             break;
 
         case token_end_tag:
             printf(".name = ");
             print_string(&token->end_tag.name);
+            printf(", ");
             break;
 
         case token_doc_type:
@@ -79,14 +83,11 @@ static void on_token(Token *token, __attribute__((unused)) void *extra) {
             print_opt_string(&token->doc_type.public_id);
             printf(", .system_id = ");
             print_opt_string(&token->doc_type.system_id);
-            printf(", .force_quirks = %s", token->doc_type.force_quirks ? "true" : "false");
+            printf(", .force_quirks = %s, ", token->doc_type.force_quirks ? "true" : "false");
             break;
 
-        case token_none:
+        default:
             break;
-    }
-    if (token->type != token_none) {
-        printf(", ");
     }
     printf(".raw = ");
     print_string(&token->raw);
@@ -160,7 +161,7 @@ int main(const int argc, const char *const argv[]) {
     html_tokenizer_init(&state, &options);
     ParserFeedbackState pf_state;
     if (with_feedback) {
-        parser_feedback_inject(&pf_state, &state);
+        parser_feedback_inject(&state, &pf_state);
     }
     const size_t total_len = strlen(data);
     for (size_t i = 0; i < total_len; i += chunk_size) {

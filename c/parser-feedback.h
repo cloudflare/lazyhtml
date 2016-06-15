@@ -1,7 +1,6 @@
 #ifndef PARSER_FEEDBACK_H
 #define PARSER_FEEDBACK_H
 
-#include <assert.h>
 #include "tokenizer.h"
 
 typedef enum {
@@ -13,14 +12,14 @@ typedef enum {
 #define MAX_NS_DEPTH 20
 
 typedef struct {
+    TokenHandler handler; // needs to be the first one
+
     TokenizerState *tokenizer;
-    void *wrapped_extra;
-    TokenHandler wrapped_handler;
     size_t ns_depth;
     Namespace ns_stack[MAX_NS_DEPTH];
     bool skip_next_newline;
 } ParserFeedbackState;
 
-void parser_feedback_inject(ParserFeedbackState *state, TokenizerState *tokenizer);
+void parser_feedback_inject(TokenizerState *tokenizer, ParserFeedbackState *state);
 
 #endif

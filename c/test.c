@@ -6,6 +6,7 @@
 #include "tests.pb-c.h"
 #include "tokenizer.h"
 #include "parser-feedback.h"
+#include "concat-char-tokens.h"
 
 static TokenizerString to_tok_string(const ProtobufCBinaryData data) {
     TokenizerString str = {
@@ -140,14 +141,14 @@ static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
 }
 
 typedef struct {
+    TokenizerState tokenizer;
+
     Suite__Test__State initial_state;
     bool error;
     const char *raw_pos;
     size_t expected_pos;
     const size_t expected_length;
     const Suite__Test *test;
-    char char_token_buf[1024];
-    char *char_token_buf_pos;
 } State;
 
 static void fprint_fail(FILE *file, const State *state, const char *msg) {
@@ -312,43 +313,7 @@ static void on_token(Token *token, void *extra) {
     if (state->error) {
         return;
     }
-    // if (token->raw.data != state->raw_pos) {
-    //     fprint_fail(stdout, state, "Raw position mismatch");
-    //     fprintf(stdout, "  actual:   %ld\n", token->raw.data - (char *) state->test->input.data);
-    //     fprintf(stdout, "  expected: %ld\n", state->raw_pos - (char *) state->test->input.data);
-    //     fprint_fail_end(stdout);
-    //     state->error = true;
-    //     return;
-    // }
-    // state->raw_pos = token->raw.data + token->raw.length;
-    if (token->type == token_character) {
-        if (!state->char_token_buf_pos) {
-            state->char_token_buf_pos = state->char_token_buf;
-        }
-        const TokenizerString *value = &token->character.value;
-        assert((size_t) (state->char_token_buf_pos - state->char_token_buf) + token->character.value.length < sizeof(state->char_token_buf));
-        memcpy(state->char_token_buf_pos, value->data, token->character.value.length);
-        state->char_token_buf_pos += token->character.value.length;
-        return;
-    }
-    if (state->char_token_buf_pos) {
-        const Token char_token = {
-            .type = token_character,
-            .character = {
-                .value = {
-                    .data = state->char_token_buf,
-                    .length = (size_t) (state->char_token_buf_pos - state->char_token_buf)
-                }
-            }
-        };
-        state->char_token_buf_pos = NULL;
-        if ((state->error = !tokens_match(state, &char_token))) {
-            return;
-        }
-        state->expected_pos++;
-    }
-    if (token->type == token_none) {
-        // Artificial token for EOF to finalize chartoken
+    if (token->type == token_eof) {
         return;
     }
     if ((state->error = !tokens_match(state, token))) {
@@ -356,10 +321,6 @@ static void on_token(Token *token, void *extra) {
     }
     state->expected_pos++;
 }
-
-static Token EOF_Token = {
-    .type = token_none
-};
 
 static void run_test(const Suite__Test *test, bool with_feedback) {
     printf(
@@ -375,52 +336,50 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
             return;
         }
     }
-    State custom_state = {
+    State state = {
         .expected_length = test->n_output,
         .test = test
     };
     char buffer[2048];
     TokenizerOpts options = {
-        .on_token = on_token,
         .last_start_tag_name = to_tok_string(test->last_start_tag),
         .buffer = buffer,
         .buffer_size = sizeof(buffer),
-        .extra = &custom_state
+        .on_token = on_token
     };
-    TokenizerState state;
     ParserFeedbackState pf_state;
+    ConcatCharTokensState cct_state;
     TokenizerString input = to_tok_string(test->input);
     for (size_t i = 0; i < test->n_initial_states; i++) {
-        custom_state.initial_state = test->initial_states[i];
-        custom_state.error = false;
-        custom_state.raw_pos = input.data;
-        custom_state.expected_pos = 0;
-        custom_state.char_token_buf_pos = NULL;
-        options.initial_state = to_tok_state(custom_state.initial_state);
-        html_tokenizer_init(&state, &options);
+        state.initial_state = test->initial_states[i];
+        state.error = false;
+        state.raw_pos = input.data;
+        state.expected_pos = 0;
+        options.initial_state = to_tok_state(state.initial_state);
+        html_tokenizer_init(&state.tokenizer, &options);
         if (with_feedback) {
-            parser_feedback_inject(&pf_state, &state);
+            parser_feedback_inject(&state.tokenizer, &pf_state);
         }
+        concat_char_tokens_inject(&state.tokenizer, &cct_state);
         for (size_t j = 0; j < input.length; j++) {
             char c = input.data[j]; // to ensure that pointers are not saved to the original data
             const TokenizerString ch = {
                 .length = 1,
                 .data = &c
             };
-            html_tokenizer_feed(&state, &ch);
+            html_tokenizer_feed(&state.tokenizer, &ch);
         }
-        html_tokenizer_feed(&state, NULL);
-        on_token(&EOF_Token, &custom_state);
-        if (custom_state.error) return;
-        if (state.cs == html_state_error) {
-            fprint_fail(stdout, &custom_state, "Tokenization error");
+        html_tokenizer_feed(&state.tokenizer, NULL);
+        if (state.error) return;
+        if (state.tokenizer.cs == html_state_error) {
+            fprint_fail(stdout, &state, "Tokenization error");
             fprint_fail_end(stdout);
             return;
         }
-        if (custom_state.expected_pos < custom_state.expected_length) {
-            fprint_fail(stdout, &custom_state, "Not enough tokens");
-            fprintf(stdout, "    actual:   %zu\n", custom_state.expected_pos);
-            fprintf(stdout, "    expected: %zu\n", custom_state.expected_length);
+        if (state.expected_pos < state.expected_length) {
+            fprint_fail(stdout, &state, "Not enough tokens");
+            fprintf(stdout, "    actual:   %zu\n", state.expected_pos);
+            fprintf(stdout, "    expected: %zu\n", state.expected_length);
             fprint_fail_end(stdout);
             return;
         }

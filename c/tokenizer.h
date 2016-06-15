@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 extern const int html_state_error;
 extern const int html_state_Data;
@@ -28,7 +27,8 @@ typedef enum {
     token_comment,
     token_start_tag,
     token_end_tag,
-    token_doc_type
+    token_doc_type,
+    token_eof
 } TokenType;
 
 typedef enum {
@@ -246,13 +246,22 @@ typedef struct {
     TokenizerString raw;
 } Token;
 
-typedef __attribute__((nonnull(1))) void (*TokenHandler)(Token *token, void *extra);
+typedef struct TokenHandler TokenHandler;
+
+typedef __attribute__((nonnull(1))) void (*TokenCallback)(Token *token, void *extra);
+
+typedef struct TokenHandler {
+    TokenCallback callback;
+    TokenHandler *next;
+} TokenHandler;
 
 typedef struct {
+    TokenHandler base_handler; // needs to be the first one
+
     int cs;
+    TokenHandler *handler;
     char quote;
     bool allow_cdata;
-    TokenHandler emit_token;
     char last_start_tag_name_buf[20]; // all the tags that might need this, fit
     const char *last_start_tag_name_end;
     Token token;
@@ -263,20 +272,20 @@ typedef struct {
     char *buffer;
     char *buffer_pos;
     const char *buffer_end;
-    void *extra;
 } TokenizerState;
 
 typedef struct {
     int initial_state;
     bool allow_cdata;
-    TokenHandler on_token;
     TokenizerString last_start_tag_name;
     char *buffer;
     size_t buffer_size;
-    void *extra;
+    TokenCallback on_token;
 } TokenizerOpts;
 
 __attribute__((nonnull)) void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options);
+__attribute__((nonnull)) void html_tokenizer_add_handler(TokenizerState *state, TokenHandler *handler, TokenCallback callback);
+__attribute__((nonnull)) void html_tokenizer_emit(void *extra, Token *token);
 __attribute__((nonnull(1))) int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk);
 __attribute__((const, nonnull, warn_unused_result)) bool html_name_equals(const TokenizerString actual, const char *expected);
 
