@@ -94,6 +94,10 @@
                     "StartTag",
                     "svg",
                     {}
+                ],
+                [
+                    "Character",
+                    ""
                 ]
             ]
         },
