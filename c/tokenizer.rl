@@ -70,10 +70,6 @@ void set_last_start_tag_name(lhtml_state_t *state, const lhtml_string_t name) {
 
 HELPER(const, warn_unused_result)
 lhtml_tag_type_t get_tag_type(const lhtml_string_t name) {
-    if (name.length > 12) {
-        return 0;
-    }
-
     uint64_t code = 0;
 
     const char *data = name.data;
@@ -81,6 +77,11 @@ lhtml_tag_type_t get_tag_type(const lhtml_string_t name) {
 
     for (; data < max; data++) {
         char c = *data;
+
+        // protect against overflow
+        if (code >> (64 - 5)) {
+            return 0;
+        }
 
         if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
             code = (code << 5) | (c & 31);

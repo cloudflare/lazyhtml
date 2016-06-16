@@ -212,7 +212,7 @@ typedef enum {
     // SVG HTML integration points
     LHTML_TAG_DESC = 136803,
     // LHTML_TAG_TITLE // already exists,
-    // LHTML_TAG_FOREIGNOBJECT // too long,
+    LHTML_TAG_FOREIGNOBJECT = 6288300733885616211,
 } lhtml_tag_type_t;
 
 typedef struct {

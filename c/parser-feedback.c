@@ -148,7 +148,7 @@ static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, c
             }
 
         case LHTML_NS_SVG:
-            return type == LHTML_TAG_DESC || type == LHTML_TAG_TITLE || lhtml_name_equals(name, "foreignobject");
+            return type == LHTML_TAG_DESC || type == LHTML_TAG_TITLE || type == LHTML_TAG_FOREIGNOBJECT;
 
         case LHTML_NS_HTML:
             return false;
