@@ -174,13 +174,13 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
     if (p == eof) {
         token->type = LHTML_TOKEN_EOF;
-        token->raw.length = 0;
+        token->raw.length = (size_t) (pe - token->raw.data);
         emit(state, token);
         return state->cs;
     }
 
     if (token->type == LHTML_TOKEN_CHARACTER) {
-        const char *middle = state->mark != NULL ? state->mark : p;
+        const char *middle = state->mark != NULL ? state->mark : pe;
         set_string(&token->character.value, state->start_slice, middle);
         token->raw.length = (size_t) (middle - token->raw.data);
         if (token->raw.length) {
