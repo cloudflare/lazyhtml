@@ -1417,7 +1417,7 @@
                     "StartTag",
                     "math",
                     {
-                        "href": "foo"
+                        "xlink:href": "foo"
                     }
                 ],
                 [
@@ -1454,8 +1454,8 @@
                     "StartTag",
                     "mi",
                     {
-                        "lang": "en",
-                        "href": "foo"
+                        "xml:lang": "en",
+                        "xlink:href": "foo"
                     }
                 ],
                 [
@@ -1496,8 +1496,8 @@
                     "StartTag",
                     "mi",
                     {
-                        "lang": "en",
-                        "href": "foo"
+                        "xml:lang": "en",
+                        "xlink:href": "foo"
                     },
                     true
                 ],
@@ -1535,8 +1535,8 @@
                     "StartTag",
                     "mi",
                     {
-                        "lang": "en",
-                        "href": "foo"
+                        "xml:lang": "en",
+                        "xlink:href": "foo"
                     },
                     true
                 ],
