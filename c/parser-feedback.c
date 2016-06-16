@@ -182,6 +182,8 @@ static void handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
 
             case LHTML_TAG_IMAGE:
                 tag->type = LHTML_TAG_IMG;
+                tag->name.data = "img";
+                tag->name.length = sizeof("img") - 1;
                 break;
 
             default:
