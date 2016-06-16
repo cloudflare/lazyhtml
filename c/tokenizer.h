@@ -259,7 +259,7 @@ typedef struct {
     lhtml_token_handler_t base_handler; // needs to be the first one
 
     int cs;
-    lhtml_token_handler_t *handler;
+    lhtml_token_handler_t *last_handler;
     char quote;
     bool allow_cdata;
     char last_start_tag_name_buf[20]; // all the tags that might need this, fit
@@ -280,7 +280,6 @@ typedef struct {
     lhtml_string_t last_start_tag_name;
     char *buffer;
     size_t buffer_size;
-    lhtml_token_callback_t on_token;
 } lhtml_options_t;
 
 __attribute__((nonnull))

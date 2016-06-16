@@ -143,7 +143,12 @@ static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
 }
 
 typedef struct {
+    lhtml_token_handler_t handler;
+
     lhtml_state_t tokenizer;
+    lhtml_feedback_state_t feedback;
+    lhtml_concat_state_t concat;
+    lhtml_decoder_state_t decoder;
 
     Suite__Test__State initial_state;
     bool error;
@@ -326,12 +331,8 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
     lhtml_options_t options = {
         .last_start_tag_name = to_tok_string(test->last_start_tag),
         .buffer = buffer,
-        .buffer_size = sizeof(buffer),
-        .on_token = on_token
+        .buffer_size = sizeof(buffer)
     };
-    lhtml_feedback_state_t pf_state;
-    lhtml_concat_state_t cct_state;
-    lhtml_decoder_state_t decoder_state;
     lhtml_string_t input = to_tok_string(test->input);
     for (size_t i = 0; i < test->n_initial_states; i++) {
         state.initial_state = test->initial_states[i];
@@ -340,11 +341,12 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         state.expected_pos = 0;
         options.initial_state = to_tok_state(state.initial_state);
         lhtml_init(&state.tokenizer, &options);
-        lhtml_decoder_inject(&state.tokenizer, &decoder_state);
-        lhtml_concat_inject(&state.tokenizer, &cct_state);
         if (with_feedback) {
-            lhtml_feedback_inject(&state.tokenizer, &pf_state);
+            lhtml_feedback_inject(&state.tokenizer, &state.feedback);
         }
+        lhtml_concat_inject(&state.tokenizer, &state.concat);
+        lhtml_decoder_inject(&state.tokenizer, &state.decoder);
+        lhtml_add_handler(&state.tokenizer, &state.handler, on_token);
         for (size_t j = 0; j < input.length; j++) {
             char c = input.data[j]; // to ensure that pointers are not saved to the original data
             const lhtml_string_t ch = {

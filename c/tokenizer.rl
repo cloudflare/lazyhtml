@@ -92,13 +92,6 @@ lhtml_tag_type_t get_tag_type(const lhtml_string_t name) {
     return code;
 }
 
-HELPER()
-void emit(const lhtml_state_t *state, lhtml_token_t *token) {
-    lhtml_token_handler_t *handler = state->handler;
-    assert(handler != NULL);
-    handler->callback(token, handler);
-}
-
 void lhtml_emit(lhtml_token_t *token, void *extra) {
     lhtml_token_handler_t *handler = ((lhtml_token_handler_t *) extra)->next;
     if (handler == NULL) {
@@ -130,8 +123,8 @@ bool lhtml_name_equals(const lhtml_string_t actual, const char *expected) {
 void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
     %%write init nocs;
     state->allow_cdata = options->allow_cdata;
-    state->handler = NULL;
-    lhtml_add_handler(state, &state->base_handler, options->on_token);
+    state->base_handler.next = NULL;
+    state->last_handler = &state->base_handler;
     set_last_start_tag_name(state, options->last_start_tag_name);
     state->quote = 0;
     state->attribute = 0;
@@ -147,8 +140,8 @@ void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
 
 void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback) {
     handler->callback = callback;
-    handler->next = state->handler;
-    state->handler = handler;
+    handler->next = NULL;
+    state->last_handler = state->last_handler->next = handler;
 }
 
 int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
@@ -175,7 +168,7 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     if (p == eof) {
         token->type = LHTML_TOKEN_EOF;
         token->raw.length = (size_t) (pe - token->raw.data);
-        emit(state, token);
+        lhtml_emit(token, &state->base_handler);
         return state->cs;
     }
 
@@ -184,7 +177,7 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         set_string(&token->character.value, state->start_slice, middle);
         token->raw.length = (size_t) (middle - token->raw.data);
         if (token->raw.length) {
-            emit(state, token);
+            lhtml_emit(token, &state->base_handler);
             token->type = LHTML_TOKEN_CHARACTER; // restore just in case
         }
         token->raw.data = state->start_slice = middle;

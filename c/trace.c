@@ -152,7 +152,6 @@ int main(const int argc, const char *const argv[]) {
     char buffer[buffer_size];
     const lhtml_options_t options = {
         .allow_cdata = false,
-        .on_token = on_token,
         .last_start_tag_name = { .length = 0 },
         .initial_state = initial_state,
         .buffer = buffer,
@@ -163,6 +162,8 @@ int main(const int argc, const char *const argv[]) {
     if (with_feedback) {
         lhtml_feedback_inject(&state, &pf_state);
     }
+    lhtml_token_handler_t handler;
+    lhtml_add_handler(&state, &handler, on_token);
     const size_t total_len = strlen(data);
     for (size_t i = 0; i < total_len; i += chunk_size) {
         const lhtml_string_t str = {
