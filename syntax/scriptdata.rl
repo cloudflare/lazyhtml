@@ -27,7 +27,7 @@
 
     ScriptDataEscapedDashDash := '-'* <: (
         (
-            '<' @To_ScriptDataEscapedLessThanSign |
+            '<' @AsRawSlice @EmitSlice @StartSlice @To_ScriptDataEscapedLessThanSign |
             '>' @AsRawSlice @EmitSlice @Reconsume @To_ScriptData
         ) >1 |
         any >0 @AsRawSlice @EmitSlice @Reconsume @To_ScriptDataEscaped
