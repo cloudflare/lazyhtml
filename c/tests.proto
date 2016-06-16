@@ -1,14 +1,14 @@
 message Suite {
     message Test {
         enum State {
-            Data = 1;
-            PlainText = 2;
-            RCData = 3;
-            RawText = 4;
-            ScriptData = 5;
+            DATA = 1;
+            PLAINTEXT = 2;
+            RCDATA = 3;
+            RAWTEXT = 4;
+            SCRIPTDATA = 5;
         }
 
-        message DocType {
+        message Doctype {
             optional bytes name = 1;
             optional bytes public_id = 2;
             optional bytes system_id = 3;
@@ -40,7 +40,7 @@ message Suite {
 
         message Token {
             oneof token {
-                DocType doc_type = 1;
+                Doctype doctype = 1;
                 StartTag start_tag = 2;
                 EndTag end_tag = 3;
                 Comment comment = 4;

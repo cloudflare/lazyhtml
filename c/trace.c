@@ -22,13 +22,13 @@ const char *TOKEN_CHARACTER_KIND_NAMES[] = {
     "Safe"
 };
 
-static void print_string(const TokenizerString *str) {
+static void print_string(const lhtml_string_t *str) {
     printf("'");
     fwrite(str->data, sizeof(char), str->length, stdout);
     printf("'");
 }
 
-static void print_opt_string(const TokenizerOptionalString *str) {
+static void print_opt_string(const lhtml_opt_string_t *str) {
     if (str->has_value) {
         print_string(&str->value);
     } else {
@@ -36,33 +36,33 @@ static void print_opt_string(const TokenizerOptionalString *str) {
     }
 }
 
-static void on_token(Token *token, __attribute__((unused)) void *extra) {
+static void on_token(lhtml_token_t *token, __attribute__((unused)) void *extra) {
     printf("%s { ", TOKEN_TYPE_NAMES[token->type]);
     switch (token->type) {
-        case token_character:
+        case LHTML_TOKEN_CHARACTER:
             printf(".kind = %s, .value = ", TOKEN_CHARACTER_KIND_NAMES[token->character.kind]);
             print_string(&token->character.value);
             printf(", ");
             break;
 
-        case token_comment:
+        case LHTML_TOKEN_COMMENT:
             printf(".value = ");
             print_string(&token->comment.value);
             printf(", ");
             break;
 
-        case token_start_tag:
+        case LHTML_TOKEN_START_TAG:
             printf(".name = ");
             print_string(&token->start_tag.name);
             printf(", .self_closing = %s, .attributes = { ", token->start_tag.self_closing ? "true" : "false");
-            const TokenAttributes *attributes = &token->start_tag.attributes;
+            const lhtml_attributes_t *attributes = &token->start_tag.attributes;
             const size_t count = attributes->count;
-            const Attribute *items = attributes->items;
+            const lhtml_attribute_t *items = attributes->items;
             for (size_t i = 0; i < count; i++) {
                 if (i > 0) {
                     printf(", ");
                 }
-                const Attribute *attr = &items[i];
+                const lhtml_attribute_t *attr = &items[i];
                 print_string(&attr->name);
                 printf(" = ");
                 print_string(&attr->value);
@@ -70,20 +70,20 @@ static void on_token(Token *token, __attribute__((unused)) void *extra) {
             printf(" } , ");
             break;
 
-        case token_end_tag:
+        case LHTML_TOKEN_END_TAG:
             printf(".name = ");
             print_string(&token->end_tag.name);
             printf(", ");
             break;
 
-        case token_doc_type:
+        case LHTML_TOKEN_DOCTYPE:
             printf(".name = ");
-            print_opt_string(&token->doc_type.name);
+            print_opt_string(&token->doctype.name);
             printf(", .public_id = ");
-            print_opt_string(&token->doc_type.public_id);
+            print_opt_string(&token->doctype.public_id);
             printf(", .system_id = ");
-            print_opt_string(&token->doc_type.system_id);
-            printf(", .force_quirks = %s, ", token->doc_type.force_quirks ? "true" : "false");
+            print_opt_string(&token->doctype.system_id);
+            printf(", .force_quirks = %s, ", token->doctype.force_quirks ? "true" : "false");
             break;
 
         default:
@@ -100,11 +100,11 @@ static size_t min(size_t a, size_t b) {
 
 int main(const int argc, const char *const argv[]) {
     assert(argc >= 2);
-    TokenizerState state;
+    lhtml_state_t state;
     const char *data = NULL;
     size_t chunk_size = 1024;
     size_t buffer_size = 1024;
-    int initial_state = html_state_Data;
+    int initial_state = LHTML_STATE_DATA;
     bool with_feedback = false;
     for (int i = 1; i < argc; i++) {
         const char *arg = argv[i];
@@ -123,23 +123,23 @@ int main(const int argc, const char *const argv[]) {
             if (strncmp(arg, "state=", sizeof("state=") - 1) == 0) {
                 arg += sizeof("state=") - 1;
                 if (strcasecmp(arg, "Data") == 0) {
-                    initial_state = html_state_Data;
+                    initial_state = LHTML_STATE_DATA;
                     continue;
                 }
                 if (strcasecmp(arg, "PlainText") == 0) {
-                    initial_state = html_state_PlainText;
+                    initial_state = LHTML_STATE_PLAINTEXT;
                     continue;
                 }
                 if (strcasecmp(arg, "RCData") == 0) {
-                    initial_state = html_state_RCData;
+                    initial_state = LHTML_STATE_RCDATA;
                     continue;
                 }
                 if (strcasecmp(arg, "RawText") == 0) {
-                    initial_state = html_state_RawText;
+                    initial_state = LHTML_STATE_RAWTEXT;
                     continue;
                 }
                 if (strcasecmp(arg, "ScriptData") == 0) {
-                    initial_state = html_state_ScriptData;
+                    initial_state = LHTML_STATE_SCRIPTDATA;
                     continue;
                 }
             }
@@ -150,7 +150,7 @@ int main(const int argc, const char *const argv[]) {
     assert(chunk_size <= 1024);
     assert(buffer_size <= 1024);
     char buffer[buffer_size];
-    const TokenizerOpts options = {
+    const lhtml_options_t options = {
         .allow_cdata = false,
         .on_token = on_token,
         .last_start_tag_name = { .length = 0 },
@@ -158,23 +158,23 @@ int main(const int argc, const char *const argv[]) {
         .buffer = buffer,
         .buffer_size = buffer_size
     };
-    html_tokenizer_init(&state, &options);
-    ParserFeedbackState pf_state;
+    lhtml_init(&state, &options);
+    lhtml_feedback_state_t pf_state;
     if (with_feedback) {
-        parser_feedback_inject(&state, &pf_state);
+        lhtml_feedback_inject(&state, &pf_state);
     }
     const size_t total_len = strlen(data);
     for (size_t i = 0; i < total_len; i += chunk_size) {
-        const TokenizerString str = {
+        const lhtml_string_t str = {
             .data = data + i,
             .length = min(chunk_size, total_len - i)
         };
         printf("// Feeding chunk '%.*s'\n", (int) str.length, str.data);
-        html_tokenizer_feed(&state, &str);
-        assert(state.cs != html_state_error);
+        lhtml_feed(&state, &str);
+        assert(state.cs != LHTML_STATE_ERROR);
         printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - state.token.raw.data), state.token.raw.data);
     }
-    html_tokenizer_feed(&state, NULL);
-    assert(state.cs != html_state_error);
+    lhtml_feed(&state, NULL);
+    assert(state.cs != LHTML_STATE_ERROR);
     return 0;
 }

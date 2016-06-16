@@ -1,13 +1,13 @@
-#ifndef DECODER_H
-#define DECODER_H
+#ifndef LHTML_DECODER_H
+#define LHTML_DECODER_H
 
 #include <assert.h>
 #include "tokenizer.h"
 
 typedef struct {
-    TokenHandler handler;
-} DecoderState;
+    lhtml_token_handler_t handler;
+} lhtml_decoder_state_t;
 
-void decoder_inject(TokenizerState *tokenizer, DecoderState *state);
+void lhtml_decoder_inject(lhtml_state_t *tokenizer, lhtml_decoder_state_t *state);
 
 #endif

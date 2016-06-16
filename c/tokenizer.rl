@@ -2,6 +2,7 @@
 #include <strings.h>
 #include <stdint.h>
 #include "tokenizer.h"
+#include "field-names.h"
 
 %%{
     machine html;
@@ -14,43 +15,51 @@
     write data nofinal noprefix;
 }%%
 
-const int html_state_error = error;
-const int html_state_Data = en_Data;
-const int html_state_RCData = en_RCData;
-const int html_state_RawText = en_RawText;
-const int html_state_PlainText = en_PlainText;
-const int html_state_ScriptData = en_ScriptData;
+const int LHTML_STATE_ERROR = error;
+const int LHTML_STATE_DATA = en_Data;
+const int LHTML_STATE_RCDATA = en_RCData;
+const int LHTML_STATE_RAWTEXT = en_RawText;
+const int LHTML_STATE_PLAINTEXT = en_PlainText;
+const int LHTML_STATE_SCRIPTDATA = en_ScriptData;
 
-#define get_token(state, wanted_type) (assert(state->token.type == token_##wanted_type), &state->token.wanted_type)
+#define GET_TOKEN(TYPE) (assert(state->token.type == LHTML_TOKEN_##TYPE), &state->token.LHTML_FIELD_NAME_##TYPE)
 
-#define create_token(state, wanted_type) (state->token.type = token_##wanted_type, &state->token.wanted_type)
+#define CREATE_TOKEN(TYPE) (state->token.type = LHTML_TOKEN_##TYPE, &state->token.LHTML_FIELD_NAME_##TYPE)
 
-inline __attribute__((always_inline)) static void set_string(TokenizerString *dest, const char *begin, const char *end) {
+#define HELPER(...) __attribute__((always_inline, __VA_ARGS__)) inline static
+
+HELPER(nonnull)
+void set_string(lhtml_string_t *dest, const char *begin, const char *end) {
     assert(end >= begin);
     dest->length = (size_t) (end - begin);
     dest->data = begin;
 }
 
-inline __attribute__((always_inline)) static void reset_string(TokenizerString *dest) {
+HELPER(nonnull)
+void reset_string(lhtml_string_t *dest) {
     dest->length = 0;
 }
 
-inline __attribute__((always_inline)) static void set_opt_string(TokenizerOptionalString *dest, const char *begin, const char *end) {
+HELPER(nonnull)
+void set_opt_string(lhtml_opt_string_t *dest, const char *begin, const char *end) {
     dest->has_value = true;
     set_string(&dest->value, begin, end);
 }
 
-inline __attribute__((always_inline)) static void reset_opt_string(TokenizerOptionalString *dest) {
+HELPER(nonnull)
+void reset_opt_string(lhtml_opt_string_t *dest) {
     dest->has_value = false;
 }
 
-inline __attribute__((always_inline)) static void token_init_character(TokenizerState *state, TokenCharacterKind kind) {
-    TokenCharacter *character = create_token(state, character);
+HELPER(nonnull)
+void token_init_character(lhtml_state_t *state, lhtml_token_character_kind_t kind) {
+    lhtml_token_character_t *character = CREATE_TOKEN(CHARACTER);
     character->kind = kind;
     reset_string(&character->value);
 }
 
-inline __attribute__((always_inline)) static void set_last_start_tag_name(TokenizerState *state, const TokenizerString name) {
+HELPER(nonnull)
+void set_last_start_tag_name(lhtml_state_t *state, const lhtml_string_t name) {
     size_t len = name.length;
     if (len > sizeof(state->last_start_tag_name_buf)) {
         len = sizeof(state->last_start_tag_name_buf);
@@ -59,7 +68,8 @@ inline __attribute__((always_inline)) static void set_last_start_tag_name(Tokeni
     state->last_start_tag_name_end = state->last_start_tag_name_buf + len;
 }
 
-inline __attribute__((always_inline, const, warn_unused_result)) static HtmlTagType get_tag_type(const TokenizerString name) {
+HELPER(const, warn_unused_result)
+lhtml_tag_type_t get_tag_type(const lhtml_string_t name) {
     if (name.length > 12) {
         return 0;
     }
@@ -82,21 +92,22 @@ inline __attribute__((always_inline, const, warn_unused_result)) static HtmlTagT
     return code;
 }
 
-inline __attribute__((always_inline, nonnull)) static void emit(const TokenizerState *state, Token *token) {
-    TokenHandler *handler = state->handler;
+HELPER()
+void emit(const lhtml_state_t *state, lhtml_token_t *token) {
+    lhtml_token_handler_t *handler = state->handler;
     assert(handler != NULL);
     handler->callback(token, handler);
 }
 
-void html_tokenizer_emit(void *extra, Token *token) {
-    TokenHandler *handler = ((TokenHandler *) extra)->next;
+void lhtml_emit(lhtml_token_t *token, void *extra) {
+    lhtml_token_handler_t *handler = ((lhtml_token_handler_t *) extra)->next;
     if (handler == NULL) {
         return;
     }
     handler->callback(token, handler);
 }
 
-bool html_name_equals(const TokenizerString actual, const char *expected) {
+bool lhtml_name_equals(const lhtml_string_t actual, const char *expected) {
     size_t len = actual.length;
     const char *data = actual.data;
 
@@ -116,11 +127,11 @@ bool html_name_equals(const TokenizerString actual, const char *expected) {
     return expected[len] == 0;
 }
 
-void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
+void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
     %%write init nocs;
     state->allow_cdata = options->allow_cdata;
     state->handler = NULL;
-    html_tokenizer_add_handler(state, &state->base_handler, options->on_token);
+    lhtml_add_handler(state, &state->base_handler, options->on_token);
     set_last_start_tag_name(state, options->last_start_tag_name);
     state->quote = 0;
     state->attribute = 0;
@@ -129,18 +140,18 @@ void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options) {
     state->appropriate_end_tag_offset = 0;
     state->buffer = state->buffer_pos = options->buffer;
     state->buffer_end = options->buffer + options->buffer_size;
-    state->token.type = token_none;
+    state->token.type = LHTML_TOKEN_UNKNOWN;
     state->token.raw.data = state->buffer;
     state->cs = options->initial_state;
 }
 
-void html_tokenizer_add_handler(TokenizerState *state, TokenHandler *handler, TokenCallback callback) {
+void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback) {
     handler->callback = callback;
     handler->next = state->handler;
     state->handler = handler;
 }
 
-int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
+int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     const char *p = state->buffer_pos;
 
     if (chunk != NULL) {
@@ -159,22 +170,22 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
         return 0;
     }
 
-    Token *const token = &state->token;
+    lhtml_token_t *const token = &state->token;
 
     if (p == eof) {
-        token->type = token_eof;
+        token->type = LHTML_TOKEN_EOF;
         token->raw.length = 0;
         emit(state, token);
         return state->cs;
     }
 
-    if (token->type == token_character) {
+    if (token->type == LHTML_TOKEN_CHARACTER) {
         const char *middle = state->mark != NULL ? state->mark : p;
         set_string(&token->character.value, state->start_slice, middle);
         token->raw.length = (size_t) (middle - token->raw.data);
         if (token->raw.length) {
             emit(state, token);
-            token->type = token_character; // restore just in case
+            token->type = LHTML_TOKEN_CHARACTER; // restore just in case
         }
         token->raw.data = state->start_slice = middle;
     }
@@ -182,28 +193,28 @@ int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk) {
     size_t shift = (size_t) (token->raw.data - state->buffer);
 
     switch (token->type) {
-        case token_comment: {
+        case LHTML_TOKEN_COMMENT: {
             token->comment.value.data -= shift;
             break;
         }
 
-        case token_doc_type: {
-            token->doc_type.name.value.data -= shift;
-            token->doc_type.public_id.value.data -= shift;
-            token->doc_type.system_id.value.data -= shift;
+        case LHTML_TOKEN_DOCTYPE: {
+            token->doctype.name.value.data -= shift;
+            token->doctype.public_id.value.data -= shift;
+            token->doctype.system_id.value.data -= shift;
             break;
         }
 
-        case token_end_tag: {
+        case LHTML_TOKEN_END_TAG: {
             token->end_tag.name.data -= shift;
             break;
         }
 
-        case token_start_tag: {
+        case LHTML_TOKEN_START_TAG: {
             token->start_tag.name.data -= shift;
-            TokenAttributes *attrs = &token->start_tag.attributes;
+            lhtml_attributes_t *attrs = &token->start_tag.attributes;
             for (size_t i = 0; i < attrs->count; i++) {
-                Attribute *attr = &attrs->items[i];
+                lhtml_attribute_t *attr = &attrs->items[i];
                 attr->name.data -= shift;
                 attr->value.data -= shift;
             }

@@ -1,292 +1,301 @@
-#ifndef HTML_TOKENIZER_H
-#define HTML_TOKENIZER_H
+#ifndef LHTML_TOKENIZER_H
+#define LHTML_TOKENIZER_H
 
 #include <stddef.h>
 #include <stdbool.h>
 
-extern const int html_state_error;
-extern const int html_state_Data;
-extern const int html_state_RCData;
-extern const int html_state_RawText;
-extern const int html_state_PlainText;
-extern const int html_state_ScriptData;
+extern const int LHTML_STATE_ERROR;
+extern const int LHTML_STATE_DATA;
+extern const int LHTML_STATE_RCDATA;
+extern const int LHTML_STATE_RAWTEXT;
+extern const int LHTML_STATE_PLAINTEXT;
+extern const int LHTML_STATE_SCRIPTDATA;
 
 typedef struct {
     size_t length;
     const char *data;
-} TokenizerString;
+} lhtml_string_t;
 
 typedef struct {
     bool has_value;
-    TokenizerString value;
-} TokenizerOptionalString;
+    lhtml_string_t value;
+} lhtml_opt_string_t;
 
 typedef enum {
-    token_none,
-    token_character,
-    token_comment,
-    token_start_tag,
-    token_end_tag,
-    token_doc_type,
-    token_eof
-} TokenType;
+    LHTML_TOKEN_UNKNOWN,
+    LHTML_TOKEN_CHARACTER,
+    LHTML_TOKEN_COMMENT,
+    LHTML_TOKEN_START_TAG,
+    LHTML_TOKEN_END_TAG,
+    LHTML_TOKEN_DOCTYPE,
+    LHTML_TOKEN_EOF
+} lhtml_token_type_t;
 
 typedef enum {
-    token_character_raw,
-    token_character_data,
-    token_character_rcdata,
-    token_character_cdata,
-    token_character_safe
-} TokenCharacterKind;
+    LHTML_TOKEN_CHARACTER_RAW,
+    LHTML_TOKEN_CHARACTER_DATA,
+    LHTML_TOKEN_CHARACTER_RCDATA,
+    LHTML_TOKEN_CHARACTER_CDATA,
+    LHTML_TOKEN_CHARACTER_SAFE
+} lhtml_token_character_kind_t;
 
 typedef struct {
-    TokenCharacterKind kind;
-    TokenizerString value;
-} TokenCharacter;
+    lhtml_token_character_kind_t kind;
+    lhtml_string_t value;
+} lhtml_token_character_t;
 
 typedef struct {
-    TokenizerString value;
-} TokenComment;
+    lhtml_string_t value;
+} lhtml_token_comment_t;
 
 typedef struct {
-    TokenizerString name;
-    TokenizerString value;
-} Attribute;
+    lhtml_string_t name;
+    lhtml_string_t value;
+} lhtml_attribute_t;
 
 #define MAX_ATTR_COUNT 256
 
 typedef struct {
     size_t count;
-    Attribute items[MAX_ATTR_COUNT];
-} TokenAttributes;
+    lhtml_attribute_t items[MAX_ATTR_COUNT];
+} lhtml_attributes_t;
 
 typedef enum {
     // Regular elements
-    HTML_TAG_A = 1,
-    HTML_TAG_ABBR = 34898,
-    HTML_TAG_ADDRESS = 1212749427,
-    HTML_TAG_AREA = 51361,
-    HTML_TAG_ARTICLE = 1698991493,
-    HTML_TAG_ASIDE = 1680517,
-    HTML_TAG_AUDIO = 1741103,
-    HTML_TAG_B = 2,
-    HTML_TAG_BASE = 67173,
-    HTML_TAG_BDI = 2185,
-    HTML_TAG_BDO = 2191,
-    HTML_TAG_BLOCKQUOTE = 84081888640645,
-    HTML_TAG_BODY = 81049,
-    HTML_TAG_BR = 82,
-    HTML_TAG_BUTTON = 89805294,
-    HTML_TAG_CANVAS = 102193203,
-    HTML_TAG_CAPTION = 3272222190,
-    HTML_TAG_CITE = 108165,
-    HTML_TAG_CODE = 113797,
-    HTML_TAG_COL = 3564,
-    HTML_TAG_COLGROUP = 119595941552,
-    HTML_TAG_DATA = 132737,
-    HTML_TAG_DATALIST = 139185235572,
-    HTML_TAG_DD = 132,
-    HTML_TAG_DEL = 4268,
-    HTML_TAG_DETAILS = 4483753363,
-    HTML_TAG_DFN = 4302,
-    HTML_TAG_DIALOG = 143700455,
-    HTML_TAG_DIV = 4406,
-    HTML_TAG_DL = 140,
-    HTML_TAG_DT = 148,
-    HTML_TAG_EM = 173,
-    HTML_TAG_EMBED = 5671076,
-    HTML_TAG_FIELDSET = 216002612404,
-    HTML_TAG_FIGCAPTION = 221245627573742,
-    HTML_TAG_FIGURE = 211015237,
-    HTML_TAG_FOOTER = 217567410,
-    HTML_TAG_FORM = 212557,
-    HTML_TAG_HEAD = 267300,
-    HTML_TAG_HEADER = 273715378,
-    HTML_TAG_HGROUP = 276381360,
-    HTML_TAG_HR = 274,
-    HTML_TAG_HTML = 283052,
-    HTML_TAG_I = 9,
-    HTML_TAG_IFRAME = 308872613,
-    HTML_TAG_IMG = 9639,
-    HTML_TAG_INPUT = 9913012,
-    HTML_TAG_INS = 9683,
-    HTML_TAG_KBD = 11332,
-    HTML_TAG_KEYGEN = 375168174,
-    HTML_TAG_LABEL = 12617900,
-    HTML_TAG_LEGEND = 408131012,
-    HTML_TAG_LI = 393,
-    HTML_TAG_LINK = 402891,
-    HTML_TAG_MAIN = 427310,
-    HTML_TAG_MAP = 13360,
-    HTML_TAG_MARK = 427595,
-    HTML_TAG_MATH = 427656,
-    HTML_TAG_MENU = 431573,
-    HTML_TAG_MENUITEM = 452537405613,
-    HTML_TAG_META = 431745,
-    HTML_TAG_METER = 13815986,
-    HTML_TAG_NAV = 14390,
-    HTML_TAG_NOSCRIPT = 497783744020,
-    HTML_TAG_OBJECT = 505746548,
-    HTML_TAG_OL = 492,
-    HTML_TAG_OPTGROUP = 533254979248,
-    HTML_TAG_OPTION = 520758766,
-    HTML_TAG_OUTPUT = 526009012,
-    HTML_TAG_P = 16,
-    HTML_TAG_PARAM = 16828461,
-    HTML_TAG_PICTURE = 17485682245,
-    HTML_TAG_PRE = 16965,
-    HTML_TAG_PROGRESS = 569594418803,
-    HTML_TAG_Q = 17,
-    HTML_TAG_RP = 592,
-    HTML_TAG_RT = 596,
-    HTML_TAG_RUBY = 611417,
-    HTML_TAG_S = 19,
-    HTML_TAG_SAMP = 624048,
-    HTML_TAG_SCRIPT = 641279508,
-    HTML_TAG_SECTION = 20572677614,
-    HTML_TAG_SELECT = 643175540,
-    HTML_TAG_SLOT = 635380,
-    HTML_TAG_SMALL = 20350348,
-    HTML_TAG_SOURCE = 653969509,
-    HTML_TAG_SPAN = 639022,
-    HTML_TAG_STRONG = 659111367,
-    HTML_TAG_STYLE = 20604293,
-    HTML_TAG_SUB = 20130,
-    HTML_TAG_SUMMARY = 21119796825,
-    HTML_TAG_SUP = 20144,
-    HTML_TAG_SVG = 20167,
-    HTML_TAG_TABLE = 21006725,
-    HTML_TAG_TBODY = 21052569,
-    HTML_TAG_TD = 644,
-    HTML_TAG_TEMPLATE = 693016856197,
-    HTML_TAG_TEXTAREA = 693389805729,
-    HTML_TAG_TFOOT = 21183988,
-    HTML_TAG_TH = 648,
-    HTML_TAG_THEAD = 21238820,
-    HTML_TAG_TIME = 664997,
-    HTML_TAG_TITLE = 21287301,
-    HTML_TAG_TR = 658,
-    HTML_TAG_TRACK = 21562475,
-    HTML_TAG_U = 21,
-    HTML_TAG_UL = 684,
-    HTML_TAG_VAR = 22578,
-    HTML_TAG_VIDEO = 23367855,
-    HTML_TAG_WBR = 23634,
+    LHTML_TAG_A = 1,
+    LHTML_TAG_ABBR = 34898,
+    LHTML_TAG_ADDRESS = 1212749427,
+    LHTML_TAG_AREA = 51361,
+    LHTML_TAG_ARTICLE = 1698991493,
+    LHTML_TAG_ASIDE = 1680517,
+    LHTML_TAG_AUDIO = 1741103,
+    LHTML_TAG_B = 2,
+    LHTML_TAG_BASE = 67173,
+    LHTML_TAG_BDI = 2185,
+    LHTML_TAG_BDO = 2191,
+    LHTML_TAG_BLOCKQUOTE = 84081888640645,
+    LHTML_TAG_BODY = 81049,
+    LHTML_TAG_BR = 82,
+    LHTML_TAG_BUTTON = 89805294,
+    LHTML_TAG_CANVAS = 102193203,
+    LHTML_TAG_CAPTION = 3272222190,
+    LHTML_TAG_CITE = 108165,
+    LHTML_TAG_CODE = 113797,
+    LHTML_TAG_COL = 3564,
+    LHTML_TAG_COLGROUP = 119595941552,
+    LHTML_TAG_DATA = 132737,
+    LHTML_TAG_DATALIST = 139185235572,
+    LHTML_TAG_DD = 132,
+    LHTML_TAG_DEL = 4268,
+    LHTML_TAG_DETAILS = 4483753363,
+    LHTML_TAG_DFN = 4302,
+    LHTML_TAG_DIALOG = 143700455,
+    LHTML_TAG_DIV = 4406,
+    LHTML_TAG_DL = 140,
+    LHTML_TAG_DT = 148,
+    LHTML_TAG_EM = 173,
+    LHTML_TAG_EMBED = 5671076,
+    LHTML_TAG_FIELDSET = 216002612404,
+    LHTML_TAG_FIGCAPTION = 221245627573742,
+    LHTML_TAG_FIGURE = 211015237,
+    LHTML_TAG_FOOTER = 217567410,
+    LHTML_TAG_FORM = 212557,
+    LHTML_TAG_HEAD = 267300,
+    LHTML_TAG_HEADER = 273715378,
+    LHTML_TAG_HGROUP = 276381360,
+    LHTML_TAG_HR = 274,
+    LHTML_TAG_HTML = 283052,
+    LHTML_TAG_I = 9,
+    LHTML_TAG_IFRAME = 308872613,
+    LHTML_TAG_IMG = 9639,
+    LHTML_TAG_INPUT = 9913012,
+    LHTML_TAG_INS = 9683,
+    LHTML_TAG_KBD = 11332,
+    LHTML_TAG_KEYGEN = 375168174,
+    LHTML_TAG_LABEL = 12617900,
+    LHTML_TAG_LEGEND = 408131012,
+    LHTML_TAG_LI = 393,
+    LHTML_TAG_LINK = 402891,
+    LHTML_TAG_MAIN = 427310,
+    LHTML_TAG_MAP = 13360,
+    LHTML_TAG_MARK = 427595,
+    LHTML_TAG_MATH = 427656,
+    LHTML_TAG_MENU = 431573,
+    LHTML_TAG_MENUITEM = 452537405613,
+    LHTML_TAG_META = 431745,
+    LHTML_TAG_METER = 13815986,
+    LHTML_TAG_NAV = 14390,
+    LHTML_TAG_NOSCRIPT = 497783744020,
+    LHTML_TAG_OBJECT = 505746548,
+    LHTML_TAG_OL = 492,
+    LHTML_TAG_OPTGROUP = 533254979248,
+    LHTML_TAG_OPTION = 520758766,
+    LHTML_TAG_OUTPUT = 526009012,
+    LHTML_TAG_P = 16,
+    LHTML_TAG_PARAM = 16828461,
+    LHTML_TAG_PICTURE = 17485682245,
+    LHTML_TAG_PRE = 16965,
+    LHTML_TAG_PROGRESS = 569594418803,
+    LHTML_TAG_Q = 17,
+    LHTML_TAG_RP = 592,
+    LHTML_TAG_RT = 596,
+    LHTML_TAG_RUBY = 611417,
+    LHTML_TAG_S = 19,
+    LHTML_TAG_SAMP = 624048,
+    LHTML_TAG_SCRIPT = 641279508,
+    LHTML_TAG_SECTION = 20572677614,
+    LHTML_TAG_SELECT = 643175540,
+    LHTML_TAG_SLOT = 635380,
+    LHTML_TAG_SMALL = 20350348,
+    LHTML_TAG_SOURCE = 653969509,
+    LHTML_TAG_SPAN = 639022,
+    LHTML_TAG_STRONG = 659111367,
+    LHTML_TAG_STYLE = 20604293,
+    LHTML_TAG_SUB = 20130,
+    LHTML_TAG_SUMMARY = 21119796825,
+    LHTML_TAG_SUP = 20144,
+    LHTML_TAG_SVG = 20167,
+    LHTML_TAG_TABLE = 21006725,
+    LHTML_TAG_TBODY = 21052569,
+    LHTML_TAG_TD = 644,
+    LHTML_TAG_TEMPLATE = 693016856197,
+    LHTML_TAG_TEXTAREA = 693389805729,
+    LHTML_TAG_TFOOT = 21183988,
+    LHTML_TAG_TH = 648,
+    LHTML_TAG_THEAD = 21238820,
+    LHTML_TAG_TIME = 664997,
+    LHTML_TAG_TITLE = 21287301,
+    LHTML_TAG_TR = 658,
+    LHTML_TAG_TRACK = 21562475,
+    LHTML_TAG_U = 21,
+    LHTML_TAG_UL = 684,
+    LHTML_TAG_VAR = 22578,
+    LHTML_TAG_VIDEO = 23367855,
+    LHTML_TAG_WBR = 23634,
 
     // Obsolete elements
-    HTML_TAG_APPLET = 50868404,
-    HTML_TAG_ACRONYM = 1193786157,
-    HTML_TAG_BGSOUND = 2402801092,
-    HTML_TAG_DIR = 4402,
-    HTML_TAG_FRAME = 6882725,
-    HTML_TAG_FRAMESET = 225533152436,
-    HTML_TAG_NOFRAMES = 497362711731,
-    HTML_TAG_ISINDEX = 10311110840,
-    HTML_TAG_LISTING = 13207479751,
-    HTML_TAG_NEXTID = 475812132,
-    HTML_TAG_NOEMBED = 15541373092,
-    HTML_TAG_PLAINTEXT = 18005893977876,
-    HTML_TAG_RB = 578,
-    HTML_TAG_RTC = 19075,
-    HTML_TAG_STRIKE = 659105125,
-    HTML_TAG_XMP = 25008,
-    HTML_TAG_BASEFONT = 70436208084,
-    HTML_TAG_BIG = 2343,
-    HTML_TAG_BLINK = 2500043,
-    HTML_TAG_CENTER = 106385586,
-    HTML_TAG_FONT = 212436,
-    HTML_TAG_MARQUEE = 14011651237,
-    HTML_TAG_MULTICOL = 469649100268,
-    HTML_TAG_NOBR = 474194,
-    HTML_TAG_SPACER = 654347442,
-    HTML_TAG_TT = 660,
-    HTML_TAG_IMAGE = 9864421,
+    LHTML_TAG_APPLET = 50868404,
+    LHTML_TAG_ACRONYM = 1193786157,
+    LHTML_TAG_BGSOUND = 2402801092,
+    LHTML_TAG_DIR = 4402,
+    LHTML_TAG_FRAME = 6882725,
+    LHTML_TAG_FRAMESET = 225533152436,
+    LHTML_TAG_NOFRAMES = 497362711731,
+    LHTML_TAG_ISINDEX = 10311110840,
+    LHTML_TAG_LISTING = 13207479751,
+    LHTML_TAG_NEXTID = 475812132,
+    LHTML_TAG_NOEMBED = 15541373092,
+    LHTML_TAG_PLAINTEXT = 18005893977876,
+    LHTML_TAG_RB = 578,
+    LHTML_TAG_RTC = 19075,
+    LHTML_TAG_STRIKE = 659105125,
+    LHTML_TAG_XMP = 25008,
+    LHTML_TAG_BASEFONT = 70436208084,
+    LHTML_TAG_BIG = 2343,
+    LHTML_TAG_BLINK = 2500043,
+    LHTML_TAG_CENTER = 106385586,
+    LHTML_TAG_FONT = 212436,
+    LHTML_TAG_MARQUEE = 14011651237,
+    LHTML_TAG_MULTICOL = 469649100268,
+    LHTML_TAG_NOBR = 474194,
+    LHTML_TAG_SPACER = 654347442,
+    LHTML_TAG_TT = 660,
+    LHTML_TAG_IMAGE = 9864421,
 
     // MathML text integration points
-    HTML_TAG_MI = 425,
-    HTML_TAG_MO = 431,
-    HTML_TAG_MN = 430,
-    HTML_TAG_MS = 435,
-    HTML_TAG_MTEXT = 14292756,
+    LHTML_TAG_MI = 425,
+    LHTML_TAG_MO = 431,
+    LHTML_TAG_MN = 430,
+    LHTML_TAG_MS = 435,
+    LHTML_TAG_MTEXT = 14292756,
 
     // SVG HTML integration points
-    HTML_TAG_DESC = 136803,
-    // HTML_TAG_TITLE // already exists,
-    // HTML_TAG_FOREIGNOBJECT // too long,
-} HtmlTagType;
+    LHTML_TAG_DESC = 136803,
+    // LHTML_TAG_TITLE // already exists,
+    // LHTML_TAG_FOREIGNOBJECT // too long,
+} lhtml_tag_type_t;
 
 typedef struct {
-    TokenizerString name;
-    HtmlTagType type;
-    TokenAttributes attributes;
+    lhtml_string_t name;
+    lhtml_tag_type_t type;
+    lhtml_attributes_t attributes;
     bool self_closing;
-} TokenStartTag;
+} lhtml_token_starttag_t;
 
 typedef struct {
-    TokenizerString name;
-    HtmlTagType type;
-} TokenEndTag;
+    lhtml_string_t name;
+    lhtml_tag_type_t type;
+} lhtml_token_endtag_t;
 
 typedef struct {
-    TokenizerOptionalString name;
-    TokenizerOptionalString public_id;
-    TokenizerOptionalString system_id;
+    lhtml_opt_string_t name;
+    lhtml_opt_string_t public_id;
+    lhtml_opt_string_t system_id;
     bool force_quirks;
-} TokenDocType;
+} lhtml_token_doctype_t;
 
 typedef struct {
-    TokenType type;
+    lhtml_token_type_t type;
     union {
-        TokenCharacter character;
-        TokenComment comment;
-        TokenStartTag start_tag;
-        TokenEndTag end_tag;
-        TokenDocType doc_type;
+        lhtml_token_character_t character;
+        lhtml_token_comment_t comment;
+        lhtml_token_starttag_t start_tag;
+        lhtml_token_endtag_t end_tag;
+        lhtml_token_doctype_t doctype;
     };
-    TokenizerString raw;
-} Token;
+    lhtml_string_t raw;
+} lhtml_token_t;
 
-typedef struct TokenHandler TokenHandler;
+typedef struct lhtml_token_handler lhtml_token_handler_t;
 
-typedef __attribute__((nonnull(1))) void (*TokenCallback)(Token *token, void *extra);
+typedef __attribute__((nonnull(1))) void (*lhtml_token_callback_t)(lhtml_token_t *token, void *extra);
 
-typedef struct TokenHandler {
-    TokenCallback callback;
-    TokenHandler *next;
-} TokenHandler;
+struct lhtml_token_handler {
+    lhtml_token_callback_t callback;
+    lhtml_token_handler_t *next;
+};
 
 typedef struct {
-    TokenHandler base_handler; // needs to be the first one
+    lhtml_token_handler_t base_handler; // needs to be the first one
 
     int cs;
-    TokenHandler *handler;
+    lhtml_token_handler_t *handler;
     char quote;
     bool allow_cdata;
     char last_start_tag_name_buf[20]; // all the tags that might need this, fit
     const char *last_start_tag_name_end;
-    Token token;
-    Attribute *attribute;
+    lhtml_token_t token;
+    lhtml_attribute_t *attribute;
     const char *start_slice;
     const char *mark;
     const char *appropriate_end_tag_offset;
     char *buffer;
     char *buffer_pos;
     const char *buffer_end;
-} TokenizerState;
+} lhtml_state_t;
 
 typedef struct {
     int initial_state;
     bool allow_cdata;
-    TokenizerString last_start_tag_name;
+    lhtml_string_t last_start_tag_name;
     char *buffer;
     size_t buffer_size;
-    TokenCallback on_token;
-} TokenizerOpts;
+    lhtml_token_callback_t on_token;
+} lhtml_options_t;
 
-__attribute__((nonnull)) void html_tokenizer_init(TokenizerState *state, const TokenizerOpts *options);
-__attribute__((nonnull)) void html_tokenizer_add_handler(TokenizerState *state, TokenHandler *handler, TokenCallback callback);
-__attribute__((nonnull)) void html_tokenizer_emit(void *extra, Token *token);
-__attribute__((nonnull(1))) int html_tokenizer_feed(TokenizerState *state, const TokenizerString *chunk);
-__attribute__((const, nonnull, warn_unused_result)) bool html_name_equals(const TokenizerString actual, const char *expected);
+__attribute__((nonnull))
+void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options);
+
+__attribute__((nonnull))
+void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback);
+
+__attribute__((nonnull, always_inline))
+void lhtml_emit(lhtml_token_t *token, void *extra);
+
+__attribute__((nonnull(1)))
+int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
+
+__attribute__((const, nonnull, warn_unused_result))
+bool lhtml_name_equals(const lhtml_string_t actual, const char *expected);
 
 #endif

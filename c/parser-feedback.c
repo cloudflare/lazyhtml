@@ -2,54 +2,54 @@
 #include <assert.h>
 #include "parser-feedback.h"
 
-static Namespace get_current_ns(ParserFeedbackState *state) {
+static lhtml_ns_t get_current_ns(lhtml_feedback_state_t *state) {
     return state->ns_stack[state->ns_depth - 1];
 }
 
-static bool is_foreign_ns(Namespace ns) {
-    return ns != NS_HTML;
+static bool is_foreign_ns(lhtml_ns_t ns) {
+    return ns != LHTML_NS_HTML;
 }
 
-static bool is_in_foreign_content(ParserFeedbackState *state) {
+static bool is_in_foreign_content(lhtml_feedback_state_t *state) {
     return is_foreign_ns(get_current_ns(state));
 }
 
-static void enter_ns(ParserFeedbackState *state, Namespace ns) {
+static void enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
     assert(state->ns_depth < MAX_NS_DEPTH);
     state->ns_stack[state->ns_depth++] = ns;
     state->tokenizer->allow_cdata = is_foreign_ns(ns);
 }
 
-static void leave_ns(ParserFeedbackState *state) {
+static void leave_ns(lhtml_feedback_state_t *state) {
     assert(state->ns_depth > 1);
     state->ns_depth--;
     state->tokenizer->allow_cdata = is_in_foreign_content(state);
 }
 
-static void ensure_tokenizer_mode(TokenizerState *tokenizer, HtmlTagType tag_type) {
+static void ensure_tokenizer_mode(lhtml_state_t *tokenizer, lhtml_tag_type_t tag_type) {
     int new_state;
 
     switch (tag_type) {
-        case HTML_TAG_TEXTAREA:
-        case HTML_TAG_TITLE:
-            new_state = html_state_RCData;
+        case LHTML_TAG_TEXTAREA:
+        case LHTML_TAG_TITLE:
+            new_state = LHTML_STATE_RCDATA;
             break;
 
-        case HTML_TAG_PLAINTEXT:
-            new_state = html_state_PlainText;
+        case LHTML_TAG_PLAINTEXT:
+            new_state = LHTML_STATE_PLAINTEXT;
             break;
 
-        case HTML_TAG_SCRIPT:
-            new_state = html_state_ScriptData;
+        case LHTML_TAG_SCRIPT:
+            new_state = LHTML_STATE_SCRIPTDATA;
             break;
 
-        case HTML_TAG_STYLE:
-        case HTML_TAG_IFRAME:
-        case HTML_TAG_XMP:
-        case HTML_TAG_NOEMBED:
-        case HTML_TAG_NOFRAMES:
-        case HTML_TAG_NOSCRIPT:
-            new_state = html_state_RawText;
+        case LHTML_TAG_STYLE:
+        case LHTML_TAG_IFRAME:
+        case LHTML_TAG_XMP:
+        case LHTML_TAG_NOEMBED:
+        case LHTML_TAG_NOFRAMES:
+        case LHTML_TAG_NOSCRIPT:
+            new_state = LHTML_STATE_RAWTEXT;
             break;
 
         default:
@@ -59,85 +59,86 @@ static void ensure_tokenizer_mode(TokenizerState *tokenizer, HtmlTagType tag_typ
     tokenizer->cs = new_state;
 }
 
-static bool foreign_causes_exit(const TokenStartTag *start_tag) {
+static bool foreign_causes_exit(const lhtml_token_starttag_t *start_tag) {
     switch (start_tag->type) {
-        case HTML_TAG_B: return true;
-        case HTML_TAG_BIG: return true;
-        case HTML_TAG_BLOCKQUOTE: return true;
-        case HTML_TAG_BODY: return true;
-        case HTML_TAG_BR: return true;
-        case HTML_TAG_CENTER: return true;
-        case HTML_TAG_CODE: return true;
-        case HTML_TAG_DD: return true;
-        case HTML_TAG_DIV: return true;
-        case HTML_TAG_DL: return true;
-        case HTML_TAG_DT: return true;
-        case HTML_TAG_EM: return true;
-        case HTML_TAG_EMBED: return true;
-        case HTML_TAG_FONT: {
-            const TokenAttributes *attrs = &start_tag->attributes;
+        case LHTML_TAG_B:
+        case LHTML_TAG_BIG:
+        case LHTML_TAG_BLOCKQUOTE:
+        case LHTML_TAG_BODY:
+        case LHTML_TAG_BR:
+        case LHTML_TAG_CENTER:
+        case LHTML_TAG_CODE:
+        case LHTML_TAG_DD:
+        case LHTML_TAG_DIV:
+        case LHTML_TAG_DL:
+        case LHTML_TAG_DT:
+        case LHTML_TAG_EM:
+        case LHTML_TAG_EMBED:
+        /*case LHTML_TAG_H1:
+        case LHTML_TAG_H2:
+        case LHTML_TAG_H3:
+        case LHTML_TAG_H4:
+        case LHTML_TAG_H5:
+        case LHTML_TAG_H6:*/
+        case LHTML_TAG_HEAD:
+        case LHTML_TAG_HR:
+        case LHTML_TAG_I:
+        case LHTML_TAG_IMG:
+        case LHTML_TAG_LI:
+        case LHTML_TAG_LISTING:
+        case LHTML_TAG_MENU:
+        case LHTML_TAG_META:
+        case LHTML_TAG_NOBR:
+        case LHTML_TAG_OL:
+        case LHTML_TAG_P:
+        case LHTML_TAG_PRE:
+        case LHTML_TAG_RUBY:
+        case LHTML_TAG_S:
+        case LHTML_TAG_SMALL:
+        case LHTML_TAG_SPAN:
+        case LHTML_TAG_STRONG:
+        case LHTML_TAG_STRIKE:
+        case LHTML_TAG_SUB:
+        case LHTML_TAG_SUP:
+        case LHTML_TAG_TABLE:
+        case LHTML_TAG_TT:
+        case LHTML_TAG_U:
+        case LHTML_TAG_UL:
+        case LHTML_TAG_VAR:
+            return true;
+        case LHTML_TAG_FONT: {
+            const lhtml_attributes_t *attrs = &start_tag->attributes;
             for (size_t i = 0; i < attrs->count; i++) {
-                const TokenizerString name = attrs->items[i].name;
-                if (html_name_equals(name, "color") || html_name_equals(name, "size") || html_name_equals(name, "face")) {
+                const lhtml_string_t name = attrs->items[i].name;
+                if (lhtml_name_equals(name, "color") || lhtml_name_equals(name, "size") || lhtml_name_equals(name, "face")) {
                     return true;
                 }
             }
             return false;
         }
-        /*case HTML_TAG_H1: return true;
-        case HTML_TAG_H2: return true;
-        case HTML_TAG_H3: return true;
-        case HTML_TAG_H4: return true;
-        case HTML_TAG_H5: return true;
-        case HTML_TAG_H6: return true;*/
-        case HTML_TAG_HEAD: return true;
-        case HTML_TAG_HR: return true;
-        case HTML_TAG_I: return true;
-        case HTML_TAG_IMG: return true;
-        case HTML_TAG_LI: return true;
-        case HTML_TAG_LISTING: return true;
-        case HTML_TAG_MENU: return true;
-        case HTML_TAG_META: return true;
-        case HTML_TAG_NOBR: return true;
-        case HTML_TAG_OL: return true;
-        case HTML_TAG_P: return true;
-        case HTML_TAG_PRE: return true;
-        case HTML_TAG_RUBY: return true;
-        case HTML_TAG_S: return true;
-        case HTML_TAG_SMALL: return true;
-        case HTML_TAG_SPAN: return true;
-        case HTML_TAG_STRONG: return true;
-        case HTML_TAG_STRIKE: return true;
-        case HTML_TAG_SUB: return true;
-        case HTML_TAG_SUP: return true;
-        case HTML_TAG_TABLE: return true;
-        case HTML_TAG_TT: return true;
-        case HTML_TAG_U: return true;
-        case HTML_TAG_UL: return true;
-        case HTML_TAG_VAR: return true;
         default: {
-            const TokenizerString name = start_tag->name;
+            const lhtml_string_t name = start_tag->name;
             return name.length == 2 && ((name.data[0] | 0x20) == 'h') && (name.data[1] >= '1' && name.data[1] <= '6');
         }
     }
 }
 
-static bool foreign_is_integration_point(Namespace ns, HtmlTagType type, const TokenizerString name, const TokenAttributes *attrs) {
+static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, const lhtml_string_t name, const lhtml_attributes_t *attrs) {
     switch (ns) {
-        case NS_MATHML:
+        case LHTML_NS_MATHML:
             switch (type) {
-                case HTML_TAG_MI:
-                case HTML_TAG_MO:
-                case HTML_TAG_MN:
-                case HTML_TAG_MS:
-                case HTML_TAG_MTEXT:
+                case LHTML_TAG_MI:
+                case LHTML_TAG_MO:
+                case LHTML_TAG_MN:
+                case LHTML_TAG_MS:
+                case LHTML_TAG_MTEXT:
                     return true;
 
                 default: {
-                    if (attrs && html_name_equals(name, "annotation-xml")) {
+                    if (attrs && lhtml_name_equals(name, "annotation-xml")) {
                         for (size_t i = 0; i < attrs->count; i++) {
-                            const Attribute *attr = &attrs->items[i];
-                            if (html_name_equals(attr->name, "encoding") && (html_name_equals(attr->value, "text/html") || html_name_equals(attr->value, "application/xhtml+xml"))) {
+                            const lhtml_attribute_t *attr = &attrs->items[i];
+                            if (lhtml_name_equals(attr->name, "encoding") && (lhtml_name_equals(attr->value, "text/html") || lhtml_name_equals(attr->value, "application/xhtml+xml"))) {
                                 return true;
                             }
                         }
@@ -146,21 +147,21 @@ static bool foreign_is_integration_point(Namespace ns, HtmlTagType type, const T
                 }
             }
 
-        case NS_SVG:
-            return type == HTML_TAG_DESC || type == HTML_TAG_TITLE || html_name_equals(name, "foreignobject");
+        case LHTML_NS_SVG:
+            return type == LHTML_TAG_DESC || type == LHTML_TAG_TITLE || lhtml_name_equals(name, "foreignobject");
 
-        case NS_HTML:
+        case LHTML_NS_HTML:
             return false;
     }
 }
 
-static void handle_start_tag_token(ParserFeedbackState *state, TokenStartTag *tag) {
-    HtmlTagType type = tag->type;
+static void handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_starttag_t *tag) {
+    lhtml_tag_type_t type = tag->type;
 
-    if (type == HTML_TAG_SVG || type == HTML_TAG_MATH)
-        enter_ns(state, (Namespace) type);
+    if (type == LHTML_TAG_SVG || type == LHTML_TAG_MATH)
+        enter_ns(state, (lhtml_ns_t) type);
 
-    Namespace ns = get_current_ns(state);
+    lhtml_ns_t ns = get_current_ns(state);
 
     if (is_foreign_ns(ns)) {
         if (foreign_causes_exit(tag)) {
@@ -169,18 +170,18 @@ static void handle_start_tag_token(ParserFeedbackState *state, TokenStartTag *ta
         }
 
         if (!tag->self_closing && foreign_is_integration_point(ns, tag->type, tag->name, &tag->attributes)) {
-            enter_ns(state, NS_HTML);
+            enter_ns(state, LHTML_NS_HTML);
         }
     } else {
         switch (type) {
-            case HTML_TAG_PRE:
-            case HTML_TAG_TEXTAREA:
-            case HTML_TAG_LISTING:
+            case LHTML_TAG_PRE:
+            case LHTML_TAG_TEXTAREA:
+            case LHTML_TAG_LISTING:
                 state->skip_next_newline = true;
                 break;
 
-            case HTML_TAG_IMAGE:
-                tag->type = HTML_TAG_IMG;
+            case LHTML_TAG_IMAGE:
+                tag->type = LHTML_TAG_IMG;
                 break;
 
             default:
@@ -191,16 +192,16 @@ static void handle_start_tag_token(ParserFeedbackState *state, TokenStartTag *ta
     }
 }
 
-static void handle_end_tag_token(ParserFeedbackState *state, const TokenEndTag *tag) {
+static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_token_endtag_t *tag) {
     if (!is_in_foreign_content(state)) {
-        Namespace prev_ns = state->ns_stack[state->ns_depth - 2];
+        lhtml_ns_t prev_ns = state->ns_stack[state->ns_depth - 2];
 
         if (foreign_is_integration_point(prev_ns, tag->type, tag->name, NULL)) {
             leave_ns(state);
         }
     } else {
-        Namespace ns = get_current_ns(state);
-        HtmlTagType type = tag->type;
+        lhtml_ns_t ns = get_current_ns(state);
+        lhtml_tag_type_t type = tag->type;
 
         if (type == ns) {
             leave_ns(state);
@@ -208,27 +209,27 @@ static void handle_end_tag_token(ParserFeedbackState *state, const TokenEndTag *
     }
 }
 
-static void handle_token(Token *token, void *extra) {
-    ParserFeedbackState *state = extra;
+static void handle_token(lhtml_token_t *token, void *extra) {
+    lhtml_feedback_state_t *state = extra;
     switch (token->type) {
-        case token_start_tag:
+        case LHTML_TOKEN_START_TAG:
             handle_start_tag_token(state, &token->start_tag);
             break;
 
-        case token_end_tag:
+        case LHTML_TOKEN_END_TAG:
             handle_end_tag_token(state, &token->end_tag);
             break;
 
         default:
             break;
     }
-    html_tokenizer_emit(extra, token);
+    lhtml_emit(token, extra);
 }
 
-void parser_feedback_inject(TokenizerState *tokenizer, ParserFeedbackState *state) {
+void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state) {
     state->tokenizer = tokenizer;
     state->ns_depth = 0;
     state->skip_next_newline = false;
-    enter_ns(state, NS_HTML);
-    html_tokenizer_add_handler(tokenizer, &state->handler, handle_token);
+    enter_ns(state, LHTML_NS_HTML);
+    lhtml_add_handler(tokenizer, &state->handler, handle_token);
 }

@@ -9,6 +9,11 @@ tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 tokenizer.o: tokenizer.c tokenizer.h
 	$(CC) $(CFLAGS) -c -Wno-parentheses-equality -Wno-unused-const-variable $< -o $@
 
+tests.pb-c.c: tests.proto
+	protoc-c --c_out=$(@D) --proto_path=$(<D) $<
+
+tests.pb-c.h: tests.pb-c.c
+
 parser-feedback.o: parser-feedback.c parser-feedback.h
 concat-char-tokens.o: concat-char-tokens.c concat-char-tokens.h
 decoder.o: decoder.c decoder.h
@@ -21,12 +26,7 @@ parser-feedback.o concat-char-tokens.o decoder.o tests.pb-c.o trace.o:
 trace: trace.o tokenizer.o parser-feedback.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $+ -o $@
 
-tests.pb-c.c: tests.proto
-	protoc-c --c_out=$(@D) --proto_path=$(<D) $<
-
-tests.pb-c.h: tests.pb-c.c
-
-test.o: test.c
+test.o: test.c tests.pb-c.h
 	$(CC) $(CFLAGS) -Wno-cast-qual -Wno-cast-align -c $< -o $@
 
 .PHONY: test

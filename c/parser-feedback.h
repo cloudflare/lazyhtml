@@ -1,25 +1,25 @@
-#ifndef PARSER_FEEDBACK_H
-#define PARSER_FEEDBACK_H
+#ifndef LHTML_FEEDBACK_H
+#define LHTML_FEEDBACK_H
 
 #include "tokenizer.h"
 
 typedef enum {
-    NS_HTML = HTML_TAG_HTML,
-    NS_MATHML = HTML_TAG_MATH,
-    NS_SVG = HTML_TAG_SVG
-} Namespace;
+    LHTML_NS_HTML = LHTML_TAG_HTML,
+    LHTML_NS_MATHML = LHTML_TAG_MATH,
+    LHTML_NS_SVG = LHTML_TAG_SVG
+} lhtml_ns_t;
 
 #define MAX_NS_DEPTH 20
 
 typedef struct {
-    TokenHandler handler; // needs to be the first one
+    lhtml_token_handler_t handler; // needs to be the first one
 
-    TokenizerState *tokenizer;
+    lhtml_state_t *tokenizer;
     size_t ns_depth;
-    Namespace ns_stack[MAX_NS_DEPTH];
+    lhtml_ns_t ns_stack[MAX_NS_DEPTH];
     bool skip_next_newline;
-} ParserFeedbackState;
+} lhtml_feedback_state_t;
 
-void parser_feedback_inject(TokenizerState *tokenizer, ParserFeedbackState *state);
+void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state);
 
 #endif

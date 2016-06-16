@@ -5,12 +5,13 @@
 #include <ctype.h>
 #include "tests.pb-c.h"
 #include "tokenizer.h"
+#include "field-names.h"
 #include "parser-feedback.h"
 #include "concat-char-tokens.h"
 #include "decoder.h"
 
-static TokenizerString to_tok_string(const ProtobufCBinaryData data) {
-    TokenizerString str = {
+static lhtml_string_t to_tok_string(const ProtobufCBinaryData data) {
+    lhtml_string_t str = {
         .length = data.len,
         .data = (char *) data.data
     };
@@ -20,27 +21,27 @@ static TokenizerString to_tok_string(const ProtobufCBinaryData data) {
 static int to_tok_state(const Suite__Test__State state) {
     #define state_case(NAME) \
         case SUITE__TEST__STATE__##NAME:\
-            return html_state_##NAME;
+            return LHTML_STATE_##NAME;
 
     switch (state) {
-        state_case(Data)
-        state_case(PlainText)
-        state_case(RCData)
-        state_case(RawText)
-        state_case(ScriptData)
+        state_case(DATA)
+        state_case(PLAINTEXT)
+        state_case(RCDATA)
+        state_case(RAWTEXT)
+        state_case(SCRIPTDATA)
 
         default: assert(false);
     }
 }
 
-static ProtobufCBinaryData to_test_string(const TokenizerString src) {
+static ProtobufCBinaryData to_test_string(const lhtml_string_t src) {
     ProtobufCBinaryData dest;
     dest.data = (unsigned char *) src.data;
     dest.len = src.length;
     return dest;
 }
 
-static void to_opt_test_string(const TokenizerOptionalString src, volatile protobuf_c_boolean *has_value, volatile ProtobufCBinaryData *value) {
+static void to_opt_test_string(const lhtml_opt_string_t src, volatile protobuf_c_boolean *has_value, volatile ProtobufCBinaryData *value) {
     if ((*has_value = src.has_value)) {
         *value = to_test_string(src.value);
     }
@@ -142,7 +143,7 @@ static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
 }
 
 typedef struct {
-    TokenizerState tokenizer;
+    lhtml_state_t tokenizer;
 
     Suite__Test__State initial_state;
     bool error;
@@ -150,9 +151,9 @@ typedef struct {
     size_t expected_pos;
     const size_t expected_length;
     const Suite__Test *test;
-} State;
+} test_state_t;
 
-static void fprint_fail(FILE *file, const State *state, const char *msg) {
+static void fprint_fail(FILE *file, const test_state_t *state, const char *msg) {
     fprintf(
         file,
         "not ok - %s\n"
@@ -174,7 +175,7 @@ static void fprint_fail_end(FILE *file) {
     fprintf(file, "  ...\n");
 }
 
-static bool tokens_match(const State *state, const Token *src) {
+static bool tokens_match(const test_state_t *state, const lhtml_token_t *src) {
     if (state->expected_pos >= state->expected_length) {
         fprint_fail(stdout, state, "Extraneous tokens");
         fprintf(stdout, "  actual:   %zu\n", state->expected_pos);
@@ -187,12 +188,12 @@ static bool tokens_match(const State *state, const Token *src) {
 
     volatile Suite__Test__Token actual = SUITE__TEST__TOKEN__INIT;
 
-    #define case_token(TYPE, NAME, CAP_TYPE) case token_##NAME:;\
-        volatile Suite__Test__##TYPE NAME = SUITE__TEST__##CAP_TYPE##__INIT;\
+    #define case_token(TYPE, CAP_TYPE) case LHTML_TOKEN_##CAP_TYPE:;\
+        volatile Suite__Test__##TYPE LHTML_FIELD_NAME_##CAP_TYPE = SUITE__TEST__##CAP_TYPE##__INIT;\
         actual.token_case = SUITE__TEST__TOKEN__TOKEN_##CAP_TYPE;\
-        actual.NAME = (Suite__Test__##TYPE *) &NAME;
+        actual.LHTML_FIELD_NAME_##CAP_TYPE = (Suite__Test__##TYPE *) &LHTML_FIELD_NAME_##CAP_TYPE;
 
-    const size_t n_attributes = src->type == token_start_tag ? src->start_tag.attributes.count : 0;
+    const size_t n_attributes = src->type == LHTML_TOKEN_START_TAG ? src->start_tag.attributes.count : 0;
     Suite__Test__Attribute attributes[n_attributes];
     Suite__Test__Attribute *attribute_pointers[n_attributes];
 
@@ -200,32 +201,32 @@ static bool tokens_match(const State *state, const Token *src) {
         default:
             assert(false);
 
-        case_token(Character, character, CHARACTER)
+        case_token(Character, CHARACTER)
             character.value = to_test_string(src->character.value);
             break;
 
-        case_token(DocType, doc_type, DOC_TYPE)
-            to_opt_test_string(src->doc_type.name, &doc_type.has_name, &doc_type.name);
-            to_opt_test_string(src->doc_type.public_id, &doc_type.has_public_id, &doc_type.public_id);
-            to_opt_test_string(src->doc_type.system_id, &doc_type.has_system_id, &doc_type.system_id);
-            doc_type.force_quirks = src->doc_type.force_quirks;
+        case_token(Doctype, DOCTYPE)
+            to_opt_test_string(src->doctype.name, &doctype.has_name, &doctype.name);
+            to_opt_test_string(src->doctype.public_id, &doctype.has_public_id, &doctype.public_id);
+            to_opt_test_string(src->doctype.system_id, &doctype.has_system_id, &doctype.system_id);
+            doctype.force_quirks = src->doctype.force_quirks;
             break;
 
-        case_token(Comment, comment, COMMENT)
+        case_token(Comment, COMMENT)
             comment.value = to_test_string(src->comment.value);
             break;
 
-        case_token(EndTag, end_tag, END_TAG)
+        case_token(EndTag, END_TAG)
             end_tag.name = to_test_string(src->end_tag.name);
             break;
 
-        case_token(StartTag, start_tag, START_TAG)
+        case_token(StartTag, START_TAG)
             start_tag.name = to_test_string(src->start_tag.name);
             start_tag.n_attributes = 0;
             for (size_t i = 0; i < n_attributes; i++) {
                 Suite__Test__Attribute *attr = attribute_pointers[start_tag.n_attributes] = &attributes[start_tag.n_attributes];
                 suite__test__attribute__init(attr);
-                const Attribute *src_attr = &src->start_tag.attributes.items[i];
+                const lhtml_attribute_t *src_attr = &src->start_tag.attributes.items[i];
                 const ProtobufCBinaryData name = attr->name = to_test_string(src_attr->name);
                 attr->value = to_test_string(src_attr->value);
                 bool duplicate_name = false;
@@ -273,7 +274,7 @@ static bool tokens_match(const State *state, const Token *src) {
     }
 
     if (!same) {
-        fprint_fail(stdout, state, "Token mismatch");
+        fprint_fail(stdout, state, "token mismatch");
 
         fprintf(stdout, "    actual:   ");
         fprint_msg(stdout, (ProtobufCMessage *) &actual);
@@ -289,12 +290,12 @@ static bool tokens_match(const State *state, const Token *src) {
     return same;
 }
 
-static void on_token(Token *token, void *extra) {
-    State *state = extra;
+static void on_token(lhtml_token_t *token, void *extra) {
+    test_state_t *state = extra;
     if (state->error) {
         return;
     }
-    if (token->type == token_eof) {
+    if (token->type == LHTML_TOKEN_EOF) {
         return;
     }
     if ((state->error = !tokens_match(state, token))) {
@@ -317,44 +318,44 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
             return;
         }
     }
-    State state = {
+    test_state_t state = {
         .expected_length = test->n_output,
         .test = test
     };
     char buffer[2048];
-    TokenizerOpts options = {
+    lhtml_options_t options = {
         .last_start_tag_name = to_tok_string(test->last_start_tag),
         .buffer = buffer,
         .buffer_size = sizeof(buffer),
         .on_token = on_token
     };
-    ParserFeedbackState pf_state;
-    ConcatCharTokensState cct_state;
-    DecoderState decoder_state;
-    TokenizerString input = to_tok_string(test->input);
+    lhtml_feedback_state_t pf_state;
+    lhtml_concat_state_t cct_state;
+    lhtml_decoder_state_t decoder_state;
+    lhtml_string_t input = to_tok_string(test->input);
     for (size_t i = 0; i < test->n_initial_states; i++) {
         state.initial_state = test->initial_states[i];
         state.error = false;
         state.raw_pos = input.data;
         state.expected_pos = 0;
         options.initial_state = to_tok_state(state.initial_state);
-        html_tokenizer_init(&state.tokenizer, &options);
-        decoder_inject(&state.tokenizer, &decoder_state);
-        concat_char_tokens_inject(&state.tokenizer, &cct_state);
+        lhtml_init(&state.tokenizer, &options);
+        lhtml_decoder_inject(&state.tokenizer, &decoder_state);
+        lhtml_concat_inject(&state.tokenizer, &cct_state);
         if (with_feedback) {
-            parser_feedback_inject(&state.tokenizer, &pf_state);
+            lhtml_feedback_inject(&state.tokenizer, &pf_state);
         }
         for (size_t j = 0; j < input.length; j++) {
             char c = input.data[j]; // to ensure that pointers are not saved to the original data
-            const TokenizerString ch = {
+            const lhtml_string_t ch = {
                 .length = 1,
                 .data = &c
             };
-            html_tokenizer_feed(&state.tokenizer, &ch);
+            lhtml_feed(&state.tokenizer, &ch);
         }
-        html_tokenizer_feed(&state.tokenizer, NULL);
+        lhtml_feed(&state.tokenizer, NULL);
         if (state.error) return;
-        if (state.tokenizer.cs == html_state_error) {
+        if (state.tokenizer.cs == LHTML_STATE_ERROR) {
             fprint_fail(stdout, &state, "Tokenization error");
             fprint_fail_end(stdout);
             return;
