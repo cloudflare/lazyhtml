@@ -9,29 +9,29 @@
 
     ScriptDataLessThanSign := (
         _SpecialEndTag |
-        '!--' @To_ScriptDataEscapedDashDash
-    ) @err(AsRawSlice) @err(EmitSlice) @err(Reconsume) @err(To_ScriptData);
+        '!--' >StartSafe @To_ScriptDataEscapedDashDash
+    ) @err(EmitSlice) @err(Reconsume) @err(To_ScriptData);
 
-    ScriptDataEscaped := _SafeText :> ((
-        '-' @To_ScriptDataEscapedDash |
-        '<' @To_ScriptDataEscapedLessThanSign
-    ) >StartSlice)?;
+    ScriptDataEscaped := _SafeText :> (
+        '-' @StartSafe @StartSlice @To_ScriptDataEscapedDash |
+        '<' @StartSlice @To_ScriptDataEscapedLessThanSign
+    );
 
     ScriptDataEscapedDash := (
         (
             '-' @To_ScriptDataEscapedDashDash |
-            '<' @AsRawSlice @EmitSlice @StartSlice @To_ScriptDataEscapedLessThanSign
+            '<' @EmitSlice @StartSlice @To_ScriptDataEscapedLessThanSign
         ) >1 |
-        any >0 @AsRawSlice @EmitSlice @Reconsume @To_ScriptDataEscaped
-    ) @eof(AsRawSlice) @eof(EmitSlice);
+        any >0 @EmitSlice @Reconsume @To_ScriptDataEscaped
+    ) @eof(EmitSlice);
 
     ScriptDataEscapedDashDash := '-'* <: (
         (
-            '<' @AsRawSlice @EmitSlice @StartSlice @To_ScriptDataEscapedLessThanSign |
-            '>' @AsRawSlice @EmitSlice @Reconsume @To_ScriptData
+            '<' @EmitSlice @StartSlice @To_ScriptDataEscapedLessThanSign |
+            '>' @EmitSlice @Reconsume @To_ScriptData
         ) >1 |
-        any >0 @AsRawSlice @EmitSlice @Reconsume @To_ScriptDataEscaped
-    ) @eof(AsRawSlice) @eof(EmitSlice);
+        any >0 @EmitSlice @Reconsume @To_ScriptDataEscaped
+    ) @eof(EmitSlice);
 
     ScriptDataEscapedLessThanSign := (
         _SpecialEndTag |
