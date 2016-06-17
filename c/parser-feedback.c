@@ -196,10 +196,12 @@ static void handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
 
 static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_token_endtag_t *tag) {
     if (!is_in_foreign_content(state)) {
-        lhtml_ns_t prev_ns = state->ns_stack[state->ns_depth - 2];
+        if (state->ns_depth >= 2) {
+            lhtml_ns_t prev_ns = state->ns_stack[state->ns_depth - 2];
 
-        if (foreign_is_integration_point(prev_ns, tag->type, tag->name, NULL)) {
-            leave_ns(state);
+            if (foreign_is_integration_point(prev_ns, tag->type, tag->name, NULL)) {
+                leave_ns(state);
+            }
         }
     } else {
         lhtml_ns_t ns = get_current_ns(state);
