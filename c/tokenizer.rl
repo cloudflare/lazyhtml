@@ -107,11 +107,8 @@ bool lhtml_name_equals(const lhtml_string_t actual, const char *expected) {
 
     for (size_t i = 0; i < len; i++) {
         char c = data[i];
+        c |= ((unsigned char) c - 'A' < 26U) << 5;
         char e = expected[i];
-
-        if (c >= 'A' && c <= 'Z') {
-            c |= 0x20;
-        }
 
         if (e == 0 || c != e) {
             return false;
