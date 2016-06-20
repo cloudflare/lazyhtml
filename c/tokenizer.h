@@ -290,7 +290,7 @@ void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options);
 __attribute__((nonnull))
 void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback);
 
-__attribute__((nonnull, always_inline))
+__attribute__((nonnull))
 void lhtml_emit(lhtml_token_t *token, void *extra);
 
 __attribute__((nonnull(1)))

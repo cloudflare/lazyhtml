@@ -152,6 +152,9 @@ static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, c
 
         case LHTML_NS_HTML:
             return false;
+
+        default:
+            assert(false);
     }
 }
 
@@ -207,7 +210,7 @@ static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_toke
         lhtml_ns_t ns = get_current_ns(state);
         lhtml_tag_type_t type = tag->type;
 
-        if (type == ns) {
+        if (type == (lhtml_tag_type_t) ns) {
             leave_ns(state);
         }
     }
