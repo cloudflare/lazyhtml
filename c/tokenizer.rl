@@ -1,5 +1,5 @@
 #include <assert.h>
-#include <strings.h>
+#include <string.h>
 #include <stdint.h>
 #include "tokenizer.h"
 #include "field-names.h"
@@ -93,7 +93,7 @@ lhtml_tag_type_t get_tag_type(const lhtml_string_t name) {
     return code;
 }
 
-void lhtml_emit(lhtml_token_t *token, void *extra) {
+inline void lhtml_emit(lhtml_token_t *token, void *extra) {
     lhtml_token_handler_t *handler = ((lhtml_token_handler_t *) extra)->next;
     if (handler == NULL) {
         return;
@@ -107,7 +107,7 @@ bool lhtml_name_equals(const lhtml_string_t actual, const char *expected) {
 
     for (size_t i = 0; i < len; i++) {
         char c = data[i];
-        c |= ((unsigned char) c - 'A' < 26U) << 5;
+        c |= (char) (((unsigned char) c - 'A' < 26) << 5);
         char e = expected[i];
 
         if (e == 0 || c != e) {
@@ -208,6 +208,7 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 lhtml_attribute_t *attr = &attrs->items[i];
                 attr->name.data -= shift;
                 attr->value.data -= shift;
+                attr->raw.data -= shift;
             }
             break;
         }
