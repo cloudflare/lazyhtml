@@ -127,7 +127,9 @@
 
     action SetAttributeValue {
         assert(state->token.type == LHTML_TOKEN_START_TAG);
-        set_string(&state->attribute->value, state->start_slice, p);
+        lhtml_attribute_t *attr = state->attribute;
+        set_string(&attr->value, state->start_slice, p);
+        attr->raw.length = (size_t) (p + (*p == '"' || *p == '\'') - attr->name.data);
     }
 
     action AppendAttribute {
@@ -135,6 +137,7 @@
         lhtml_attribute_t *attr = state->attribute;
         assert(&attributes->items[attributes->count] == attr);
         set_string(&attr->name, state->start_slice, p);
+        attr->raw = attr->name;
         attributes->count++;
     }
 
