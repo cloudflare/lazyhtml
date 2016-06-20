@@ -217,7 +217,7 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         }
     }
 
-    memmove(state->buffer, token->raw.data, pe - token->raw.data);
+    memmove(state->buffer, token->raw.data, (size_t) (pe - token->raw.data));
     token->raw.data = state->buffer;
     state->buffer_pos -= shift;
     state->start_slice -= shift;

@@ -61,5 +61,5 @@
 
     ScriptDataDoubleEscapedLessThanSign := (
         '/' /script/i TagNameEnd @EmitSlice @Reconsume @To_ScriptDataEscaped
-    ) @err(To_ScriptDataDoubleEscaped);
+    ) @err(Reconsume) @err(To_ScriptDataDoubleEscaped);
 }%%
