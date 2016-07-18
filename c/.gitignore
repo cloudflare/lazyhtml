@@ -2,6 +2,7 @@
 /tokenizer
 /*.dSYM
 /*.o
+/bench
 /trace
 /test
 /tests.pb-c.*
