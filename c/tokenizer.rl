@@ -157,9 +157,7 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
     %%write exec;
 
-    if (state->cs == 0) {
-        return 0;
-    }
+    assert(state->cs != 0);
 
     lhtml_token_t *const token = &state->token;
 
