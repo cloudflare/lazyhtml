@@ -299,6 +299,6 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
 __attribute__((const, nonnull, warn_unused_result))
 bool lhtml_name_equals(const lhtml_string_t actual, const char *expected);
 
-#define lhtml_string(str) ((lhtml_string_t) { sizeof(str) - 1, str })
+#define LHTML_STRING(str) ((lhtml_string_t) { .data = str, .length = sizeof(str) - 1 })
 
 #endif
