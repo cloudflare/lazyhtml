@@ -357,11 +357,6 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         }
         lhtml_feed(&state.tokenizer, NULL);
         if (state.error) return;
-        if (state.tokenizer.cs == LHTML_STATE_ERROR) {
-            fprint_fail(stdout, &state, "Tokenization error");
-            fprint_fail_end(stdout);
-            return;
-        }
         if (state.expected_pos < state.expected_length) {
             fprint_fail(stdout, &state, "Not enough tokens");
             fprintf(stdout, "    actual:   %zu\n", state.expected_pos);

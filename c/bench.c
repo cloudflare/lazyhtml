@@ -150,16 +150,13 @@ int main(int argc, char **argv) {
 
         for (; chunk.data < lastChunk; chunk.data += CHUNK_SIZE) {
             lhtml_feed(&state, &chunk);
-            assert(state.cs != LHTML_STATE_ERROR);
         }
 
         chunk.length = total_length % CHUNK_SIZE;
 
         lhtml_feed(&state, &chunk);
-        assert(state.cs != LHTML_STATE_ERROR);
 
         lhtml_feed(&state, NULL);
-        assert(state.cs != LHTML_STATE_ERROR);
     }
 
     fprintf(stderr, "Total time: %lluµs\n", (mach_absolute_time() - start) / 1000 / 100);

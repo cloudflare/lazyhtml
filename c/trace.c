@@ -175,10 +175,8 @@ int main(const int argc, const char *const argv[]) {
         };
         printf("// Feeding chunk '%.*s'\n", (int) str.length, str.data);
         lhtml_feed(&state, &str);
-        assert(state.cs != LHTML_STATE_ERROR);
         printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - state.token.raw.data), state.token.raw.data);
     }
     lhtml_feed(&state, NULL);
-    assert(state.cs != LHTML_STATE_ERROR);
     return 0;
 }
