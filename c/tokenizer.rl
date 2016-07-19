@@ -157,8 +157,6 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     lhtml_token_t *const token = &state->token;
 
     do {
-        const char *p, *pe, *eof;
-
         size_t available_space = (size_t) (state->buffer_end - state->buffer_pos);
 
         if (length <= available_space) {
@@ -167,7 +165,7 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             assert(available_space != 0); // just for message
         }
 
-        p = state->buffer_pos;
+        const char *p = state->buffer_pos;
 
         if (available_space > 0) {
             memcpy(state->buffer_pos, data, available_space);
@@ -176,8 +174,8 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             length -= available_space;
         }
 
-        pe = state->buffer_pos;
-        eof = chunk == NULL ? pe : NULL;
+        const char *const pe = state->buffer_pos;
+        const char *const eof = chunk == NULL ? pe : NULL;
 
         %%write exec;
 
