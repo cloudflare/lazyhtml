@@ -46,7 +46,7 @@
     }
 
     action UnmarkPosition {
-        state->mark = 0;
+        state->mark = NULL;
     }
 
     action AdvanceMarkedPosition {
@@ -66,7 +66,7 @@
     }
 
     action EndText {
-        set_string(&GET_TOKEN(CHARACTER)->value, state->start_slice, state->mark != 0 ? state->mark : p);
+        set_string(&GET_TOKEN(CHARACTER)->value, state->start_slice, state->mark != NULL ? state->mark : p);
     }
 
     action AsRawSlice {

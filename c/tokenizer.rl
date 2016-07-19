@@ -153,7 +153,7 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     }
 
     const char *const pe = state->buffer_pos;
-    const char *const eof = chunk == NULL ? pe : 0;
+    const char *const eof = chunk == NULL ? pe : NULL;
 
     %%write exec;
 
