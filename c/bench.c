@@ -9,13 +9,11 @@
 
 static FILE *out;
 
-static void writestr(const char *str) {
-    fputs(str, out);
+static void writehbstr(const lhtml_string_t str) {
+    fwrite(str.data, str.length, 1, out);
 }
 
-static void writehbstr(const lhtml_string_t *str) {
-    fwrite(str->data, str->length, 1, out);
-}
+#define writestr(str) writehbstr(LHTML_STRING(str))
 
 static void token_handler(lhtml_token_t *token, __attribute__((unused)) void *extra) {
 	switch (token->type) {
@@ -25,7 +23,7 @@ static void token_handler(lhtml_token_t *token, __attribute__((unused)) void *ex
             bool is_a_tag = tag->type == LHTML_TAG_A;
 #else
             if (tag->type != LHTML_TAG_A) {
-                writehbstr(&token->raw);
+                writehbstr(token->raw);
                 return;
             }
             const bool is_a_tag = true;
@@ -33,7 +31,7 @@ static void token_handler(lhtml_token_t *token, __attribute__((unused)) void *ex
             const size_t n_attrs = tag->attributes.count;
             const lhtml_attribute_t *attrs = tag->attributes.items;
             writestr("<");
-            writehbstr(&tag->name);
+            writehbstr(tag->name);
             for (size_t i = 0; i < n_attrs; i++) {
                 const lhtml_attribute_t *attr = &attrs[i];
                 const lhtml_string_t *attr_name = &attr->name;
@@ -41,7 +39,7 @@ static void token_handler(lhtml_token_t *token, __attribute__((unused)) void *ex
                     writestr(" href=\"[REPLACED]\"");
                 } else {
                     writestr(" ");
-                    writehbstr(&attr->raw);
+                    writehbstr(attr->raw);
                 }
             }
             if (tag->self_closing) {
@@ -92,7 +90,7 @@ static void token_handler(lhtml_token_t *token, __attribute__((unused)) void *ex
             break;
 #else
         default:
-            writehbstr(&token->raw);
+            writehbstr(token->raw);
 #endif
 	}
 }
