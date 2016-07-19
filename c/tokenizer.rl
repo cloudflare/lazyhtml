@@ -22,9 +22,9 @@ const int LHTML_STATE_RAWTEXT = en_RawText;
 const int LHTML_STATE_PLAINTEXT = en_PlainText;
 const int LHTML_STATE_SCRIPTDATA = en_ScriptData;
 
-#define GET_TOKEN(TYPE) (assert(state->token.type == LHTML_TOKEN_##TYPE), &state->token.LHTML_FIELD_NAME_##TYPE)
+#define GET_TOKEN(TYPE) (assert(token->type == LHTML_TOKEN_##TYPE), &token->LHTML_FIELD_NAME_##TYPE)
 
-#define CREATE_TOKEN(TYPE) (state->token.type = LHTML_TOKEN_##TYPE, &state->token.LHTML_FIELD_NAME_##TYPE)
+#define CREATE_TOKEN(TYPE) (token->type = LHTML_TOKEN_##TYPE, &token->LHTML_FIELD_NAME_##TYPE)
 
 #define HELPER(...) __attribute__((always_inline, __VA_ARGS__)) inline static
 
@@ -52,7 +52,7 @@ void reset_opt_string(lhtml_opt_string_t *dest) {
 }
 
 HELPER(nonnull)
-void token_init_character(lhtml_state_t *state, lhtml_token_character_kind_t kind) {
+void token_init_character(lhtml_token_t *token, lhtml_token_character_kind_t kind) {
     lhtml_token_character_t *character = CREATE_TOKEN(CHARACTER);
     character->kind = kind;
     reset_string(&character->value);
@@ -143,87 +143,112 @@ void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lht
 }
 
 int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
-    const char *p = state->buffer_pos;
+    const char *data;
+    size_t length;
 
     if (chunk != NULL) {
-        char *new_buffer_pos = state->buffer_pos + chunk->length;
-        assert(new_buffer_pos <= state->buffer_end);
-        memcpy(state->buffer_pos, chunk->data, chunk->length);
-        state->buffer_pos = new_buffer_pos;
+        data = chunk->data;
+        length = chunk->length;
+    } else {
+        data = NULL;
+        length = 0;
     }
-
-    const char *const pe = state->buffer_pos;
-    const char *const eof = chunk == NULL ? pe : NULL;
-
-    %%write exec;
-
-    assert(state->cs != 0);
 
     lhtml_token_t *const token = &state->token;
 
-    if (p == eof) {
-        token->type = LHTML_TOKEN_EOF;
-        token->raw.length = (size_t) (pe - token->raw.data);
-        lhtml_emit(token, &state->base_handler);
-        return state->cs;
-    }
+    do {
+        const char *p, *pe, *eof;
 
-    if (token->type == LHTML_TOKEN_CHARACTER) {
-        const char *middle = state->mark != NULL ? state->mark : pe;
-        set_string(&token->character.value, state->start_slice, middle);
-        token->raw.length = (size_t) (middle - token->raw.data);
-        if (token->raw.length) {
+        size_t available_space = (size_t) (state->buffer_end - state->buffer_pos);
+
+        if (length <= available_space) {
+            available_space = length;
+        } else if (available_space == 0) {
+            assert(available_space != 0); // just for message
+        }
+
+        p = state->buffer_pos;
+
+        if (available_space > 0) {
+            memcpy(state->buffer_pos, data, available_space);
+            state->buffer_pos += available_space;
+            data += available_space;
+            length -= available_space;
+        }
+
+        pe = state->buffer_pos;
+        eof = chunk == NULL ? pe : NULL;
+
+        %%write exec;
+
+        assert(state->cs != 0);
+
+        if (chunk == NULL) {
+            token->type = LHTML_TOKEN_EOF;
+            token->raw.length = (size_t) (pe - token->raw.data);
             lhtml_emit(token, &state->base_handler);
-            token->type = LHTML_TOKEN_CHARACTER; // restore just in case
-        }
-        token->raw.data = state->start_slice = middle;
-    }
-
-    size_t shift = (size_t) (token->raw.data - state->buffer);
-
-    switch (token->type) {
-        case LHTML_TOKEN_COMMENT: {
-            token->comment.value.data -= shift;
             break;
         }
 
-        case LHTML_TOKEN_DOCTYPE: {
-            token->doctype.name.value.data -= shift;
-            token->doctype.public_id.value.data -= shift;
-            token->doctype.system_id.value.data -= shift;
-            break;
-        }
-
-        case LHTML_TOKEN_END_TAG: {
-            token->end_tag.name.data -= shift;
-            break;
-        }
-
-        case LHTML_TOKEN_START_TAG: {
-            token->start_tag.name.data -= shift;
-            lhtml_attributes_t *attrs = &token->start_tag.attributes;
-            for (size_t i = 0; i < attrs->count; i++) {
-                lhtml_attribute_t *attr = &attrs->items[i];
-                attr->name.data -= shift;
-                attr->value.data -= shift;
-                attr->raw.data -= shift;
+        if (token->type == LHTML_TOKEN_CHARACTER) {
+            const char *middle = state->mark != NULL ? state->mark : pe;
+            set_string(&token->character.value, state->start_slice, middle);
+            token->raw.length = (size_t) (middle - token->raw.data);
+            if (token->raw.length) {
+                lhtml_emit(token, &state->base_handler);
+                token->type = LHTML_TOKEN_CHARACTER; // restore just in case
             }
-            break;
+            token->raw.data = state->start_slice = middle;
         }
 
-        default: {
-            break;
+        size_t shift = (size_t) (token->raw.data - state->buffer);
+
+        if (shift != 0) {
+            switch (token->type) {
+                case LHTML_TOKEN_COMMENT: {
+                    token->comment.value.data -= shift;
+                    break;
+                }
+
+                case LHTML_TOKEN_DOCTYPE: {
+                    token->doctype.name.value.data -= shift;
+                    token->doctype.public_id.value.data -= shift;
+                    token->doctype.system_id.value.data -= shift;
+                    break;
+                }
+
+                case LHTML_TOKEN_END_TAG: {
+                    token->end_tag.name.data -= shift;
+                    break;
+                }
+
+                case LHTML_TOKEN_START_TAG: {
+                    token->start_tag.name.data -= shift;
+                    lhtml_attributes_t *attrs = &token->start_tag.attributes;
+                    for (size_t i = 0; i < attrs->count; i++) {
+                        lhtml_attribute_t *attr = &attrs->items[i];
+                        attr->name.data -= shift;
+                        attr->value.data -= shift;
+                        attr->raw.data -= shift;
+                    }
+                    break;
+                }
+
+                default: {
+                    break;
+                }
+            }
+
+            memmove(state->buffer, token->raw.data, (size_t) (pe - token->raw.data));
+            token->raw.data = state->buffer;
+            state->buffer_pos -= shift;
+            state->start_slice -= shift;
+
+            if (state->mark != NULL) {
+                state->mark -= shift;
+            }
         }
-    }
-
-    memmove(state->buffer, token->raw.data, (size_t) (pe - token->raw.data));
-    token->raw.data = state->buffer;
-    state->buffer_pos -= shift;
-    state->start_slice -= shift;
-
-    if (state->mark != NULL) {
-        state->mark -= shift;
-    }
+    } while (length > 0);
 
     return state->cs;
 }

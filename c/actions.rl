@@ -8,19 +8,19 @@
     action IsMatchingQuote { fc == state->quote }
 
     action StartData {
-        token_init_character(state, LHTML_TOKEN_CHARACTER_DATA);
+        token_init_character(token, LHTML_TOKEN_CHARACTER_DATA);
     }
 
     action StartRCData {
-        token_init_character(state, LHTML_TOKEN_CHARACTER_RCDATA);
+        token_init_character(token, LHTML_TOKEN_CHARACTER_RCDATA);
     }
 
     action StartCData {
-        token_init_character(state, LHTML_TOKEN_CHARACTER_CDATA);
+        token_init_character(token, LHTML_TOKEN_CHARACTER_CDATA);
     }
 
     action StartSafe {
-        token_init_character(state, LHTML_TOKEN_CHARACTER_SAFE);
+        token_init_character(token, LHTML_TOKEN_CHARACTER_SAFE);
     }
 
     action StartAppropriateEndTag {
@@ -54,7 +54,6 @@
     }
 
     action EmitToken {
-        lhtml_token_t* token = &state->token;
         bool isnt_eof = p != eof;
         token->raw.length = ((size_t) (p - token->raw.data)) + isnt_eof;
         if (token->raw.length) {
@@ -70,7 +69,7 @@
     }
 
     action AsRawSlice {
-        token_init_character(state, LHTML_TOKEN_CHARACTER_RAW);
+        token_init_character(token, LHTML_TOKEN_CHARACTER_RAW);
     }
 
     action EmitSlice() {
@@ -126,7 +125,7 @@
     }
 
     action SetAttributeValue {
-        assert(state->token.type == LHTML_TOKEN_START_TAG);
+        assert(token->type == LHTML_TOKEN_START_TAG);
         lhtml_attribute_t *attr = state->attribute;
         set_string(&attr->value, state->start_slice, p);
         attr->raw.length = (size_t) (p + (*p == '"' || *p == '\'') - attr->name.data);
