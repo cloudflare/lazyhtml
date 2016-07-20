@@ -54,13 +54,13 @@
     }
 
     action EmitToken {
-        bool isnt_eof = p != eof;
-        token->raw.length = ((size_t) (p - token->raw.data)) + isnt_eof;
+        const char *end = p + (p != eof);
+        token->raw.length = (size_t) (end - token->raw.data);
         if (token->raw.length) {
             lhtml_emit(token, &state->base_handler);
         }
         token->type = LHTML_TOKEN_UNKNOWN;
-        token->raw.data = p + isnt_eof;
+        token->raw.data = end;
         token->raw.length = 0;
     }
 
