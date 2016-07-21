@@ -7,8 +7,8 @@
 %%{
     machine html;
 
-    include 'c/actions.rl';
-    include 'syntax/index.rl';
+    include 'actions.rl';
+    include '../syntax/index.rl';
 
     access state->;
 

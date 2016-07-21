@@ -1,20 +1,20 @@
 %%{
     machine html;
 
-    include 'syntax/_navigation.rl';
-    include 'syntax/_helpers.rl';
+    include '_navigation.rl';
+    include '_helpers.rl';
 
-    include 'syntax/data.rl';
+    include 'data.rl';
 
-    include 'syntax/starttag.rl';
-    include 'syntax/endtag.rl';
+    include 'starttag.rl';
+    include 'endtag.rl';
 
-    include 'syntax/comment.rl';
-    include 'syntax/doctype.rl';
-    include 'syntax/cdata.rl';
+    include 'comment.rl';
+    include 'doctype.rl';
+    include 'cdata.rl';
 
-    include 'syntax/scriptdata.rl';
-    include 'syntax/rcdata.rl';
-    include 'syntax/rawtext.rl';
-    include 'syntax/plaintext.rl';
+    include 'scriptdata.rl';
+    include 'rcdata.rl';
+    include 'rawtext.rl';
+    include 'plaintext.rl';
 }%%

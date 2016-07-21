@@ -1,10 +1,10 @@
 RAGEL = ragel
-RAGELFLAGS = --reduce-frontend --direct-backend -G2 -L
+RAGELFLAGS = -G2
 CFLAGS = -g -O3 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wconversion -Wnull-dereference -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
 LDFLAGS =
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
-	cd .. && $(RAGEL) $(RAGELFLAGS) -s c/$< | grep -v "^compiling"
+	$(RAGEL) $(RAGELFLAGS) -s $<
 
 tokenizer.o: tokenizer.c tokenizer.h
 	$(CC) $(CFLAGS) -c -Wno-parentheses-equality -Wno-unused-const-variable $< -o $@
