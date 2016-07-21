@@ -196,8 +196,10 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             set_string(&token->character.value, state->start_slice, middle);
             token->raw.length = (size_t) (middle - token->raw.data);
             if (token->raw.length) {
+                lhtml_token_character_kind_t kind = token->character.kind;
                 lhtml_emit(token, &state->base_handler);
                 token->type = LHTML_TOKEN_CHARACTER; // restore just in case
+                token->character.kind = kind;
             }
             token->raw.data = state->start_slice = middle;
         }
