@@ -32,9 +32,7 @@
     action FeedAppropriateEndTag { state->appropriate_end_tag_offset != state->last_start_tag_name_end && *(state->appropriate_end_tag_offset++) == (fc | 0x20) }
 
     action SetAppropriateEndTagName {
-        lhtml_string_t *end_tag_name = &GET_TOKEN(END_TAG)->name;
-        end_tag_name->data = state->last_start_tag_name_buf;
-        end_tag_name->length = (size_t) (state->last_start_tag_name_end - state->last_start_tag_name_buf);
+        set_string(&GET_TOKEN(END_TAG)->name, state->last_start_tag_name_buf, state->last_start_tag_name_end);
     }
 
     action StartSlice {
