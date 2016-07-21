@@ -39,7 +39,8 @@ static void token_handler(lhtml_token_t *token, __attribute__((unused)) void *ex
                     writestr(" href=\"[REPLACED]\"");
                 } else {
                     writestr(" ");
-                    writehbstr(attr->raw);
+                    assert(attr->raw.has_value);
+                    writehbstr(attr->raw.value);
                 }
             }
             if (tag->self_closing) {

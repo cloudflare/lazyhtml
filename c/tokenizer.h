@@ -52,7 +52,7 @@ typedef struct {
     lhtml_string_t name;
     lhtml_string_t value;
 
-    lhtml_string_t raw;
+    lhtml_opt_string_t raw;
 } lhtml_attribute_t;
 
 #define MAX_ATTR_COUNT 256

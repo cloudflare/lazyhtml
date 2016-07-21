@@ -67,7 +67,7 @@ static void on_token(lhtml_token_t *token, __attribute__((unused)) void *extra) 
                 printf(" = ");
                 print_string(&attr->value);
                 printf(" (");
-                print_string(&attr->raw);
+                print_opt_string(&attr->raw);
                 printf(")");
             }
             printf(" } , ");

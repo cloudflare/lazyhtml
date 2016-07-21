@@ -250,7 +250,7 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                         lhtml_attribute_t *attr = &attrs->items[i];
                         attr->name.data -= shift;
                         attr->value.data -= shift;
-                        attr->raw.data -= shift;
+                        attr->raw.value.data -= shift;
                     }
                     break;
                 }
