@@ -93,6 +93,24 @@ lhtml_tag_type_t get_tag_type(const lhtml_string_t name) {
     return code;
 }
 
+HELPER(nonnull)
+void emit_token(lhtml_state_t *state, const char *end) {
+    lhtml_token_t *token = &state->token;
+    token->raw.length = (size_t) (end - token->raw.data);
+    if (token->raw.length) {
+        lhtml_emit(token, &state->base_handler);
+    }
+    token->type = LHTML_TOKEN_UNKNOWN;
+    token->raw.data = end;
+    token->raw.length = 0;
+}
+
+HELPER(nonnull)
+void end_text(lhtml_state_t *state, const char *p) {
+    lhtml_token_t *token = &state->token;
+    set_string(&GET_TOKEN(CHARACTER)->value, state->start_slice, state->mark != NULL ? state->mark : p);
+}
+
 inline void lhtml_emit(lhtml_token_t *token, void *extra) {
     lhtml_token_handler_t *handler = ((lhtml_token_handler_t *) extra)->next;
     if (handler == NULL) {

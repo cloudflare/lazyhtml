@@ -29,7 +29,7 @@
 
     action IsAppropriateEndTagFed { state->appropriate_end_tag_offset == state->last_start_tag_name_end }
 
-    action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && *(state->appropriate_end_tag_offset++) == (fc | 0x20) }
+    action FeedAppropriateEndTag { state->appropriate_end_tag_offset != state->last_start_tag_name_end && *(state->appropriate_end_tag_offset++) == (fc | 0x20) }
 
     action SetAppropriateEndTagName {
         lhtml_string_t *end_tag_name = &GET_TOKEN(END_TAG)->name;
@@ -54,29 +54,20 @@
     }
 
     action EmitToken {
-        const char *end = p + (p != eof);
-        token->raw.length = (size_t) (end - token->raw.data);
-        if (token->raw.length) {
-            lhtml_emit(token, &state->base_handler);
-        }
-        token->type = LHTML_TOKEN_UNKNOWN;
-        token->raw.data = end;
-        token->raw.length = 0;
+        emit_token(state, p + (p != eof));
     }
 
     action EndText {
-        set_string(&GET_TOKEN(CHARACTER)->value, state->start_slice, state->mark != NULL ? state->mark : p);
+        end_text(state, p);
     }
 
     action AsRawSlice {
         token_init_character(token, LHTML_TOKEN_CHARACTER_RAW);
     }
 
-    action EmitSlice() {
-        $EndText
-        p--;
-        $EmitToken
-        p++;
+    action EmitSlice {
+        end_text(state, p);
+        emit_token(state, p);
     }
 
     action CreateStartTagToken {
