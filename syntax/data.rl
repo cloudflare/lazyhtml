@@ -15,7 +15,7 @@
         any >0 @AsRawSlice @EmitSlice @Reconsume @To_Data
     ) @eof(AsRawSlice) @eof(EmitSlice);
 
-    _BogusComment = any* >StartSlice %MarkPosition %EmitComment :> ('>' @To_Data)?;
+    _BogusComment = any* >StartSlice %MarkPosition %EndComment %EmitToken %UnmarkPosition :> ('>' @To_Data)?;
 
     BogusComment := _BogusComment;
 

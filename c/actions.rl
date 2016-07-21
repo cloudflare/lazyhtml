@@ -106,10 +106,8 @@
         GET_TOKEN(START_TAG)->self_closing = true;
     }
 
-    action EmitComment() {
+    action EndComment {
         set_string(&CREATE_TOKEN(COMMENT)->value, state->start_slice, state->mark);
-        $EmitToken
-        $UnmarkPosition
     }
 
     action CreateEndTagToken {

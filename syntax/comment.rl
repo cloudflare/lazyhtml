@@ -42,5 +42,5 @@
             ) >1 |
             any >0 -> text_slice
         )
-    ) >StartSlice >eof(StartSlice) >eof(MarkPosition) @EmitComment @To_Data @eof(EmitComment);
+    ) >StartSlice >eof(StartSlice) >eof(MarkPosition) @EndComment @EmitToken @UnmarkPosition @To_Data @eof(EndComment) @eof(EmitToken);
 }%%

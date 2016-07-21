@@ -111,13 +111,11 @@
         this.token.selfClosing = true;
     }
 
-    action EmitComment() {
+    action EndComment {
         this.token = {
             type: 'Comment',
             value: data.slice(this.startSlice, this.mark)
         };
-        $EmitToken
-        $UnmarkPosition
     }
 
     action CreateEndTagToken {
