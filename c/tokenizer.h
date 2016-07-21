@@ -296,9 +296,11 @@ void lhtml_emit(lhtml_token_t *token, void *extra);
 __attribute__((nonnull(1)))
 int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
 
-__attribute__((const, nonnull, warn_unused_result))
-bool lhtml_name_equals(const lhtml_string_t actual, const char *expected);
+__attribute__((const, warn_unused_result))
+bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected);
 
 #define LHTML_STRING(str) ((lhtml_string_t) { .data = str, .length = sizeof(str) - 1 })
+
+#define LHTML_NAME_EQUALS(actual, expected) lhtml_name_equals(actual, LHTML_STRING(expected))
 
 #endif

@@ -101,21 +101,24 @@ inline void lhtml_emit(lhtml_token_t *token, void *extra) {
     handler->callback(token, handler);
 }
 
-bool lhtml_name_equals(const lhtml_string_t actual, const char *expected) {
-    size_t len = actual.length;
-    const char *data = actual.data;
+inline bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected) {
+    size_t length = expected.length;
 
-    for (size_t i = 0; i < len; i++) {
-        char c = data[i];
+    if (actual.length != length) {
+        return false;
+    }
+
+    for (size_t i = 0; i < length; i++) {
+        char c = actual.data[i];
         c |= (char) (((unsigned char) c - 'A' < 26) << 5);
-        char e = expected[i];
+        char e = expected.data[i];
 
-        if (e == 0 || c != e) {
+        if (c != e) {
             return false;
         }
     }
 
-    return expected[len] == 0;
+    return true;
 }
 
 void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {

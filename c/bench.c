@@ -35,7 +35,7 @@ static void token_handler(lhtml_token_t *token, __attribute__((unused)) void *ex
             for (size_t i = 0; i < n_attrs; i++) {
                 const lhtml_attribute_t *attr = &attrs[i];
                 const lhtml_string_t *attr_name = &attr->name;
-                if (is_a_tag && lhtml_name_equals(*attr_name, "href")) {
+                if (is_a_tag && LHTML_NAME_EQUALS(*attr_name, "href")) {
                     writestr(" href=\"[REPLACED]\"");
                 } else {
                     writestr(" ");

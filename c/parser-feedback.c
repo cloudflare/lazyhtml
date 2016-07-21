@@ -110,7 +110,7 @@ static bool foreign_causes_exit(const lhtml_token_starttag_t *start_tag) {
             const lhtml_attributes_t *attrs = &start_tag->attributes;
             for (size_t i = 0; i < attrs->count; i++) {
                 const lhtml_string_t name = attrs->items[i].name;
-                if (lhtml_name_equals(name, "color") || lhtml_name_equals(name, "size") || lhtml_name_equals(name, "face")) {
+                if (LHTML_NAME_EQUALS(name, "color") || LHTML_NAME_EQUALS(name, "size") || LHTML_NAME_EQUALS(name, "face")) {
                     return true;
                 }
             }
@@ -135,10 +135,10 @@ static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, c
                     return true;
 
                 default: {
-                    if (attrs && lhtml_name_equals(name, "annotation-xml")) {
+                    if (attrs && LHTML_NAME_EQUALS(name, "annotation-xml")) {
                         for (size_t i = 0; i < attrs->count; i++) {
                             const lhtml_attribute_t *attr = &attrs->items[i];
-                            if (lhtml_name_equals(attr->name, "encoding") && (lhtml_name_equals(attr->value, "text/html") || lhtml_name_equals(attr->value, "application/xhtml+xml"))) {
+                            if (LHTML_NAME_EQUALS(attr->name, "encoding") && (LHTML_NAME_EQUALS(attr->value, "text/html") || LHTML_NAME_EQUALS(attr->value, "application/xhtml+xml"))) {
                                 return true;
                             }
                         }
