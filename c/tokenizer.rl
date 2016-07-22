@@ -165,35 +165,28 @@ void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lht
 }
 
 bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
-    const char *data;
-    size_t length;
+    lhtml_string_t unprocessed;
+
+    if (chunk != NULL) {
+        unprocessed = *chunk;
+    } else {
+        unprocessed.length = 0;
+    }
 
     lhtml_token_t *const token = &state->token;
 
     if (state->errored) {
-        if (chunk != NULL) {
-            token->type = LHTML_TOKEN_ERROR;
-            token->raw = *chunk;
-        } else {
-            token->type = LHTML_TOKEN_EOF;
-            token->raw.length = 0;
-        }
+        token->type = chunk != NULL ? LHTML_TOKEN_ERROR : LHTML_TOKEN_EOF;
+        token->raw = unprocessed;
         lhtml_emit(token, &state->base_handler);
         return false;
-    }
-
-    if (chunk != NULL) {
-        data = chunk->data;
-        length = chunk->length;
-    } else {
-        length = 0;
     }
 
     do {
         size_t available_space = (size_t) (state->buffer_end - state->buffer_pos);
 
-        if (length <= available_space) {
-            available_space = length;
+        if (unprocessed.length <= available_space) {
+            available_space = unprocessed.length;
         } else if (available_space == 0) {
             state->errored = true;
             token->raw.length = (size_t) (state->buffer_pos - token->raw.data);
@@ -202,10 +195,9 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 lhtml_emit(token, &state->base_handler);
                 state->buffer_pos = state->buffer;
             }
-            if (length > 0) {
+            if (unprocessed.length > 0) {
                 token->type = LHTML_TOKEN_ERROR;
-                token->raw.data = data;
-                token->raw.length = length;
+                token->raw = unprocessed;
                 lhtml_emit(token, &state->base_handler);
             }
             return false;
@@ -214,10 +206,10 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         const char *p = state->buffer_pos;
 
         if (available_space > 0) {
-            memcpy(state->buffer_pos, data, available_space);
+            memcpy(state->buffer_pos, unprocessed.data, available_space);
             state->buffer_pos += available_space;
-            data += available_space;
-            length -= available_space;
+            unprocessed.data += available_space;
+            unprocessed.length -= available_space;
         }
 
         const char *const pe = state->buffer_pos;
@@ -233,10 +225,9 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 lhtml_emit(token, &state->base_handler);
                 state->buffer_pos = state->buffer;
             }
-            if (length > 0) {
+            if (unprocessed.length > 0) {
                 token->type = LHTML_TOKEN_ERROR;
-                token->raw.data = data;
-                token->raw.length = length;
+                token->raw = unprocessed;
                 lhtml_emit(token, &state->base_handler);
             }
             return false;
@@ -309,7 +300,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 state->mark -= shift;
             }
         }
-    } while (length > 0);
+    } while (unprocessed.length > 0);
 
     return true;
 }
