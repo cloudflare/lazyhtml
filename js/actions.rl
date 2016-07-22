@@ -122,6 +122,8 @@
         this.token = { type: 'EndTag', name: '' };
     }
 
+    action CanCreateAttribute { true }
+
     action CreateAttribute {
         this.attribute = {
             name: '',

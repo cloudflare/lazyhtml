@@ -30,7 +30,9 @@ static int to_tok_state(const Suite__Test__State state) {
         state_case(RAWTEXT)
         state_case(SCRIPTDATA)
 
-        default: assert(false);
+        default:
+            assert(false);
+            return LHTML_STATE_ERROR;
     }
 }
 
@@ -158,7 +160,8 @@ typedef struct {
     const Suite__Test *test;
 } test_state_t;
 
-static void fprint_fail(FILE *file, const test_state_t *state, const char *msg) {
+static void fprint_fail(FILE *file, test_state_t *state, const char *msg) {
+    state->error = true;
     fprintf(
         file,
         "not ok - %s\n"
@@ -180,13 +183,13 @@ static void fprint_fail_end(FILE *file) {
     fprintf(file, "  ...\n");
 }
 
-static bool tokens_match(const test_state_t *state, const lhtml_token_t *src) {
+static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
     if (state->expected_pos >= state->expected_length) {
         fprint_fail(stdout, state, "Extraneous tokens");
         fprintf(stdout, "  actual:   %zu\n", state->expected_pos);
         fprintf(stdout, "  expected: %zu\n", state->expected_length - 1);
         fprint_fail_end(stdout);
-        return false;
+        return;
     }
 
     const ProtobufCMessage *expected = &state->test->output[state->expected_pos]->base;
@@ -292,21 +295,24 @@ static bool tokens_match(const test_state_t *state, const lhtml_token_t *src) {
         fprint_fail_end(stdout);
     }
 
-    return same;
+    return;
 }
 
 static void on_token(lhtml_token_t *token, void *extra) {
     test_state_t *state = extra;
-    if (state->error) {
+    if (state->error || token->type == LHTML_TOKEN_EOF) {
         return;
     }
-    if (token->type == LHTML_TOKEN_EOF) {
+    if (token->type == LHTML_TOKEN_ERROR) {
+        fprint_fail(stdout, state, "tokenization error");
+        fprintf(stdout, "    leftover: \"%.*s\"\n", (int) token->raw.length, token->raw.data);
+        fprint_fail_end(stdout);
         return;
     }
-    if ((state->error = !tokens_match(state, token))) {
-        return;
+    tokens_match(state, token);
+    if (!state->error) {
+        state->expected_pos++;
     }
-    state->expected_pos++;
 }
 
 static void run_test(const Suite__Test *test, bool with_feedback) {
@@ -353,10 +359,14 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
                 .length = 1,
                 .data = &c
             };
-            lhtml_feed(&state.tokenizer, &ch);
+            if (!lhtml_feed(&state.tokenizer, &ch) || state.error) {
+                return;
+            }
         }
-        lhtml_feed(&state.tokenizer, NULL);
-        if (state.error) return;
+        if (!lhtml_feed(&state.tokenizer, NULL) || state.error) {
+            return;
+        }
+
         if (state.expected_pos < state.expected_length) {
             fprint_fail(stdout, &state, "Not enough tokens");
             fprintf(stdout, "    actual:   %zu\n", state.expected_pos);

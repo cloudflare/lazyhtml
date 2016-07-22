@@ -155,6 +155,7 @@ void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
     state->token.type = LHTML_TOKEN_UNKNOWN;
     state->token.raw.data = state->buffer;
     state->cs = options->initial_state;
+    state->errored = false;
 }
 
 void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback) {
@@ -163,19 +164,30 @@ void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lht
     state->last_handler = state->last_handler->next = handler;
 }
 
-int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
+bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     const char *data;
     size_t length;
+
+    lhtml_token_t *const token = &state->token;
+
+    if (state->errored) {
+        if (chunk != NULL) {
+            token->type = LHTML_TOKEN_ERROR;
+            token->raw = *chunk;
+        } else {
+            token->type = LHTML_TOKEN_EOF;
+            token->raw.length = 0;
+        }
+        lhtml_emit(token, &state->base_handler);
+        return false;
+    }
 
     if (chunk != NULL) {
         data = chunk->data;
         length = chunk->length;
     } else {
-        data = NULL;
         length = 0;
     }
-
-    lhtml_token_t *const token = &state->token;
 
     do {
         size_t available_space = (size_t) (state->buffer_end - state->buffer_pos);
@@ -183,7 +195,20 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         if (length <= available_space) {
             available_space = length;
         } else if (available_space == 0) {
-            assert(available_space != 0); // just for message
+            state->errored = true;
+            token->raw.length = (size_t) (state->buffer_pos - token->raw.data);
+            if (token->raw.length > 0) {
+                token->type = LHTML_TOKEN_ERROR;
+                lhtml_emit(token, &state->base_handler);
+                state->buffer_pos = state->buffer;
+            }
+            if (length > 0) {
+                token->type = LHTML_TOKEN_ERROR;
+                token->raw.data = data;
+                token->raw.length = length;
+                lhtml_emit(token, &state->base_handler);
+            }
+            return false;
         }
 
         const char *p = state->buffer_pos;
@@ -200,7 +225,22 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
         %%write exec;
 
-        assert(state->cs != 0);
+        if (state->cs == 0) {
+            state->errored = true;
+            token->raw.length = (size_t) (pe - token->raw.data);
+            if (token->raw.length > 0) {
+                token->type = LHTML_TOKEN_ERROR;
+                lhtml_emit(token, &state->base_handler);
+                state->buffer_pos = state->buffer;
+            }
+            if (length > 0) {
+                token->type = LHTML_TOKEN_ERROR;
+                token->raw.data = data;
+                token->raw.length = length;
+                lhtml_emit(token, &state->base_handler);
+            }
+            return false;
+        }
 
         if (chunk == NULL) {
             token->type = LHTML_TOKEN_EOF;
@@ -271,5 +311,5 @@ int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         }
     } while (length > 0);
 
-    return state->cs;
+    return true;
 }

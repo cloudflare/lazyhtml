@@ -103,16 +103,16 @@
         reset_string(&CREATE_TOKEN(END_TAG)->name);
     }
 
+    action CanCreateAttribute { GET_TOKEN(START_TAG)->attributes.count < MAX_ATTR_COUNT }
+
     action CreateAttribute {
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
-        assert(attributes->count < MAX_ATTR_COUNT);
         lhtml_attribute_t *attr = state->attribute = &attributes->items[attributes->count];
         reset_string(&attr->name);
         reset_string(&attr->value);
     }
 
     action SetAttributeValue {
-        assert(token->type == LHTML_TOKEN_START_TAG);
         lhtml_attribute_t *attr = state->attribute;
         set_string(&attr->value, state->start_slice, p);
         attr->raw.value.length = (size_t) (p + (*p == '"' || *p == '\'') - attr->name.data);

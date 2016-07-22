@@ -11,7 +11,8 @@ const char *TOKEN_TYPE_NAMES[] = {
     "StartTag",
     "EndTag",
     "DocType",
-    "EOF"
+    "EOF",
+    "Error"
 };
 
 const char *TOKEN_CHARACTER_KIND_NAMES[] = {
@@ -175,7 +176,7 @@ int main(const int argc, const char *const argv[]) {
         };
         printf("// Feeding chunk '%.*s'\n", (int) str.length, str.data);
         lhtml_feed(&state, &str);
-        printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - state.token.raw.data), state.token.raw.data);
+        printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - state.buffer), state.buffer);
     }
     lhtml_feed(&state, NULL);
     return 0;

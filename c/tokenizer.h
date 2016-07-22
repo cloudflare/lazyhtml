@@ -28,7 +28,8 @@ typedef enum {
     LHTML_TOKEN_START_TAG,
     LHTML_TOKEN_END_TAG,
     LHTML_TOKEN_DOCTYPE,
-    LHTML_TOKEN_EOF
+    LHTML_TOKEN_EOF,
+    LHTML_TOKEN_ERROR
 } lhtml_token_type_t;
 
 typedef enum {
@@ -260,6 +261,7 @@ struct lhtml_token_handler {
 typedef struct {
     lhtml_token_handler_t base_handler; // needs to be the first one
 
+    bool errored;
     int cs;
     lhtml_token_handler_t *last_handler;
     char quote;
@@ -294,7 +296,7 @@ __attribute__((nonnull))
 void lhtml_emit(lhtml_token_t *token, void *extra);
 
 __attribute__((nonnull(1)))
-int lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
+bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
 
 __attribute__((const, warn_unused_result))
 bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected);
