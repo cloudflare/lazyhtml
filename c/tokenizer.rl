@@ -153,7 +153,6 @@ void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
     state->buffer = state->buffer_pos = options->buffer;
     state->buffer_end = options->buffer + options->buffer_size;
     state->token.type = LHTML_TOKEN_UNKNOWN;
-    state->token.raw.data = state->buffer;
     state->cs = options->initial_state;
     state->errored = false;
 }
@@ -183,6 +182,8 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     }
 
     do {
+        token->raw.data = state->buffer;
+
         size_t available_space = (size_t) (state->buffer_end - state->buffer_pos);
 
         if (unprocessed.length <= available_space) {
@@ -291,8 +292,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 }
             }
 
-            memmove(state->buffer, token->raw.data, (size_t) (pe - token->raw.data));
-            token->raw.data = state->buffer;
+            memmove(state->buffer, token->raw.data, (size_t) (state->buffer_pos - token->raw.data));
             state->buffer_pos -= shift;
             state->start_slice -= shift;
 
