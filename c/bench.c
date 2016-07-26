@@ -19,16 +19,11 @@ static void modtoken(lhtml_token_t *token, void *extra) {
     if (token->type == LHTML_TOKEN_START_TAG) {
         lhtml_token_starttag_t *tag = &token->start_tag;
         if (tag->type == LHTML_TAG_A) {
-            const size_t n_attrs = tag->attributes.count;
-            lhtml_attribute_t *attrs = tag->attributes.items;
-            for (size_t i = 0; i < n_attrs; i++) {
-                lhtml_attribute_t *attr = &attrs[i];
-                if (LHTML_NAME_EQUALS(attr->name, "href")) {
-                    attr->raw.has_value = false;
-                    token->raw.data = NULL;
-                    attr->value = LHTML_STRING("[REPLACED]");
-                    break;
-                }
+            lhtml_attribute_t *href = LHTML_FIND_ATTR(&tag->attributes, "href");
+            if (href != NULL) {
+                href->raw.has_value = false;
+                token->raw.data = NULL;
+                href->value = LHTML_STRING("[REPLACED]");
             }
         }
     }

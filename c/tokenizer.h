@@ -56,11 +56,11 @@ typedef struct {
     lhtml_opt_string_t raw;
 } lhtml_attribute_t;
 
-#define MAX_ATTR_COUNT 256
+#define LHTML_MAX_ATTR_COUNT 256
 
 typedef struct {
     size_t count;
-    lhtml_attribute_t items[MAX_ATTR_COUNT];
+    lhtml_attribute_t items[LHTML_MAX_ATTR_COUNT];
 } lhtml_attributes_t;
 
 typedef enum {
@@ -301,8 +301,16 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
 __attribute__((const, warn_unused_result))
 bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected);
 
+__attribute__((nonnull, warn_unused_result))
+lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml_string_t name);
+
+__attribute__((nonnull, warn_unused_result))
+lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs);
+
 #define LHTML_STRING(str) ((lhtml_string_t) { .data = str, .length = sizeof(str) - 1 })
 
 #define LHTML_NAME_EQUALS(actual, expected) lhtml_name_equals(actual, LHTML_STRING(expected))
+
+#define LHTML_FIND_ATTR(attrs, name) lhtml_find_attr(attrs, LHTML_STRING(name))
 
 #endif

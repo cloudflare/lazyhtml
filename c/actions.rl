@@ -103,7 +103,7 @@
         reset_string(&CREATE_TOKEN(END_TAG)->name);
     }
 
-    action CanCreateAttribute { GET_TOKEN(START_TAG)->attributes.count < MAX_ATTR_COUNT }
+    action CanCreateAttribute { GET_TOKEN(START_TAG)->attributes.count < LHTML_MAX_ATTR_COUNT }
 
     action CreateAttribute {
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;

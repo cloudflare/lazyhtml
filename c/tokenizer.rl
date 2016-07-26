@@ -164,6 +164,22 @@ inline bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t 
     return true;
 }
 
+inline lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml_string_t name) {
+    size_t count = attrs->count;
+    lhtml_attribute_t *items = attrs->items;
+    for (size_t i = 0; i < count; i++) {
+        lhtml_attribute_t *attr = &items[i];
+        if (lhtml_name_equals(attr->name, name)) {
+            return attr;
+        }
+    }
+    return NULL;
+}
+
+inline lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs) {
+    return attrs->count < LHTML_MAX_ATTR_COUNT ? &attrs->items[attrs->count++] : NULL;
+}
+
 void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
     %%write init nocs;
     state->allow_cdata = options->allow_cdata;
