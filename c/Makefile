@@ -15,17 +15,18 @@ tests.pb-c.c: tests.proto
 tests.pb-c.h: tests.pb-c.c
 
 parser-feedback.o: parser-feedback.c parser-feedback.h
+serializer.o: serializer.c serializer.h
 concat-char-tokens.o: concat-char-tokens.c concat-char-tokens.h
 decoder.o: decoder.c decoder.h
 tests.pb-c.o: tests.pb-c.c tests.pb-c.h
 trace.o: trace.c
 bench.o: bench.c
 
-parser-feedback.o concat-char-tokens.o decoder.o tests.pb-c.o trace.o bench.o:
+parser-feedback.o serializer.o concat-char-tokens.o decoder.o tests.pb-c.o trace.o bench.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 trace: trace.o tokenizer.o parser-feedback.o
-bench: bench.o tokenizer.o parser-feedback.o
+bench: bench.o tokenizer.o parser-feedback.o serializer.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $+ -o $@
 
 test.o: test.c tests.pb-c.h

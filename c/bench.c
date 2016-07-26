@@ -6,94 +6,33 @@
 #include <mach/mach_time.h>
 #include <stdbool.h>
 #include "parser-feedback.h"
+#include "serializer.h"
 
 static FILE *out;
 
-static void writehbstr(const lhtml_string_t str) {
+static void writehbstr(lhtml_string_t str, void *extra) {
+    (void) extra;
     fwrite(str.data, str.length, 1, out);
 }
 
-#define writestr(str) writehbstr(LHTML_STRING(str))
-
-static void token_handler(lhtml_token_t *token, __attribute__((unused)) void *extra) {
-	switch (token->type) {
-        case LHTML_TOKEN_START_TAG: {
-            const lhtml_token_starttag_t *tag = &token->start_tag;
-#ifdef FULL_SERIALIZE
-            bool is_a_tag = tag->type == LHTML_TAG_A;
-#else
-            if (tag->type != LHTML_TAG_A) {
-                writehbstr(token->raw);
-                return;
-            }
-            const bool is_a_tag = true;
-#endif
+static void modtoken(lhtml_token_t *token, void *extra) {
+    if (token->type == LHTML_TOKEN_START_TAG) {
+        lhtml_token_starttag_t *tag = &token->start_tag;
+        if (tag->type == LHTML_TAG_A) {
             const size_t n_attrs = tag->attributes.count;
-            const lhtml_attribute_t *attrs = tag->attributes.items;
-            writestr("<");
-            writehbstr(tag->name);
+            lhtml_attribute_t *attrs = tag->attributes.items;
             for (size_t i = 0; i < n_attrs; i++) {
-                const lhtml_attribute_t *attr = &attrs[i];
-                const lhtml_string_t *attr_name = &attr->name;
-                if (is_a_tag && LHTML_NAME_EQUALS(*attr_name, "href")) {
-                    writestr(" href=\"[REPLACED]\"");
-                } else {
-                    writestr(" ");
-                    assert(attr->raw.has_value);
-                    writehbstr(attr->raw.value);
+                lhtml_attribute_t *attr = &attrs[i];
+                if (LHTML_NAME_EQUALS(attr->name, "href")) {
+                    attr->raw.has_value = false;
+                    token->raw.data = NULL;
+                    attr->value = LHTML_STRING("[REPLACED]");
+                    break;
                 }
             }
-            if (tag->self_closing) {
-                writestr("/");
-            }
-            writestr(">");
-            break;
         }
-
-#ifdef FULL_SERIALIZE
-        case LHTML_TOKEN_DOCTYPE:
-            writestr("<!DOCTYPE");
-            if (token->doctype.name.has_value) {
-                writestr(" ");
-                writehbstr(&token->doctype.name.value);
-            }
-            if (token->doctype.public_id.has_value) {
-                writestr(" \"");
-                writehbstr(&token->doctype.public_id.value);
-                writestr("\"");
-            }
-            if (token->doctype.system_id.has_value) {
-                writestr(" \"");
-                writehbstr(&token->doctype.system_id.value);
-                writestr("\"");
-            }
-            writestr(">");
-            break;
-
-        case LHTML_TOKEN_END_TAG:
-            writestr("</");
-            writehbstr(&token->end_tag.name);
-            writestr(">");
-            break;
-
-        case LHTML_TOKEN_COMMENT:
-            writestr("<!--");
-            writehbstr(&token->comment.value);
-            writestr("-->");
-            break;
-
-        case LHTML_TOKEN_CHARACTER:
-            writehbstr(&token->character.value);
-            break;
-
-        case LHTML_TOKEN_UNKNOWN:
-        case LHTML_TOKEN_EOF:
-            break;
-#else
-        default:
-            writehbstr(token->raw);
-#endif
-	}
+    }
+    lhtml_emit(token, extra);
 }
 
 static const int CHUNK_SIZE = 1024;
@@ -138,7 +77,13 @@ int main(int argc, char **argv) {
         lhtml_feedback_inject(&state, &pf_state);
 
         lhtml_token_handler_t handler;
-        lhtml_add_handler(&state, &handler, token_handler);
+        lhtml_add_handler(&state, &handler, modtoken);
+
+        lhtml_serializer_state_t serializer_state;
+        lhtml_serializer_inject(&state, &serializer_state, (lhtml_serializer_options_t) {
+            .writer = writehbstr,
+            .compact = false
+        });
 
         lhtml_string_t chunk = {
             .data = html,
