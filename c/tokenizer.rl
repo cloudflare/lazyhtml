@@ -106,6 +106,24 @@ void emit_token(lhtml_state_t *state, const char *end) {
 }
 
 HELPER(nonnull)
+bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
+    lhtml_token_t *token = &state->token;
+    state->errored = true;
+    token->raw.length = (size_t) (state->buffer_pos - token->raw.data);
+    if (token->raw.length > 0) {
+        token->type = LHTML_TOKEN_ERROR;
+        lhtml_emit(token, &state->base_handler);
+        state->buffer_pos = state->buffer;
+    }
+    if (unprocessed.length > 0) {
+        token->type = LHTML_TOKEN_ERROR;
+        token->raw = unprocessed;
+        lhtml_emit(token, &state->base_handler);
+    }
+    return false;
+}
+
+HELPER(nonnull)
 void end_text(lhtml_state_t *state, const char *p) {
     lhtml_token_t *token = &state->token;
     set_string(&GET_TOKEN(CHARACTER)->value, state->start_slice, state->mark != NULL ? state->mark : p);
@@ -189,19 +207,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         if (unprocessed.length <= available_space) {
             available_space = unprocessed.length;
         } else if (available_space == 0) {
-            state->errored = true;
-            token->raw.length = (size_t) (state->buffer_pos - token->raw.data);
-            if (token->raw.length > 0) {
-                token->type = LHTML_TOKEN_ERROR;
-                lhtml_emit(token, &state->base_handler);
-                state->buffer_pos = state->buffer;
-            }
-            if (unprocessed.length > 0) {
-                token->type = LHTML_TOKEN_ERROR;
-                token->raw = unprocessed;
-                lhtml_emit(token, &state->base_handler);
-            }
-            return false;
+            return emit_error(state, unprocessed);
         }
 
         const char *p = state->buffer_pos;
@@ -219,19 +225,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         %%write exec;
 
         if (state->cs == 0) {
-            state->errored = true;
-            token->raw.length = (size_t) (pe - token->raw.data);
-            if (token->raw.length > 0) {
-                token->type = LHTML_TOKEN_ERROR;
-                lhtml_emit(token, &state->base_handler);
-                state->buffer_pos = state->buffer;
-            }
-            if (unprocessed.length > 0) {
-                token->type = LHTML_TOKEN_ERROR;
-                token->raw = unprocessed;
-                lhtml_emit(token, &state->base_handler);
-            }
-            return false;
+            return emit_error(state, unprocessed);
         }
 
         if (chunk == NULL) {
