@@ -106,6 +106,18 @@ void emit_token(lhtml_state_t *state, const char *end) {
 }
 
 HELPER(nonnull)
+bool already_errored(lhtml_state_t *state, lhtml_string_t unprocessed) {
+    assert(state->errored);
+    if (unprocessed.length > 0) {
+        lhtml_token_t *token = &state->token;
+        token->type = LHTML_TOKEN_ERROR;
+        token->raw = unprocessed;
+        lhtml_emit(token, &state->base_handler);
+    }
+    return false;
+}
+
+HELPER(nonnull)
 bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
     lhtml_token_t *token = &state->token;
     state->errored = true;
@@ -113,14 +125,9 @@ bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
     if (token->raw.length > 0) {
         token->type = LHTML_TOKEN_ERROR;
         lhtml_emit(token, &state->base_handler);
-        state->buffer_pos = state->buffer;
+        token->raw.data = state->buffer_pos = state->buffer;
     }
-    if (unprocessed.length > 0) {
-        token->type = LHTML_TOKEN_ERROR;
-        token->raw = unprocessed;
-        lhtml_emit(token, &state->base_handler);
-    }
-    return false;
+    return already_errored(state, unprocessed);
 }
 
 HELPER(nonnull)
@@ -182,21 +189,25 @@ void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lht
 }
 
 bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
+    lhtml_token_t *const token = &state->token;
+
+    if (state->errored) {
+        if (chunk != NULL) {
+            return already_errored(state, *chunk);
+        } else {
+            token->type = LHTML_TOKEN_EOF;
+            token->raw.length = 0;
+            lhtml_emit(token, &state->base_handler);
+            return false;
+        }
+    }
+
     lhtml_string_t unprocessed;
 
     if (chunk != NULL) {
         unprocessed = *chunk;
     } else {
         unprocessed.length = 0;
-    }
-
-    lhtml_token_t *const token = &state->token;
-
-    if (state->errored) {
-        token->type = chunk != NULL ? LHTML_TOKEN_ERROR : LHTML_TOKEN_EOF;
-        token->raw = unprocessed;
-        lhtml_emit(token, &state->base_handler);
-        return false;
     }
 
     do {
