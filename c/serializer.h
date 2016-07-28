@@ -15,6 +15,6 @@ typedef struct {
     lhtml_serializer_options_t options;
 } lhtml_serializer_state_t;
 
-void lhtml_serializer_inject(lhtml_state_t *tokenizer, lhtml_serializer_state_t *state, const lhtml_serializer_options_t options);
+void lhtml_serializer_inject(lhtml_state_t *tokenizer, lhtml_serializer_state_t *state, const lhtml_serializer_options_t *options);
 
 #endif

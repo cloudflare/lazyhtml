@@ -99,7 +99,7 @@ static void serialize(lhtml_token_t *token, void *extra) {
     }
 }
 
-void lhtml_serializer_inject(lhtml_state_t *tokenizer, lhtml_serializer_state_t *state, const lhtml_serializer_options_t options) {
-    state->options = options;
+void lhtml_serializer_inject(lhtml_state_t *tokenizer, lhtml_serializer_state_t *state, const lhtml_serializer_options_t *options) {
+    state->options = *options;
     lhtml_add_handler(tokenizer, &state->handler, serialize);
 }
