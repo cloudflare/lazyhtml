@@ -96,13 +96,14 @@ lhtml_tag_type_t get_tag_type(const lhtml_string_t name) {
 HELPER(nonnull)
 void emit_token(lhtml_state_t *state, const char *end) {
     lhtml_token_t *token = &state->token;
-    token->raw.length = (size_t) (end - token->raw.data);
-    if (token->raw.length) {
+    token->raw.value.length = (size_t) (end - token->raw.value.data);
+    if (token->raw.value.length) {
+        token->raw.has_value = true;
         lhtml_emit(token, &state->base_handler);
     }
     token->type = LHTML_TOKEN_UNKNOWN;
-    token->raw.data = end;
-    token->raw.length = 0;
+    token->raw.value.data = end;
+    token->raw.value.length = 0;
 }
 
 HELPER(nonnull)
@@ -111,7 +112,8 @@ bool already_errored(lhtml_state_t *state, lhtml_string_t unprocessed) {
     if (unprocessed.length > 0) {
         lhtml_token_t *token = &state->token;
         token->type = LHTML_TOKEN_ERROR;
-        token->raw = unprocessed;
+        token->raw.value = unprocessed;
+        token->raw.has_value = true;
         lhtml_emit(token, &state->base_handler);
     }
     return false;
@@ -121,11 +123,12 @@ HELPER(nonnull)
 bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
     lhtml_token_t *token = &state->token;
     state->errored = true;
-    token->raw.length = (size_t) (state->buffer_pos - token->raw.data);
-    if (token->raw.length > 0) {
+    token->raw.value.length = (size_t) (state->buffer_pos - token->raw.value.data);
+    if (token->raw.value.length > 0) {
         token->type = LHTML_TOKEN_ERROR;
+        token->raw.has_value = true;
         lhtml_emit(token, &state->base_handler);
-        token->raw.data = state->buffer_pos = state->buffer;
+        token->raw.value.data = state->buffer_pos = state->buffer;
     }
     return already_errored(state, unprocessed);
 }
@@ -212,7 +215,8 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             return already_errored(state, *chunk);
         } else {
             token->type = LHTML_TOKEN_EOF;
-            token->raw.length = 0;
+            token->raw.value.length = 0;
+            token->raw.has_value = true;
             lhtml_emit(token, &state->base_handler);
             return false;
         }
@@ -227,7 +231,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     }
 
     do {
-        token->raw.data = state->buffer;
+        token->raw.value.data = state->buffer;
 
         size_t available_space = (size_t) (state->buffer_end - state->buffer_pos);
 
@@ -257,7 +261,8 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
         if (chunk == NULL) {
             token->type = LHTML_TOKEN_EOF;
-            token->raw.length = (size_t) (pe - token->raw.data);
+            token->raw.value.length = (size_t) (pe - token->raw.value.data);
+            token->raw.has_value = true;
             lhtml_emit(token, &state->base_handler);
             break;
         }
@@ -265,17 +270,18 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         if (token->type == LHTML_TOKEN_CHARACTER) {
             const char *middle = state->mark != NULL ? state->mark : pe;
             set_string(&token->character.value, state->start_slice, middle);
-            token->raw.length = (size_t) (middle - token->raw.data);
-            if (token->raw.length) {
+            token->raw.value.length = (size_t) (middle - token->raw.value.data);
+            if (token->raw.value.length) {
                 lhtml_token_character_kind_t kind = token->character.kind;
+                token->raw.has_value = true;
                 lhtml_emit(token, &state->base_handler);
                 token->type = LHTML_TOKEN_CHARACTER; // restore just in case
                 token->character.kind = kind;
             }
-            token->raw.data = state->start_slice = middle;
+            token->raw.value.data = state->start_slice = middle;
         }
 
-        size_t shift = (size_t) (token->raw.data - state->buffer);
+        size_t shift = (size_t) (token->raw.value.data - state->buffer);
 
         if (shift != 0) {
             switch (token->type) {
@@ -313,7 +319,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 }
             }
 
-            memmove(state->buffer, token->raw.data, (size_t) (state->buffer_pos - token->raw.data));
+            memmove(state->buffer, token->raw.value.data, (size_t) (state->buffer_pos - token->raw.value.data));
             state->buffer_pos -= shift;
             state->start_slice -= shift;
 

@@ -246,7 +246,7 @@ typedef struct {
         lhtml_token_endtag_t end_tag;
         lhtml_token_doctype_t doctype;
     };
-    lhtml_string_t raw;
+    lhtml_opt_string_t raw;
 } lhtml_token_t;
 
 typedef struct lhtml_token_handler lhtml_token_handler_t;

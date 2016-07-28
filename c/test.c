@@ -305,7 +305,7 @@ static void on_token(lhtml_token_t *token, void *extra) {
     }
     if (token->type == LHTML_TOKEN_ERROR) {
         fprint_fail(stdout, state, "tokenization error");
-        fprintf(stdout, "    leftover: \"%.*s\"\n", (int) token->raw.length, token->raw.data);
+        fprintf(stdout, "    leftover: \"%.*s\"\n", (int) token->raw.value.length, token->raw.value.data);
         fprint_fail_end(stdout);
         return;
     }

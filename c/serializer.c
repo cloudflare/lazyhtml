@@ -7,12 +7,12 @@ static void serialize(lhtml_token_t *token, void *extra) {
 
     lhtml_string_callback_t write = options->writer;
 
-    if (token->raw.data != NULL) {
+    if (token->raw.has_value) {
         if (options->compact && token->type == LHTML_TOKEN_COMMENT) {
             return;
         }
 
-        write(token->raw, extra);
+        write(token->raw.value, extra);
         return;
     }
 

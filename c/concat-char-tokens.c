@@ -25,8 +25,11 @@ static void on_token(lhtml_token_t *token, void *extra) {
                 }
             },
             .raw = {
-                .data = state->char_token_buf,
-                .length = length
+                .has_value = true,
+                .value = {
+                    .data = state->char_token_buf,
+                    .length = length
+                }
             }
         };
         state->char_token_buf_pos = NULL;

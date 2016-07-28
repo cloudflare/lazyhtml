@@ -94,7 +94,7 @@ static void on_token(lhtml_token_t *token, __attribute__((unused)) void *extra) 
             break;
     }
     printf(".raw = ");
-    print_string(&token->raw);
+    print_opt_string(&token->raw);
     printf(" }\n");
 }
 

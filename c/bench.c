@@ -21,8 +21,7 @@ static void modtoken(lhtml_token_t *token, void *extra) {
         if (tag->type == LHTML_TAG_A) {
             lhtml_attribute_t *href = LHTML_FIND_ATTR(&tag->attributes, "href");
             if (href != NULL) {
-                href->raw.has_value = false;
-                token->raw.data = NULL;
+                token->raw.has_value = href->raw.has_value = false;
                 href->value = LHTML_STRING("[REPLACED]");
             }
         }
