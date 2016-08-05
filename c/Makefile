@@ -1,3 +1,4 @@
+CC = clang # gcc doesn't support some of the features we use
 RAGEL = ragel
 RAGELFLAGS = -G2
 CFLAGS = -g -O3 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wconversion -Wnull-dereference -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
