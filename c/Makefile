@@ -26,8 +26,11 @@ bench.o: bench.c
 parser-feedback.o serializer.o concat-char-tokens.o decoder.o tests.pb-c.o trace.o bench.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
+transformer.a: tokenizer.o parser-feedback.o serializer.o
+	ar rcs $@ $+
+
 trace: trace.o tokenizer.o parser-feedback.o
-bench: bench.o tokenizer.o parser-feedback.o serializer.o
+bench: bench.o transformer.a
 	$(CC) $(CFLAGS) $(LDFLAGS) $+ -o $@
 
 test.o: test.c tests.pb-c.h
