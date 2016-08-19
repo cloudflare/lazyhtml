@@ -4,6 +4,10 @@ RAGELFLAGS = -G2
 CFLAGS = -g -O3 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wconversion -Wnull-dereference -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
 LDFLAGS =
 
+.PHONY: print-builddeps
+print-builddeps:
+	@echo clang protobuf-c-compiler libprotobuf-c-dev
+
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 	$(RAGEL) $(RAGELFLAGS) -s $<
 
