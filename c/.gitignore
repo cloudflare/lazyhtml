@@ -1,4 +1,5 @@
 /tokenizer.c
+/tokenizer.c.bak
 /tokenizer
 /*.dSYM
 /*.o
@@ -6,4 +7,3 @@
 /bench
 /trace
 /test
-/tests.pb-c.*

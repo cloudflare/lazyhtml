@@ -1,19 +1,18 @@
-CC = clang # gcc doesn't support some of the features we use
 RAGEL = ragel
 RAGELFLAGS = -G2
-CFLAGS = -g -O3 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wconversion -Wnull-dereference -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
+CFLAGS = -g -O3 -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
 LDFLAGS =
 
 .PHONY: print-builddeps
 print-builddeps:
-	@echo clang protobuf-c-compiler libprotobuf-c-dev
+	@echo libprotobuf-c-dev
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 	$(RAGEL) $(RAGELFLAGS) -s $<
 	sed -i.bak -E 's/^static const int ([^ ]+) = ([0-9]+);/#define \1 \2/g' $@
 
 tokenizer.o: tokenizer.c tokenizer.h
-	$(CC) $(CFLAGS) -c -Wno-parentheses-equality -Wno-unused-const-variable $< -o $@
+	$(CC) $(CFLAGS) -Wno-unused -c $< -o $@
 
 tests.pb-c.c: tests.proto
 	protoc-c --c_out=$(@D) --proto_path=$(<D) $<
@@ -48,4 +47,4 @@ test: test.o tests.pb-c.o tokenizer.o parser-feedback.o concat-char-tokens.o dec
 
 .PHONY: clean
 clean:
-	rm -rf *.dot *.png *.o tokenizer.c tokenizer test
+	rm -rf *.dot *.png *.o tokenizer.c tokenizer test tests.pb-c.*

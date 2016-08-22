@@ -139,12 +139,11 @@ void end_text(lhtml_state_t *state, const char *p) {
     set_string(&GET_TOKEN(CHARACTER)->value, state->start_slice, state->mark != NULL ? state->mark : p);
 }
 
-inline void lhtml_emit(lhtml_token_t *token, void *extra) {
+void lhtml_emit(lhtml_token_t *token, void *extra) {
     lhtml_token_handler_t *handler = ((lhtml_token_handler_t *) extra)->next;
-    if (handler == NULL) {
-        return;
+    if (handler != NULL) {
+        handler->callback(token, handler);
     }
-    handler->callback(token, handler);
 }
 
 inline bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected) {
@@ -227,6 +226,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     if (chunk != NULL) {
         unprocessed = *chunk;
     } else {
+        unprocessed.data = NULL;
         unprocessed.length = 0;
     }
 
