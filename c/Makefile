@@ -5,7 +5,7 @@ LDFLAGS =
 
 .PHONY: print-builddeps
 print-builddeps:
-	@echo libprotobuf-c-dev
+	@echo pkg-config libprotobuf-c-dev
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 	$(RAGEL) $(RAGELFLAGS) -s $<
@@ -40,10 +40,16 @@ bench: bench.o transformer.a
 test.o: test.c tests.pb-c.h
 	$(CC) $(CFLAGS) -Wno-cast-qual -Wno-cast-align -c $< -o $@
 
-.PHONY: test
-test: test.o tests.pb-c.o tokenizer.o parser-feedback.o concat-char-tokens.o decoder.o
+test-runner: test.o tests.pb-c.o tokenizer.o parser-feedback.o concat-char-tokens.o decoder.o
 	$(CC) $(CFLAGS) $(shell pkg-config --cflags 'libprotobuf-c >= 1.0.0') $(LDFLAGS) $(shell pkg-config --libs 'libprotobuf-c >= 1.0.0') $+ -o $@
-	./$@ | ../js/node_modules/.bin/tap-summary
+
+.PHONY: test
+test: test-runner
+ifndef CI
+	./$< | ../js/node_modules/.bin/tap-summary
+else
+	./$< > results.tap
+endif
 
 .PHONY: clean
 clean:

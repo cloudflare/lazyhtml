@@ -80,7 +80,7 @@ static void fprint_msg(FILE *file, const volatile ProtobufCMessage *msg) {
         if (is_oneof) {
             unsigned int quantifier = *((unsigned int *) (mem + field->quantifier_offset));
             i += quantifier - 1;
-            assert(i >= 0 && i < n_fields);
+            assert(i < n_fields);
             field = &fields[i];
             for (; i < n_fields && fields[i].quantifier_offset == field->quantifier_offset; i++);
             i--;
