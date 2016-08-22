@@ -5,7 +5,7 @@ LDFLAGS =
 
 .PHONY: print-builddeps
 print-builddeps:
-	@echo pkg-config libprotobuf-c-dev
+	@echo pkg-config libprotobuf-c-dev ragel
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 	$(RAGEL) $(RAGELFLAGS) -s $<

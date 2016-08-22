@@ -6,4 +6,5 @@
 /*.a
 /bench
 /trace
-/test
+/test-runner
+/results.tap
