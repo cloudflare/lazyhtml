@@ -158,6 +158,7 @@ typedef struct {
     size_t expected_pos;
     const size_t expected_length;
     const Suite__Test *test;
+    bool needs_decoding;
 } test_state_t;
 
 static void fprint_fail(FILE *file, test_state_t *state, const char *msg) {
@@ -282,6 +283,12 @@ static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
     }
 
     if (!same) {
+        if (state->needs_decoding) {
+            state->error = true;
+            printf("ok skipped # skip Decoding is unsupported yet\n");
+            return;
+        }
+
         fprint_fail(stdout, state, "token mismatch");
 
         fprintf(stdout, "    actual:   ");
@@ -322,21 +329,20 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         (char *) test->description.data,
         with_feedback ? " (with feedback)" : ""
     );
+    test_state_t state = {
+        .expected_length = test->n_output,
+        .test = test,
+        .needs_decoding = false
+    };
     bool has_cr = false;
     for (size_t i = 0; i < test->input.len; i++) {
         char c = (char) test->input.data[i];
         if (c == '&' || c == '\0') {
-            printf("ok skipped # skip Decoding is unsupported yet\n");
-            return;
-        }
-        if (c == '\r') {
+            state.needs_decoding = true;
+        } else if (c == '\r') {
             has_cr = true;
         }
     }
-    test_state_t state = {
-        .expected_length = test->n_output,
-        .test = test
-    };
     char buffer[2048];
     lhtml_options_t options = {
         .last_start_tag_name = to_tok_string(test->last_start_tag),
