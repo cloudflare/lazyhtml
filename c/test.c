@@ -322,11 +322,15 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         (char *) test->description.data,
         with_feedback ? " (with feedback)" : ""
     );
+    bool has_cr = false;
     for (size_t i = 0; i < test->input.len; i++) {
         char c = (char) test->input.data[i];
-        if (c == '&' || c == '\0' || c == '\r') {
+        if (c == '&' || c == '\0') {
             printf("ok skipped # skip Decoding is unsupported yet\n");
             return;
+        }
+        if (c == '\r') {
+            has_cr = true;
         }
     }
     test_state_t state = {
@@ -340,6 +344,23 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         .buffer_size = sizeof(buffer)
     };
     lhtml_string_t input = to_tok_string(test->input);
+    char fixed_input[input.length];
+    if (has_cr) {
+        size_t j = 0;
+        for (size_t i = 0; i < input.length; i++) {
+            char c = input.data[i];
+            if (c == '\r') {
+                fixed_input[j++] = '\n';
+                if (i < input.length - 1 && input.data[i + 1] == '\n') {
+                    i++;
+                }
+            } else {
+                fixed_input[j++] = c;
+            }
+        }
+        input.data = fixed_input;
+        input.length = j;
+    }
     for (size_t i = 0; i < test->n_initial_states; i++) {
         state.initial_state = test->initial_states[i];
         state.error = false;
