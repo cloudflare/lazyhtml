@@ -405,7 +405,6 @@ static void run_suite(const char *path, bool with_feedback) {
     const size_t n = suite->n_tests;
 
     printf(
-        "TAP version 13\n"
         "1..%zu\n",
         n
     );

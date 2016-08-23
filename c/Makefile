@@ -49,6 +49,7 @@ ifndef CI
 	./$< | ../js/node_modules/.bin/tap-summary
 else
 	./$< > results.tap
+	cat results.tap
 endif
 
 .PHONY: clean
