@@ -218,6 +218,32 @@ static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_toke
 
 static void handle_token(lhtml_token_t *token, void *extra) {
     lhtml_feedback_state_t *state = extra;
+
+    if (state->skip_next_newline) {
+        state->skip_next_newline = false;
+
+        if (token->type == LHTML_TOKEN_CHARACTER) {
+            lhtml_string_t *value = &token->character.value;
+
+            if (value->length >= 1) {
+                size_t skip = 0;
+
+                if (value->data[0] == '\n') {
+                    skip = 1;
+                } else if (value->data[0] == '\r') {
+                    skip = value->length >= 2 && value->data[1] == '\n' ? 2 : 1;
+                }
+
+                if (value->length == skip) {
+                    return;
+                }
+
+                value->data += skip;
+                value->length -= skip;
+            }
+        }
+    }
+
     switch (token->type) {
         case LHTML_TOKEN_START_TAG:
             handle_start_tag_token(state, &token->start_tag);
@@ -230,6 +256,7 @@ static void handle_token(lhtml_token_t *token, void *extra) {
         default:
             break;
     }
+
     lhtml_emit(token, extra);
 }
 
