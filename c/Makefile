@@ -50,7 +50,7 @@ ifndef CI
 else
 	echo "{}" > package.json
 	npm i tap-xunit
-	./$< | ./node_modules/tap-xunit/bin/tap-xunit > results.xml
+	./$< | tail -n +2 | ./node_modules/tap-xunit/bin/tap-xunit > results.xml
 endif
 
 .PHONY: clean
