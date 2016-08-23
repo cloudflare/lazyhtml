@@ -8,3 +8,6 @@
 /trace
 /test-runner
 /results.tap
+/package.json
+/node_modules
+/results.xml

@@ -5,7 +5,7 @@ LDFLAGS =
 
 .PHONY: print-builddeps
 print-builddeps:
-	@echo pkg-config libprotobuf-c-dev ragel
+	@echo pkg-config nodejs libprotobuf-c-dev ragel
 
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 	$(RAGEL) $(RAGELFLAGS) -s $<
@@ -48,8 +48,9 @@ test: test-runner
 ifndef CI
 	./$< | ../js/node_modules/.bin/tap-summary
 else
-	./$< > results.tap
-	cat results.tap
+	echo "{}" > package.json
+	npm i tap-xunit
+	./$< | ./node_modules/tap-xunit/bin/tap-xunit > results.xml
 endif
 
 .PHONY: clean
