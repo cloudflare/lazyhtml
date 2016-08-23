@@ -13,15 +13,19 @@ function convertOptString(value) {
 
 const convert = {
     StartTag: (name, attributes, selfClosing = false) => ({
-        name,
-        attributes: Object.keys(attributes).sort().reduce((map, key) => {
-            map[key] = attributes[key];
+        name: name.toLowerCase(),
+        attributes: Object.keys(attributes).sort((a, b) => {
+            a = a.toLowerCase();
+            b = b.toLowerCase();
+            return a === b ? 0 : a > b ? 1 : -1;
+        }).reduce((map, key) => {
+            map[key.toLowerCase()] = attributes[key];
             return map;
         }, Object.create(null)),
         selfClosing
     }),
 
-    EndTag: (name) => ({ name }),
+    EndTag: (name) => ({ name: name.toLowerCase() }),
 
     Comment: (value) => ({ value }),
 
