@@ -1387,7 +1387,7 @@
                     "StartTag",
                     "svg",
                     {
-                        "xlink:href": "foo"
+                        "href": "foo"
                     }
                 ],
                 [
@@ -1424,8 +1424,8 @@
                     "StartTag",
                     "g",
                     {
-                        "xml:lang": "en",
-                        "xlink:href": "foo"
+                        "lang": "en",
+                        "href": "foo"
                     }
                 ],
                 [
@@ -1466,8 +1466,8 @@
                     "StartTag",
                     "g",
                     {
-                        "xml:lang": "en",
-                        "xlink:href": "foo"
+                        "lang": "en",
+                        "href": "foo"
                     },
                     true
                 ],
@@ -1505,8 +1505,8 @@
                     "StartTag",
                     "g",
                     {
-                        "xml:lang": "en",
-                        "xlink:href": "foo"
+                        "lang": "en",
+                        "href": "foo"
                     },
                     true
                 ],
