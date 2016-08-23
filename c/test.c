@@ -325,7 +325,7 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
     for (size_t i = 0; i < test->input.len; i++) {
         char c = (char) test->input.data[i];
         if (c == '&' || c == '\0' || c == '\r') {
-            printf("ok # skip Decoding is unsupported yet\n");
+            printf("ok skipped # skip Decoding is unsupported yet\n");
             return;
         }
     }
@@ -375,10 +375,10 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
             return;
         }
     }
-    printf("ok\n");
+    printf("ok passed\n");
 }
 
-static void run_suite(const char *path, bool with_feedback) {
+static Suite *read_suite(const char *path) {
     FILE *infile = fopen(path, "rb");
 
     assert(infile);
@@ -402,12 +402,11 @@ static void run_suite(const char *path, bool with_feedback) {
 
     assert(suite);
 
-    const size_t n = suite->n_tests;
+    return suite;
+}
 
-    printf(
-        "1..%zu\n",
-        n
-    );
+static void run_suite(Suite *suite, bool with_feedback) {
+    const size_t n = suite->n_tests;
 
     for (size_t i = 0; i < n; i++) {
         run_test(suite->tests[i], with_feedback);
@@ -417,8 +416,16 @@ static void run_suite(const char *path, bool with_feedback) {
 }
 
 int main() {
-    run_suite("../tests.dat", false);
-    run_suite("../tests-with-feedback.dat", true);
+    Suite *tokenizer_tests = read_suite("../tests.dat");
+    Suite *feedback_tests = read_suite("../tests-with-feedback.dat");
+
+    printf(
+        "1..%zu\n",
+        tokenizer_tests->n_tests + feedback_tests->n_tests
+    );
+
+    run_suite(tokenizer_tests, false);
+    run_suite(feedback_tests, true);
 
     return 0;
 }
