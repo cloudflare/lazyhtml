@@ -2,7 +2,7 @@
 #include <assert.h>
 #include "parser-feedback.h"
 
-static lhtml_ns_t get_current_ns(lhtml_feedback_state_t *state) {
+lhtml_ns_t lhtml_get_current_ns(lhtml_feedback_state_t *state) {
     return state->ns_stack[state->ns_depth - 1];
 }
 
@@ -11,7 +11,7 @@ static bool is_foreign_ns(lhtml_ns_t ns) {
 }
 
 static bool is_in_foreign_content(lhtml_feedback_state_t *state) {
-    return is_foreign_ns(get_current_ns(state));
+    return is_foreign_ns(lhtml_get_current_ns(state));
 }
 
 static void enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
@@ -158,23 +158,21 @@ static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, c
     }
 }
 
-static void handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_starttag_t *tag) {
+static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_starttag_t *tag) {
     lhtml_tag_type_t type = tag->type;
 
     if (type == LHTML_TAG_SVG || type == LHTML_TAG_MATH)
         enter_ns(state, (lhtml_ns_t) type);
 
-    lhtml_ns_t ns = get_current_ns(state);
+    lhtml_ns_t ns = lhtml_get_current_ns(state);
 
     if (is_foreign_ns(ns)) {
         if (foreign_causes_exit(tag)) {
             leave_ns(state);
-            return;
+            return false;
         }
 
-        if (!tag->self_closing && foreign_is_integration_point(ns, tag->type, tag->name, &tag->attributes)) {
-            enter_ns(state, LHTML_NS_HTML);
-        }
+        return !tag->self_closing && foreign_is_integration_point(ns, tag->type, tag->name, &tag->attributes);
     } else {
         switch (type) {
             case LHTML_TAG_PRE:
@@ -185,8 +183,7 @@ static void handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
 
             case LHTML_TAG_IMAGE:
                 tag->type = LHTML_TAG_IMG;
-                tag->name.data = "img";
-                tag->name.length = sizeof("img") - 1;
+                tag->name = LHTML_STRING("img");
                 break;
 
             default:
@@ -194,21 +191,24 @@ static void handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
         }
 
         ensure_tokenizer_mode(state->tokenizer, type);
+
+        return false;
     }
 }
 
 static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_token_endtag_t *tag) {
+    lhtml_tag_type_t type = tag->type;
+
     if (!is_in_foreign_content(state)) {
         if (state->ns_depth >= 2) {
             lhtml_ns_t prev_ns = state->ns_stack[state->ns_depth - 2];
 
-            if (foreign_is_integration_point(prev_ns, tag->type, tag->name, NULL)) {
+            if (foreign_is_integration_point(prev_ns, type, tag->name, NULL)) {
                 leave_ns(state);
             }
         }
     } else {
-        lhtml_ns_t ns = get_current_ns(state);
-        lhtml_tag_type_t type = tag->type;
+        lhtml_ns_t ns = lhtml_get_current_ns(state);
 
         if (type == (lhtml_tag_type_t) ns) {
             leave_ns(state);
@@ -244,20 +244,18 @@ static void handle_token(lhtml_token_t *token, void *extra) {
         }
     }
 
-    switch (token->type) {
-        case LHTML_TOKEN_START_TAG:
-            handle_start_tag_token(state, &token->start_tag);
-            break;
-
-        case LHTML_TOKEN_END_TAG:
+    if (token->type == LHTML_TOKEN_START_TAG) {
+        bool enter_html = handle_start_tag_token(state, &token->start_tag);
+        lhtml_emit(token, extra);
+        if (enter_html) {
+            enter_ns(state, LHTML_NS_HTML);
+        }
+    } else {
+        lhtml_emit(token, extra);
+        if (token->type == LHTML_TOKEN_END_TAG) {
             handle_end_tag_token(state, &token->end_tag);
-            break;
-
-        default:
-            break;
+        }
     }
-
-    lhtml_emit(token, extra);
 }
 
 void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state) {

@@ -159,6 +159,7 @@ typedef struct {
     const size_t expected_length;
     const Suite__Test *test;
     bool needs_decoding;
+    bool with_feedback;
 } test_state_t;
 
 static void fprint_fail(FILE *file, test_state_t *state, const char *msg) {
@@ -232,11 +233,22 @@ static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
         case_token(StartTag, START_TAG)
             start_tag.name = to_test_string(src->start_tag.name);
             start_tag.n_attributes = 0;
+            bool remove_attr_ns = state->with_feedback && lhtml_get_current_ns(&state->feedback) != LHTML_NS_HTML;
             for (size_t i = 0; i < n_attributes; i++) {
                 Suite__Test__Attribute *attr = attribute_pointers[start_tag.n_attributes] = &attributes[start_tag.n_attributes];
                 suite__test__attribute__init(attr);
                 const lhtml_attribute_t *src_attr = &src->start_tag.attributes.items[i];
-                const ProtobufCBinaryData name = attr->name = to_test_string(src_attr->name);
+                ProtobufCBinaryData name = to_test_string(src_attr->name);
+                if (remove_attr_ns) {
+                    if (name.len >= sizeof("xlink") && memcmp(name.data, "xlink:", sizeof("xlink")) == 0) {
+                        name.data += sizeof("xlink");
+                        name.len -= sizeof("xlink");
+                    } else if (name.len >= sizeof("xml") && memcmp(name.data, "xml:", sizeof("xml")) == 0) {
+                        name.data += sizeof("xml");
+                        name.len -= sizeof("xml");
+                    }
+                }
+                attr->name = name;
                 attr->value = to_test_string(src_attr->value);
                 bool duplicate_name = false;
                 long insert_before = -1;
@@ -307,7 +319,7 @@ static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
 
 static void on_token(lhtml_token_t *token, void *extra) {
     test_state_t *state = extra;
-    if (state->error || token->type == LHTML_TOKEN_EOF) {
+    if (state->error || token->type == LHTML_TOKEN_EOF || (token->type == LHTML_TOKEN_CHARACTER && token->character.value.length == 0)) {
         return;
     }
     if (token->type == LHTML_TOKEN_ERROR) {
@@ -332,7 +344,8 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
     test_state_t state = {
         .expected_length = test->n_output,
         .test = test,
-        .needs_decoding = false
+        .needs_decoding = false,
+        .with_feedback = with_feedback
     };
     bool has_cr = false;
     for (size_t i = 0; i < test->input.len; i++) {

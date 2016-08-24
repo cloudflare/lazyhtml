@@ -22,4 +22,6 @@ typedef struct {
 
 void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state);
 
+lhtml_ns_t lhtml_get_current_ns(lhtml_feedback_state_t *state);
+
 #endif
