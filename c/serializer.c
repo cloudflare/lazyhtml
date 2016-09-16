@@ -87,11 +87,11 @@ static void serialize(lhtml_token_t *token, void *extra) {
             break;
         }
 
+        case LHTML_TOKEN_ERROR:
         case LHTML_TOKEN_EOF: {
             break;
         }
 
-        case LHTML_TOKEN_ERROR:
         case LHTML_TOKEN_UNKNOWN: {
             assert(false);
             break;
