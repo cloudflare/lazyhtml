@@ -9,7 +9,7 @@ typedef enum {
     LHTML_NS_SVG = LHTML_TAG_SVG
 } lhtml_ns_t;
 
-#define LHTML_MAX_NS_DEPTH 20
+#define LHTML_MAX_NS_DEPTH 64
 
 typedef struct {
     lhtml_token_handler_t handler; // needs to be the first one

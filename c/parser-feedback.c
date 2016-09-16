@@ -161,8 +161,9 @@ static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, c
 static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_starttag_t *tag) {
     lhtml_tag_type_t type = tag->type;
 
-    if (type == LHTML_TAG_SVG || type == LHTML_TAG_MATH)
+    if (type == LHTML_TAG_SVG || type == LHTML_TAG_MATH) {
         enter_ns(state, (lhtml_ns_t) type);
+    }
 
     lhtml_ns_t ns = lhtml_get_current_ns(state);
 
@@ -172,7 +173,7 @@ static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
             return false;
         }
 
-        return !tag->self_closing && foreign_is_integration_point(ns, tag->type, tag->name, &tag->attributes);
+        return !tag->self_closing && foreign_is_integration_point(ns, type, tag->name, &tag->attributes);
     } else {
         switch (type) {
             case LHTML_TAG_PRE:
@@ -199,18 +200,16 @@ static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
 static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_token_endtag_t *tag) {
     lhtml_tag_type_t type = tag->type;
 
-    if (!is_in_foreign_content(state)) {
-        if (state->ns_depth >= 2) {
-            lhtml_ns_t prev_ns = state->ns_stack[state->ns_depth - 2];
-
-            if (foreign_is_integration_point(prev_ns, type, tag->name, NULL)) {
-                leave_ns(state);
-            }
-        }
-    } else {
+    if (is_in_foreign_content(state)) {
         lhtml_ns_t ns = lhtml_get_current_ns(state);
 
         if (type == (lhtml_tag_type_t) ns) {
+            leave_ns(state);
+        }
+    } else if (state->ns_depth >= 2) {
+        lhtml_ns_t prev_ns = state->ns_stack[state->ns_depth - 2];
+
+        if (foreign_is_integration_point(prev_ns, type, tag->name, NULL)) {
             leave_ns(state);
         }
     }
