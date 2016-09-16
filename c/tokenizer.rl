@@ -264,6 +264,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             token->raw.value.length = (size_t) (pe - token->raw.value.data);
             token->raw.has_value = true;
             lhtml_emit(token, &state->base_handler);
+            state->errored = true; // Not really, but treat any further input as error
             break;
         }
 
