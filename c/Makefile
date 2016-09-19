@@ -10,6 +10,7 @@ print-builddeps:
 tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
 	$(RAGEL) $(RAGELFLAGS) -s $<
 	sed -i.bak -E 's/^static const int ([^ ]+) = ([0-9]+);/#define \1 \2/g' $@
+	rm $@.bak
 
 tokenizer.o: tokenizer.c tokenizer.h
 	$(CC) $(CFLAGS) -Wno-unused -c $< -o $@
