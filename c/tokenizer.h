@@ -261,7 +261,6 @@ struct lhtml_token_handler {
 typedef struct {
     lhtml_token_handler_t base_handler; // needs to be the first one
 
-    bool errored;
     int cs;
     lhtml_token_handler_t *last_handler;
     char quote;
@@ -295,7 +294,7 @@ void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lht
 __attribute__((nonnull))
 void lhtml_emit(lhtml_token_t *token, void *extra);
 
-__attribute__((nonnull(1)))
+__attribute__((warn_unused_result, nonnull(1)))
 bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
 
 __attribute__((const, warn_unused_result))

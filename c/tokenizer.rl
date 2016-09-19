@@ -108,7 +108,6 @@ void emit_token(lhtml_state_t *state, const char *end) {
 
 HELPER(nonnull)
 bool already_errored(lhtml_state_t *state, lhtml_string_t unprocessed) {
-    assert(state->errored);
     if (unprocessed.length > 0) {
         lhtml_token_t *token = &state->token;
         token->type = LHTML_TOKEN_ERROR;
@@ -122,7 +121,6 @@ bool already_errored(lhtml_state_t *state, lhtml_string_t unprocessed) {
 HELPER(nonnull)
 bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
     lhtml_token_t *token = &state->token;
-    state->errored = true;
     token->raw.value.length = (size_t) (state->buffer_pos - token->raw.value.data);
     if (token->raw.value.length > 0) {
         token->type = LHTML_TOKEN_ERROR;
@@ -197,7 +195,6 @@ void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
     state->buffer_end = options->buffer + options->buffer_size;
     state->token.type = LHTML_TOKEN_UNKNOWN;
     state->cs = options->initial_state;
-    state->errored = false;
 }
 
 void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback) {
@@ -209,7 +206,7 @@ void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lht
 bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     lhtml_token_t *const token = &state->token;
 
-    if (state->errored) {
+    if (state->cs == 0) {
         if (chunk != NULL) {
             return already_errored(state, *chunk);
         } else {
@@ -238,6 +235,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         if (unprocessed.length <= available_space) {
             available_space = unprocessed.length;
         } else if (available_space == 0) {
+            state->cs = 0;
             return emit_error(state, unprocessed);
         }
 
@@ -264,8 +262,8 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             token->raw.value.length = (size_t) (pe - token->raw.value.data);
             token->raw.has_value = true;
             lhtml_emit(token, &state->base_handler);
-            state->errored = true; // Not really, but treat any further input as error
-            break;
+            state->cs = 0; // treat any further input as error
+            return true;
         }
 
         if (token->type == LHTML_TOKEN_CHARACTER) {

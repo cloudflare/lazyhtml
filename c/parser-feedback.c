@@ -18,7 +18,7 @@ static void enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
     if (state->ns_depth < LHTML_MAX_NS_DEPTH) {
         state->ns_stack[state->ns_depth++] = ns;
     } else {
-        state->tokenizer->errored = true;
+        state->tokenizer->cs = 0;
     }
     state->tokenizer->allow_cdata = is_foreign_ns(ns);
 }
@@ -27,7 +27,7 @@ static void leave_ns(lhtml_feedback_state_t *state) {
     if (state->ns_depth > 1) {
         state->ns_depth--;
     } else {
-        state->tokenizer->errored = true;
+        state->tokenizer->cs = 0;
     }
     state->tokenizer->allow_cdata = is_in_foreign_content(state);
 }
