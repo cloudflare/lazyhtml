@@ -399,11 +399,19 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
                 .length = 1,
                 .data = &c
             };
-            if (!lhtml_feed(&state.tokenizer, &ch) || state.error) {
+            if (!lhtml_feed(&state.tokenizer, &ch) && !state.error) {
+                fprint_fail(stdout, &state, "Tokenization failure");
+                fprint_fail_end(stdout);
+            }
+            if (state.error) {
                 return;
             }
         }
-        if (!lhtml_feed(&state.tokenizer, NULL) || state.error) {
+        if (!lhtml_feed(&state.tokenizer, NULL) && !state.error) {
+            fprint_fail(stdout, &state, "Tokenization failure");
+            fprint_fail_end(stdout);
+        }
+        if (state.error) {
             return;
         }
 
