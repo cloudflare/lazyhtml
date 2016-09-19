@@ -169,6 +169,7 @@ static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
 
     if (type == LHTML_TAG_SVG || type == LHTML_TAG_MATH) {
         enter_ns(state, (lhtml_ns_t) type);
+        return false;
     }
 
     lhtml_ns_t ns = lhtml_get_current_ns(state);
