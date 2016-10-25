@@ -1,6 +1,6 @@
 RAGEL = ragel
 RAGELFLAGS = -G2
-CFLAGS = -g -O3 -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
+CFLAGS = $(EXTRA_CFLAGS) -g -O3 -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
 LDFLAGS =
 
 .PHONY: print-builddeps
