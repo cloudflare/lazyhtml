@@ -453,8 +453,9 @@ static Suite *read_suite(const char *path) {
     return suite;
 }
 
-static void run_suite(Suite *suite, bool with_feedback) {
+static void run_suite(Suite *suite) {
     const size_t n = suite->n_tests;
+    const bool with_feedback = suite->with_feedback;
 
     for (size_t i = 0; i < n; i++) {
         run_test(suite->tests[i], with_feedback);
@@ -463,17 +464,14 @@ static void run_suite(Suite *suite, bool with_feedback) {
     suite__free_unpacked(suite, NULL);
 }
 
-int main() {
-    Suite *tokenizer_tests = read_suite("../tests.dat");
-    Suite *feedback_tests = read_suite("../tests-with-feedback.dat");
+int main(int argc, char *argv[]) {
+    assert(argc == 2 && "test-runner tests.dat");
 
-    printf(
-        "1..%zu\n",
-        tokenizer_tests->n_tests + feedback_tests->n_tests
-    );
+    Suite *tests = read_suite(argv[1]);
 
-    run_suite(tokenizer_tests, false);
-    run_suite(feedback_tests, true);
+    printf("1..%zu\n", tests->n_tests);
+
+    run_suite(tests);
 
     return 0;
 }

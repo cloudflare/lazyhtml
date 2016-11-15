@@ -56,4 +56,5 @@ message Suite {
     }
 
     repeated Test tests = 1;
+    required bool with_feedback = 2;
 }

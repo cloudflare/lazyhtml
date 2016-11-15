@@ -94,7 +94,7 @@ function convertTest({
     };
 }
 
-function convertSuite(inDir, outFile) {
+function convertSuite(inDir, outFile, withFeedback) {
     const suite = {
         tests: (
             readdirSync(inDir)
@@ -104,14 +104,15 @@ function convertSuite(inDir, outFile) {
             .filter(Boolean)
             .reduce((all, tests) => all.concat(tests), [])
             .map(convertTest)
-        )
+        ),
+        withFeedback
     };
 
     writeFileSync(`${outFile}`, Suite.encode(suite));
 }
 
-if (process.argv.length !== 4) {
-    throw new Error('Usage: node convert-tests.js [dir-with-tests] [output-file]');
+if (process.argv.length < 4) {
+    throw new Error('Usage: node convert-tests.js [dir-with-tests] [output-file] [--feedback]');
 }
 
-convertSuite(process.argv[2], process.argv[3]);
+convertSuite(process.argv[2], process.argv[3], process.argv[4] === '--feedback');

@@ -47,11 +47,14 @@ test-runner: test.o tests.pb-c.o tokenizer.o parser-feedback.o concat-char-token
 .PHONY: test
 test: test-runner
 ifndef CI
-	./$< | ../js/node_modules/.bin/tap-summary
+	echo "{}" > package.json
+	npm i tap-summary
+	(./$< ../tests.dat && ./$< ../tests-with-feedback.dat) | ./node_modules/.bin/tap-summary
 else
 	echo "{}" > package.json
 	npm i tap-xunit
-	./$< | tail -n +2 | ./node_modules/tap-xunit/bin/tap-xunit > results.xml
+	./$< ../tests.dat | tail -n +2 | ./node_modules/tap-xunit/bin/tap-xunit > results.xml
+	./$< ../tests-with-feedback.dat | tail -n +2 | ./node_modules/tap-xunit/bin/tap-xunit > results-with-feedback.xml
 endif
 
 .PHONY: clean

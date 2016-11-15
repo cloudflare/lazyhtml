@@ -17,7 +17,7 @@ tests.dat: convert-tests.js js/tests.proto .git/modules/html5lib-tests/HEAD
 	node $< html5lib-tests/tokenizer $@
 
 tests-with-feedback.dat: convert-tests.js js/tests.proto
-	node $< parser-feedback-tests $@
+	node $< parser-feedback-tests $@ --feedback
 
 .PHONY: clean
 clean:

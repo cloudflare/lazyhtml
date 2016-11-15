@@ -51,4 +51,5 @@ message Suite {
     }
 
     repeated Test tests = 1;
+    required bool withFeedback = 2;
 }

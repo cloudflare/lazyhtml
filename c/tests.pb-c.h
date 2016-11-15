@@ -156,10 +156,11 @@ struct  _Suite
   ProtobufCMessage base;
   size_t n_tests;
   Suite__Test **tests;
+  protobuf_c_boolean with_feedback;
 };
 #define SUITE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&suite__descriptor) \
-    , 0,NULL }
+    , 0,NULL, 0 }
 
 
 /* Suite__Test__Doctype methods */

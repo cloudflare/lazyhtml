@@ -618,7 +618,7 @@ const ProtobufCMessageDescriptor suite__test__descriptor =
   (ProtobufCMessageInit) suite__test__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor suite__field_descriptors[1] =
+static const ProtobufCFieldDescriptor suite__field_descriptors[2] =
 {
   {
     "tests",
@@ -632,14 +632,27 @@ static const ProtobufCFieldDescriptor suite__field_descriptors[1] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "with_feedback",
+    2,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(Suite, with_feedback),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned suite__field_indices_by_name[] = {
   0,   /* field[0] = tests */
+  1,   /* field[1] = with_feedback */
 };
 static const ProtobufCIntRange suite__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor suite__descriptor =
 {
@@ -649,7 +662,7 @@ const ProtobufCMessageDescriptor suite__descriptor =
   "Suite",
   "",
   sizeof(Suite),
-  1,
+  2,
   suite__field_descriptors,
   suite__field_indices_by_name,
   1,  suite__number_ranges,
