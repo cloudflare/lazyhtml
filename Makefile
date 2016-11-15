@@ -22,6 +22,8 @@ tests-with-feedback.dat: convert-tests.js js/tests.proto
 .PHONY: clean
 clean:
 	rm -rf *.dot *.png
+	make -C js clean
+	make -C c clean
 
 .PHONY: js-tokenizer
 js-tokenizer:
