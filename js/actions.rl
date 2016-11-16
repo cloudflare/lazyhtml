@@ -45,7 +45,7 @@
 
     action IsAppropriateEndTagFed { this.appropriateEndTagOffset === this.lastStartTagName.length }
 
-    action FeedAppropriateEndTag() { !($IsAppropriateEndTagFed) && this.lastStartTagName.charCodeAt(this.appropriateEndTagOffset++) === (fc | 0x20) }
+    action FeedAppropriateEndTag() { this.appropriateEndTagOffset !== this.lastStartTagName.length && this.lastStartTagName.charCodeAt(this.appropriateEndTagOffset++) === (fc | 0x20) }
 
     action SetAppropriateEndTagName {
         this.token.name = this.lastStartTagName;
@@ -85,9 +85,10 @@
     }
 
     action EmitSlice() {
-        $EndText
+        this.token.value = data.slice(this.startSlice, this.mark >= 0 ? this.mark : p);
         p--;
-        $EmitToken
+        this.emitToken(this.token, data.slice(this.tokenStart, this.tokenStart = p + 1));
+        this.token = null;
         p++;
     }
 

@@ -3,8 +3,8 @@
 
     access this.;
 
-    include 'js/actions.rl';
-    include 'syntax/index.rl';
+    include 'actions.rl';
+    include '../syntax/index.rl';
 
     write data nofinal noprefix;
 }%%
