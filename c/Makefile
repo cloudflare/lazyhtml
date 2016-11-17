@@ -59,4 +59,4 @@ endif
 
 .PHONY: clean
 clean:
-	rm -rf *.dot *.png *.o tokenizer{.c,.a,} test
+	rm -rf *.dot *.png *.o *.a *. tokenizer.c
