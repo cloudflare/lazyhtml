@@ -3,7 +3,7 @@
 #include "parser-feedback.h"
 
 lhtml_ns_t lhtml_get_current_ns(lhtml_feedback_state_t *state) {
-    return state->ns_stack[state->ns_depth - 1];
+    return state->ns_stack.items[state->ns_stack.count - 1];
 }
 
 static bool is_foreign_ns(lhtml_ns_t ns) {
@@ -15,8 +15,8 @@ static bool is_in_foreign_content(lhtml_feedback_state_t *state) {
 }
 
 static void enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
-    if (state->ns_depth < LHTML_MAX_NS_DEPTH) {
-        state->ns_stack[state->ns_depth++] = ns;
+    if (state->ns_stack.count < state->ns_stack.capacity) {
+        state->ns_stack.items[state->ns_stack.count++] = ns;
     } else {
         state->tokenizer->cs = 0;
     }
@@ -24,8 +24,8 @@ static void enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
 }
 
 static void leave_ns(lhtml_feedback_state_t *state) {
-    if (state->ns_depth > 1) {
-        state->ns_depth--;
+    if (state->ns_stack.count > 1) {
+        state->ns_stack.count--;
     } else {
         state->tokenizer->cs = 0;
     }
@@ -213,8 +213,8 @@ static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_toke
         if (type == (lhtml_tag_type_t) ns) {
             leave_ns(state);
         }
-    } else if (state->ns_depth >= 2) {
-        lhtml_ns_t prev_ns = state->ns_stack[state->ns_depth - 2];
+    } else if (state->ns_stack.count >= 2) {
+        lhtml_ns_t prev_ns = state->ns_stack.items[state->ns_stack.count - 2];
 
         if (foreign_is_integration_point(prev_ns, type, tag->name, NULL)) {
             leave_ns(state);
@@ -264,9 +264,13 @@ static void handle_token(lhtml_token_t *token, void *extra) {
     }
 }
 
-void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state) {
+void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state, lhtml_ns_buffer_t ns_buffer) {
     state->tokenizer = tokenizer;
-    state->ns_depth = 0;
+    state->ns_stack = (lhtml_ns_stack_t) {
+        .items = ns_buffer.items,
+        .count = 0,
+        .capacity = ns_buffer.count
+    };
     state->skip_next_newline = false;
     enter_ns(state, LHTML_NS_HTML);
     lhtml_add_handler(tokenizer, &state->handler, handle_token);

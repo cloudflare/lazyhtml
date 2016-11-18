@@ -11,9 +11,13 @@ extern const int LHTML_STATE_RAWTEXT;
 extern const int LHTML_STATE_PLAINTEXT;
 extern const int LHTML_STATE_SCRIPTDATA;
 
+#define LHTML_ARRAY_T(ITEM_T) struct { ITEM_T *const items; size_t count; }
+#define LHTML_LIST_T(ITEM_T) struct { LHTML_ARRAY_T(ITEM_T); const size_t capacity; }
+#define LHTML_BUFFER_T(ITEM_T) struct { ITEM_T *const items; const size_t count; }
+
 typedef struct {
-    size_t length;
     const char *data;
+    size_t length;
 } lhtml_string_t;
 
 typedef struct {
@@ -56,12 +60,8 @@ typedef struct {
     lhtml_opt_string_t raw;
 } lhtml_attribute_t;
 
-#define LHTML_MAX_ATTR_COUNT 256
 
-typedef struct {
-    size_t count;
-    lhtml_attribute_t items[LHTML_MAX_ATTR_COUNT];
-} lhtml_attributes_t;
+typedef LHTML_LIST_T(lhtml_attribute_t) lhtml_attributes_t;
 
 typedef enum {
     // Regular elements
@@ -258,14 +258,18 @@ struct lhtml_token_handler {
     lhtml_token_handler_t *next;
 };
 
+typedef LHTML_BUFFER_T(char) lhtml_buffer_t;
+
+typedef LHTML_BUFFER_T(lhtml_attribute_t) lhtml_attr_buffer_t;
+
 typedef struct {
     lhtml_token_handler_t base_handler; // needs to be the first one
 
     int cs;
-    lhtml_token_handler_t *last_handler;
-    char quote;
     bool allow_cdata;
-    char last_start_tag_name_buf[20]; // all the tags that might need this, fit
+    char quote;
+    char last_start_tag_name_buf[18]; // all the tags that might need this, fit
+    lhtml_token_handler_t *last_handler;
     const char *last_start_tag_name_end;
     lhtml_token_t token;
     lhtml_attribute_t *attribute;
@@ -275,14 +279,15 @@ typedef struct {
     char *buffer;
     char *buffer_pos;
     const char *buffer_end;
+    lhtml_attr_buffer_t attr_buffer;
 } lhtml_state_t;
 
 typedef struct {
     int initial_state;
     bool allow_cdata;
     lhtml_string_t last_start_tag_name;
-    char *buffer;
-    size_t buffer_size;
+    lhtml_buffer_t buffer;
+    lhtml_attr_buffer_t attr_buffer;
 } lhtml_options_t;
 
 __attribute__((nonnull))

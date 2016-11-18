@@ -31,6 +31,8 @@ static void modtoken(lhtml_token_t *token, void *extra) {
 
 static const int CHUNK_SIZE = 1024;
 #define BUFFER_SIZE (100 << 10)
+#define MAX_ATTR_COUNT 256
+#define MAX_NS_DEPTH 64
 
 int main(int argc, char **argv) {
     assert(argc >= 3);
@@ -46,6 +48,8 @@ int main(int argc, char **argv) {
     fclose(in);
 
     char buffer[BUFFER_SIZE];
+    lhtml_attribute_t attr_buffer[MAX_ATTR_COUNT];
+    lhtml_ns_t ns_buffer[MAX_NS_DEPTH];
 
     out = fopen(argv[2], "wb");
 
@@ -60,15 +64,24 @@ int main(int argc, char **argv) {
                 .length = 0
             },
             .initial_state = LHTML_STATE_DATA,
-            .buffer = buffer,
-            .buffer_size = BUFFER_SIZE
+            .buffer = {
+                .items = buffer,
+                .count = BUFFER_SIZE
+            },
+            .attr_buffer = {
+                .items = attr_buffer,
+                .count = MAX_ATTR_COUNT
+            }
         };
 
         lhtml_state_t state;
         lhtml_init(&state, &options);
 
         lhtml_feedback_state_t pf_state;
-        lhtml_feedback_inject(&state, &pf_state);
+        lhtml_feedback_inject(&state, &pf_state, (lhtml_ns_buffer_t) {
+            .items = ns_buffer,
+            .count = MAX_NS_DEPTH
+        });
 
         lhtml_token_handler_t handler;
         lhtml_add_handler(&state, &handler, modtoken);

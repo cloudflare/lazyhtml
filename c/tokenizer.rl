@@ -176,8 +176,13 @@ inline lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml
     return NULL;
 }
 
+HELPER(nonnull)
+bool can_create_attr(lhtml_attributes_t *attrs) {
+    return attrs->count < attrs->capacity;
+}
+
 inline lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs) {
-    return attrs->count < LHTML_MAX_ATTR_COUNT ? &attrs->items[attrs->count++] : NULL;
+    return can_create_attr(attrs) ? &attrs->items[attrs->count++] : NULL;
 }
 
 void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
@@ -191,8 +196,9 @@ void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
     state->start_slice = 0;
     state->mark = 0;
     state->appropriate_end_tag_offset = 0;
-    state->buffer = state->buffer_pos = options->buffer;
-    state->buffer_end = options->buffer + options->buffer_size;
+    state->buffer = state->buffer_pos = options->buffer.items;
+    state->buffer_end = options->buffer.items + options->buffer.count;
+    state->attr_buffer = options->attr_buffer;
     state->token.type = LHTML_TOKEN_UNKNOWN;
     state->cs = options->initial_state;
 }

@@ -108,6 +108,8 @@ int main(const int argc, const char *const argv[]) {
     const char *data = NULL;
     size_t chunk_size = 1024;
     size_t buffer_size = 1024;
+    size_t max_attr_count = 256;
+    size_t max_ns_depth = 64;
     int initial_state = LHTML_STATE_DATA;
     bool with_feedback = false;
     for (int i = 1; i < argc; i++) {
@@ -154,17 +156,28 @@ int main(const int argc, const char *const argv[]) {
     assert(chunk_size <= 1024);
     assert(buffer_size <= 1024);
     char buffer[buffer_size];
+    lhtml_attribute_t attr_buf[max_attr_count];
+    lhtml_ns_t ns_depth[with_feedback ? max_ns_depth : 0];
     const lhtml_options_t options = {
         .allow_cdata = false,
         .last_start_tag_name = { .length = 0 },
         .initial_state = initial_state,
-        .buffer = buffer,
-        .buffer_size = buffer_size
+        .buffer = {
+            .items = buffer,
+            .count = buffer_size
+        },
+        .attr_buffer = {
+            .items = attr_buf,
+            .count = max_attr_count
+        }
     };
     lhtml_init(&state, &options);
     lhtml_feedback_state_t pf_state;
     if (with_feedback) {
-        lhtml_feedback_inject(&state, &pf_state);
+        lhtml_feedback_inject(&state, &pf_state, (lhtml_ns_buffer_t) {
+            .items = ns_depth,
+            .count = max_ns_depth
+        });
     }
     lhtml_token_handler_t handler;
     lhtml_add_handler(&state, &handler, on_token);

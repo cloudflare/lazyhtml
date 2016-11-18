@@ -357,11 +357,20 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         }
     }
     char buffer[2048];
+    lhtml_attribute_t attr_buffer[256];
+    lhtml_ns_t ns_buf[64];
     lhtml_options_t options = {
         .last_start_tag_name = to_tok_string(test->last_start_tag),
-        .buffer = buffer,
-        .buffer_size = sizeof(buffer)
+        .buffer = {
+            .items = buffer,
+            .count = sizeof(buffer)
+        },
+        .attr_buffer = {
+            .items = attr_buffer,
+            .count = sizeof(attr_buffer) / sizeof(attr_buffer[0])
+        }
     };
+    char concat_buf[1024];
     lhtml_string_t input = to_tok_string(test->input);
     char fixed_input[input.length];
     if (has_cr) {
@@ -388,9 +397,15 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         options.initial_state = to_tok_state(state.initial_state);
         lhtml_init(&state.tokenizer, &options);
         if (with_feedback) {
-            lhtml_feedback_inject(&state.tokenizer, &state.feedback);
+            lhtml_feedback_inject(&state.tokenizer, &state.feedback, (lhtml_ns_buffer_t) {
+                .items = ns_buf,
+                .count = sizeof(ns_buf) / sizeof(ns_buf[0])
+            });
         }
-        lhtml_concat_inject(&state.tokenizer, &state.concat);
+        lhtml_concat_inject(&state.tokenizer, &state.concat, (lhtml_buffer_t) {
+            .items = concat_buf,
+            .count = sizeof(concat_buf)
+        });
         lhtml_decoder_inject(&state.tokenizer, &state.decoder);
         lhtml_add_handler(&state.tokenizer, &state.handler, on_token);
         for (size_t j = 0; j < input.length; j++) {

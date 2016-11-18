@@ -72,7 +72,11 @@
         lhtml_token_starttag_t *start_tag = CREATE_TOKEN(START_TAG);
         reset_string(&start_tag->name);
         start_tag->self_closing = false;
-        start_tag->attributes.count = 0;
+        start_tag->attributes = (lhtml_attributes_t) {
+            .items = state->attr_buffer.items,
+            .count = 0,
+            .capacity = state->attr_buffer.count
+        };
     }
 
     action SetStartTagName {
@@ -103,7 +107,7 @@
         reset_string(&CREATE_TOKEN(END_TAG)->name);
     }
 
-    action CanCreateAttribute { GET_TOKEN(START_TAG)->attributes.count < LHTML_MAX_ATTR_COUNT }
+    action CanCreateAttribute { can_create_attr(&GET_TOKEN(START_TAG)->attributes) }
 
     action CreateAttribute {
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
