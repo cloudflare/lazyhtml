@@ -305,7 +305,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
 __attribute__((const, warn_unused_result))
 bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected);
 
-__attribute__((nonnull, warn_unused_result))
+__attribute__((nonnull, pure, warn_unused_result))
 lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml_string_t name);
 
 __attribute__((nonnull, warn_unused_result))

@@ -11,6 +11,7 @@ typedef struct {
     const char *char_token_buf_end;
 } lhtml_concat_state_t;
 
+__attribute__((nonnull))
 void lhtml_concat_inject(lhtml_state_t *tokenizer, lhtml_concat_state_t *state, lhtml_buffer_t buffer);
 
 #endif

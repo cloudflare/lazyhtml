@@ -2,7 +2,7 @@
 #include <assert.h>
 #include "parser-feedback.h"
 
-lhtml_ns_t lhtml_get_current_ns(lhtml_feedback_state_t *state) {
+lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_state_t *state) {
     return state->ns_stack.items[state->ns_stack.count - 1];
 }
 
@@ -10,7 +10,7 @@ static bool is_foreign_ns(lhtml_ns_t ns) {
     return ns != LHTML_NS_HTML;
 }
 
-static bool is_in_foreign_content(lhtml_feedback_state_t *state) {
+static bool is_in_foreign_content(const lhtml_feedback_state_t *state) {
     return is_foreign_ns(lhtml_get_current_ns(state));
 }
 
