@@ -31,4 +31,4 @@ js-tokenizer:
 
 .PHONY: c-tokenizer
 c-tokenizer:
-	make -C c tokenizer
+	make -C c transformer.a
