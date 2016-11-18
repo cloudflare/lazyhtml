@@ -175,9 +175,9 @@ int main(const int argc, const char *const argv[]) {
             .length = min(chunk_size, total_len - i)
         };
         printf("// Feeding chunk '%.*s'\n", (int) str.length, str.data);
-        lhtml_feed(&state, &str);
+        assert(lhtml_feed(&state, &str));
         printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - state.buffer), state.buffer);
     }
-    lhtml_feed(&state, NULL);
+    assert(lhtml_feed(&state, NULL));
     return 0;
 }

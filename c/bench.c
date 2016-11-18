@@ -89,14 +89,14 @@ int main(int argc, char **argv) {
         const char *lastChunk = html + (total_length - (total_length % CHUNK_SIZE));
 
         for (; chunk.data < lastChunk; chunk.data += CHUNK_SIZE) {
-            lhtml_feed(&state, &chunk);
+            assert(lhtml_feed(&state, &chunk));
         }
 
         chunk.length = total_length % CHUNK_SIZE;
 
-        lhtml_feed(&state, &chunk);
+        assert(lhtml_feed(&state, &chunk));
 
-        lhtml_feed(&state, NULL);
+        assert(lhtml_feed(&state, NULL));
     }
 
     fprintf(stderr, "Total time: %lluµs\n", (mach_absolute_time() - start) / 1000 / 100);
