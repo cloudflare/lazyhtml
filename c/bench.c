@@ -87,13 +87,10 @@ int main(int argc, char **argv) {
         };
         LHTML_ADD_HANDLER(&state, &bench_state, modtoken);
 
-        const lhtml_serializer_options_t serializer_options = {
-            .writer = writehbstr,
-            .compact = false
+        lhtml_serializer_state_t serializer_state = {
+            .writer = writehbstr
         };
-
-        lhtml_serializer_state_t serializer_state;
-        lhtml_serializer_inject(&state, &serializer_state, &serializer_options);
+        lhtml_serializer_inject(&state, &serializer_state);
 
         lhtml_string_t chunk = {
             .data = html,

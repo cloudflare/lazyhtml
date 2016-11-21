@@ -3,12 +3,10 @@
 #include "serializer.h"
 
 static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
-    lhtml_serializer_options_t *options = &extra->options;
-
-    lhtml_string_callback_t write = options->writer;
+    lhtml_string_callback_t write = extra->writer;
 
     if (token->raw.has_value) {
-        if (options->compact && token->type == LHTML_TOKEN_COMMENT) {
+        if (extra->compact && token->type == LHTML_TOKEN_COMMENT) {
             return;
         }
 
@@ -99,7 +97,6 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
     }
 }
 
-void lhtml_serializer_inject(lhtml_state_t *tokenizer, lhtml_serializer_state_t *state, const lhtml_serializer_options_t *options) {
-    state->options = *options;
+void lhtml_serializer_inject(lhtml_state_t *tokenizer, lhtml_serializer_state_t *state) {
     LHTML_ADD_HANDLER(tokenizer, state, serialize);
 }
