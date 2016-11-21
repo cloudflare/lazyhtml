@@ -104,7 +104,6 @@ static size_t min(size_t a, size_t b) {
 
 int main(const int argc, const char *const argv[]) {
     assert(argc >= 2);
-    lhtml_state_t state;
     const char *data = NULL;
     size_t chunk_size = 1024;
     size_t buffer_size = 1024;
@@ -158,10 +157,8 @@ int main(const int argc, const char *const argv[]) {
     char buffer[buffer_size];
     lhtml_attribute_t attr_buf[max_attr_count];
     lhtml_ns_t ns_depth[with_feedback ? max_ns_depth : 0];
-    const lhtml_options_t options = {
-        .allow_cdata = false,
-        .last_start_tag_type = LHTML_TAG_UNKNOWN,
-        .initial_state = initial_state,
+    lhtml_state_t state = {
+        .cs = initial_state,
         .buffer = {
             .items = buffer,
             .count = buffer_size
@@ -171,7 +168,7 @@ int main(const int argc, const char *const argv[]) {
             .count = max_attr_count
         }
     };
-    lhtml_init(&state, &options);
+    lhtml_init(&state);
     lhtml_feedback_state_t pf_state;
     if (with_feedback) {
         lhtml_feedback_inject(&state, &pf_state, (lhtml_ns_buffer_t) {
@@ -189,7 +186,7 @@ int main(const int argc, const char *const argv[]) {
         };
         printf("// Feeding chunk '%.*s'\n", (int) str.length, str.data);
         assert(lhtml_feed(&state, &str));
-        printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - state.buffer), state.buffer);
+        printf("// Buffer contents: '%.*s'\n", (int) (state.buffer_pos - buffer), buffer);
     }
     assert(lhtml_feed(&state, NULL));
     return 0;

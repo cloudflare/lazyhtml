@@ -58,10 +58,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 100; i++) {
         rewind(out);
 
-        const lhtml_options_t options = {
-            .allow_cdata = false,
-            .last_start_tag_type = LHTML_TAG_UNKNOWN,
-            .initial_state = LHTML_STATE_DATA,
+        lhtml_state_t state = {
             .buffer = {
                 .items = buffer,
                 .count = BUFFER_SIZE
@@ -72,8 +69,7 @@ int main(int argc, char **argv) {
             }
         };
 
-        lhtml_state_t state;
-        lhtml_init(&state, &options);
+        lhtml_init(&state);
 
         lhtml_feedback_state_t pf_state;
         lhtml_feedback_inject(&state, &pf_state, (lhtml_ns_buffer_t) {

@@ -116,7 +116,7 @@ bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
         token->type = LHTML_TOKEN_ERROR;
         token->raw.has_value = true;
         lhtml_emit(token, &state->base_handler);
-        token->raw.value.data = state->buffer_pos = state->buffer;
+        token->raw.value.data = state->buffer_pos = state->buffer.items;
     }
     return already_errored(state, unprocessed);
 }
@@ -175,21 +175,15 @@ inline lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs) {
     return can_create_attr(attrs) ? &attrs->items[attrs->count++] : NULL;
 }
 
-void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
+void lhtml_init(lhtml_state_t *state) {
     %%write init nocs;
-    state->allow_cdata = options->allow_cdata;
-    state->base_handler.next = NULL;
+
+    if (state->cs == 0) {
+        state->cs = LHTML_STATE_DATA;
+    }
+
     state->last_handler = &state->base_handler;
-    state->last_start_tag_type = options->last_start_tag_type;
-    state->quote = 0;
-    state->attribute = 0;
-    state->start_slice = 0;
-    state->mark = 0;
-    state->buffer = state->buffer_pos = options->buffer.items;
-    state->buffer_end = options->buffer.items + options->buffer.count;
-    state->attr_buffer = options->attr_buffer;
-    state->token.type = LHTML_TOKEN_UNKNOWN;
-    state->cs = options->initial_state;
+    state->buffer_pos = state->buffer.items;
 }
 
 void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback) {
@@ -223,9 +217,9 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     }
 
     do {
-        token->raw.value.data = state->buffer;
+        token->raw.value.data = state->buffer.items;
 
-        size_t available_space = (size_t) (state->buffer_end - state->buffer_pos);
+        size_t available_space = (size_t) (state->buffer.items + state->buffer.count - state->buffer_pos);
 
         if (unprocessed.length <= available_space) {
             available_space = unprocessed.length;
@@ -275,7 +269,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             token->raw.value.data = state->start_slice = middle;
         }
 
-        size_t shift = (size_t) (token->raw.value.data - state->buffer);
+        size_t shift = (size_t) (token->raw.value.data - state->buffer.items);
 
         if (shift != 0) {
             switch (token->type) {
@@ -313,7 +307,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 }
             }
 
-            memmove(state->buffer, token->raw.value.data, (size_t) (state->buffer_pos - token->raw.value.data));
+            memmove(state->buffer.items, token->raw.value.data, (size_t) (state->buffer_pos - token->raw.value.data));
             state->buffer_pos -= shift;
             state->start_slice -= shift;
 

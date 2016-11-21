@@ -154,12 +154,12 @@ typedef struct {
 
     Suite__Test__State initial_state;
     bool error;
+    bool needs_decoding;
+    bool with_feedback;
     const char *raw_pos;
     size_t expected_pos;
     const size_t expected_length;
     const Suite__Test *test;
-    bool needs_decoding;
-    bool with_feedback;
 } test_state_t;
 
 static void fprint_fail(FILE *file, test_state_t *state, const char *msg) {
@@ -359,17 +359,7 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
     char buffer[2048];
     lhtml_attribute_t attr_buffer[256];
     lhtml_ns_t ns_buf[64];
-    lhtml_options_t options = {
-        .last_start_tag_type = lhtml_get_tag_type(to_tok_string(test->last_start_tag)),
-        .buffer = {
-            .items = buffer,
-            .count = sizeof(buffer)
-        },
-        .attr_buffer = {
-            .items = attr_buffer,
-            .count = sizeof(attr_buffer) / sizeof(attr_buffer[0])
-        }
-    };
+    lhtml_tag_type_t last_start_tag_type = lhtml_get_tag_type(to_tok_string(test->last_start_tag));
     char concat_buf[1024];
     lhtml_string_t input = to_tok_string(test->input);
     char fixed_input[input.length];
@@ -394,8 +384,19 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         state.error = false;
         state.raw_pos = input.data;
         state.expected_pos = 0;
-        options.initial_state = to_tok_state(state.initial_state);
-        lhtml_init(&state.tokenizer, &options);
+        state.tokenizer = (lhtml_state_t) {
+            .cs = to_tok_state(state.initial_state),
+            .last_start_tag_type = last_start_tag_type,
+            .buffer = {
+                .items = buffer,
+                .count = sizeof(buffer)
+            },
+            .attr_buffer = {
+                .items = attr_buffer,
+                .count = sizeof(attr_buffer) / sizeof(attr_buffer[0])
+            }
+        };
+        lhtml_init(&state.tokenizer);
         if (with_feedback) {
             lhtml_feedback_inject(&state.tokenizer, &state.feedback, (lhtml_ns_buffer_t) {
                 .items = ns_buf,

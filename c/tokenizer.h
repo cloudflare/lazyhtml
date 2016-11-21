@@ -269,32 +269,24 @@ typedef LHTML_BUFFER_T(lhtml_attribute_t) lhtml_attr_buffer_t;
 typedef struct {
     lhtml_token_handler_t base_handler; // needs to be the first one
 
-    int cs;
     bool allow_cdata;
     char quote;
+    int cs;
     lhtml_tag_type_t last_start_tag_type;
+    lhtml_buffer_t buffer;
+    lhtml_attr_buffer_t attr_buffer;
+
     uint64_t special_end_tag_type;
     lhtml_token_handler_t *last_handler;
     lhtml_token_t token;
     lhtml_attribute_t *attribute;
     const char *start_slice;
     const char *mark;
-    char *buffer;
     char *buffer_pos;
-    const char *buffer_end;
-    lhtml_attr_buffer_t attr_buffer;
 } lhtml_state_t;
 
-typedef struct {
-    int initial_state;
-    bool allow_cdata;
-    lhtml_tag_type_t last_start_tag_type;
-    lhtml_buffer_t buffer;
-    lhtml_attr_buffer_t attr_buffer;
-} lhtml_options_t;
-
 __attribute__((nonnull))
-void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options);
+void lhtml_init(lhtml_state_t *state);
 
 __attribute__((nonnull))
 void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback);
