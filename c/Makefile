@@ -2,6 +2,7 @@ RAGEL = ragel
 RAGELFLAGS = -G2
 CFLAGS = $(EXTRA_CFLAGS) -g -O3 -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
 LDFLAGS =
+TESTS = $(wildcard ../tests*.dat)
 
 .PHONY: print-builddeps
 print-builddeps:
@@ -44,17 +45,27 @@ test.o: test.c tests.pb-c.h
 test-runner: test.o tests.pb-c.o tokenizer.o parser-feedback.o concat-char-tokens.o decoder.o
 	$(CC) $(CFLAGS) $(shell pkg-config --cflags 'libprotobuf-c >= 1.0.0') $(LDFLAGS) $(shell pkg-config --libs 'libprotobuf-c >= 1.0.0') $+ -o $@
 
+# doesn't print test names, error details etc., but useful for quick checks
+.PHONY: quick-test
+quick-test: test-runner $(TESTS)
+	prove --exec ./test-runner $(TESTS)
+
+package.json:
+	echo "{}" > $@
+
+node_modules/.bin/%: package.json
+	npm i $(@F)
+	touch $@
+
 .PHONY: test
-test: test-runner
 ifndef CI
-	echo "{}" > package.json
-	npm i tap-summary
-	(./$< ../tests.dat && ./$< ../tests-with-feedback.dat) | ./node_modules/.bin/tap-summary
+test: test-runner node_modules/.bin/tap-summary $(TESTS)
+	($(patsubst %, ./test-runner %;, $(TESTS))) | ./node_modules/.bin/tap-summary
 else
-	echo "{}" > package.json
-	npm i tap-xunit
-	./$< ../tests.dat | tail -n +2 | ./node_modules/tap-xunit/bin/tap-xunit > results.xml
-	./$< ../tests-with-feedback.dat | tail -n +2 | ./node_modules/tap-xunit/bin/tap-xunit > results-with-feedback.xml
+%.xml: ../%.dat test-runner node_modules/.bin/tap-xunit
+	./test-runner $< | tail -n +2 | ./node_modules/tap-xunit/bin/tap-xunit > $@
+
+test: $(patsubst ../%.dat, %.xml, $(TESTS))
 endif
 
 .PHONY: clean

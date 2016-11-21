@@ -10,4 +10,4 @@
 /results.tap
 /package.json
 /node_modules
-/results.xml
+/*.xml
