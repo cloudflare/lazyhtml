@@ -2,8 +2,8 @@
 #include <assert.h>
 #include "serializer.h"
 
-static void serialize(lhtml_token_t *token, void *extra) {
-    lhtml_serializer_options_t *options = &((lhtml_serializer_state_t *) extra)->options;
+static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
+    lhtml_serializer_options_t *options = &extra->options;
 
     lhtml_string_callback_t write = options->writer;
 
@@ -101,5 +101,5 @@ static void serialize(lhtml_token_t *token, void *extra) {
 
 void lhtml_serializer_inject(lhtml_state_t *tokenizer, lhtml_serializer_state_t *state, const lhtml_serializer_options_t *options) {
     state->options = *options;
-    lhtml_add_handler(tokenizer, &state->handler, serialize);
+    LHTML_ADD_HANDLER(tokenizer, state, serialize);
 }

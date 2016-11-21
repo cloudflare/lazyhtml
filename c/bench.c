@@ -15,7 +15,12 @@ static void writehbstr(lhtml_string_t str, void *extra) {
     fwrite(str.data, str.length, 1, out);
 }
 
-static void modtoken(lhtml_token_t *token, void *extra) {
+typedef struct {
+    lhtml_token_handler_t handler;
+    lhtml_feedback_state_t *feedback;
+} bench_state_t;
+
+static void modtoken(lhtml_token_t *token, bench_state_t *bench_state) {
     if (token->type == LHTML_TOKEN_START_TAG) {
         lhtml_token_starttag_t *tag = &token->start_tag;
         if (tag->type == LHTML_TAG_A) {
@@ -26,7 +31,7 @@ static void modtoken(lhtml_token_t *token, void *extra) {
             }
         }
     }
-    lhtml_emit(token, extra);
+    lhtml_emit(token, bench_state);
 }
 
 static const int CHUNK_SIZE = 1024;
@@ -77,8 +82,10 @@ int main(int argc, char **argv) {
             .count = MAX_NS_DEPTH
         });
 
-        lhtml_token_handler_t handler;
-        lhtml_add_handler(&state, &handler, modtoken);
+        bench_state_t bench_state = {
+            .feedback = &pf_state
+        };
+        LHTML_ADD_HANDLER(&state, &bench_state, modtoken);
 
         const lhtml_serializer_options_t serializer_options = {
             .writer = writehbstr,

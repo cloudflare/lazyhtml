@@ -2,8 +2,7 @@
 #include <string.h>
 #include "concat-char-tokens.h"
 
-static void on_token(lhtml_token_t *token, void *extra) {
-    lhtml_concat_state_t *state = extra;
+static void on_token(lhtml_token_t *token, lhtml_concat_state_t *state) {
     if (token->type == LHTML_TOKEN_CHARACTER) {
         if (!state->char_token_buf_pos) {
             state->char_token_buf_pos = state->char_token_buf;
@@ -33,14 +32,14 @@ static void on_token(lhtml_token_t *token, void *extra) {
             }
         };
         state->char_token_buf_pos = NULL;
-        lhtml_emit(&char_token, extra);
+        lhtml_emit(&char_token, state);
     }
-    lhtml_emit(token, extra);
+    lhtml_emit(token, state);
 }
 
 void lhtml_concat_inject(lhtml_state_t *tokenizer, lhtml_concat_state_t *state, lhtml_buffer_t buffer) {
     state->char_token_buf = buffer.items;
     state->char_token_buf_end = buffer.items + buffer.count;
     state->char_token_buf_pos = NULL;
-    lhtml_add_handler(tokenizer, &state->handler, on_token);
+    LHTML_ADD_HANDLER(tokenizer, state, on_token);
 }

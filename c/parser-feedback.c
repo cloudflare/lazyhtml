@@ -222,9 +222,7 @@ static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_toke
     }
 }
 
-static void handle_token(lhtml_token_t *token, void *extra) {
-    lhtml_feedback_state_t *state = extra;
-
+static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
     if (state->skip_next_newline) {
         state->skip_next_newline = false;
 
@@ -252,12 +250,12 @@ static void handle_token(lhtml_token_t *token, void *extra) {
 
     if (token->type == LHTML_TOKEN_START_TAG) {
         bool enter_html = handle_start_tag_token(state, &token->start_tag);
-        lhtml_emit(token, extra);
+        lhtml_emit(token, state);
         if (enter_html) {
             enter_ns(state, LHTML_NS_HTML);
         }
     } else {
-        lhtml_emit(token, extra);
+        lhtml_emit(token, state);
         if (token->type == LHTML_TOKEN_END_TAG) {
             handle_end_tag_token(state, &token->end_tag);
         }
@@ -273,5 +271,5 @@ void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *sta
     };
     state->skip_next_newline = false;
     enter_ns(state, LHTML_NS_HTML);
-    lhtml_add_handler(tokenizer, &state->handler, handle_token);
+    LHTML_ADD_HANDLER(tokenizer, state, handle_token);
 }

@@ -12,7 +12,7 @@ static char *to_ascii_lower(lhtml_string_t *str, char *data) {
     return data + str->length;
 }
 
-static void handle_token(lhtml_token_t *token, void *extra) {
+static void handle_token(lhtml_token_t *token, lhtml_decoder_state_t *extra) {
     if (token->type == LHTML_TOKEN_START_TAG) {
         lhtml_token_starttag_t *start_tag = &token->start_tag;
         lhtml_attributes_t *attrs = &start_tag->attributes;
@@ -44,5 +44,5 @@ static void handle_token(lhtml_token_t *token, void *extra) {
 }
 
 void lhtml_decoder_inject(lhtml_state_t *tokenizer, lhtml_decoder_state_t *state) {
-    lhtml_add_handler(tokenizer, &state->handler, handle_token);
+    LHTML_ADD_HANDLER(tokenizer, state, handle_token);
 }

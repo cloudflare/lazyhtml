@@ -61,7 +61,6 @@ typedef struct {
     lhtml_opt_string_t raw;
 } lhtml_attribute_t;
 
-
 typedef LHTML_LIST_T(lhtml_attribute_t) lhtml_attributes_t;
 
 typedef enum {
@@ -253,11 +252,13 @@ typedef struct {
     lhtml_opt_string_t raw;
 } lhtml_token_t;
 
-typedef struct lhtml_token_handler lhtml_token_handler_t;
+#define LHTML_TOKEN_CALLBACK_T(NAME, T) void (*NAME)(lhtml_token_t *token, T *extra)
 
-typedef __attribute__((nonnull(1))) void (*lhtml_token_callback_t)(lhtml_token_t *token, void *extra);
+typedef __attribute__((nonnull(1))) LHTML_TOKEN_CALLBACK_T(lhtml_token_callback_t, void);
 
-struct lhtml_token_handler {
+typedef struct lhtml_token_handler_s lhtml_token_handler_t;
+
+struct lhtml_token_handler_s {
     lhtml_token_callback_t callback;
     lhtml_token_handler_t *next;
 };
@@ -314,5 +315,11 @@ lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs);
 #define LHTML_NAME_EQUALS(actual, expected) lhtml_name_equals(actual, LHTML_STRING(expected))
 
 #define LHTML_FIND_ATTR(attrs, name) lhtml_find_attr(attrs, LHTML_STRING(name))
+
+#define LHTML_ADD_HANDLER(tokenizer, state, callback) {\
+    _Static_assert(offsetof(__typeof__(*(state)), handler) == 0, ".handler is the first item in the state");\
+    LHTML_TOKEN_CALLBACK_T(cb, __typeof__(*(state))) = callback;\
+    lhtml_add_handler(tokenizer, &(state)->handler, (lhtml_token_callback_t) cb);\
+}
 
 #endif

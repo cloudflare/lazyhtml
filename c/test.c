@@ -317,8 +317,7 @@ static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
     return;
 }
 
-static void on_token(lhtml_token_t *token, void *extra) {
-    test_state_t *state = extra;
+static void on_token(lhtml_token_t *token, test_state_t *state) {
     if (state->error || token->type == LHTML_TOKEN_EOF || (token->type == LHTML_TOKEN_CHARACTER && token->character.value.length == 0)) {
         return;
     }
@@ -408,7 +407,7 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
             .count = sizeof(concat_buf)
         });
         lhtml_decoder_inject(&state.tokenizer, &state.decoder);
-        lhtml_add_handler(&state.tokenizer, &state.handler, on_token);
+        LHTML_ADD_HANDLER(&state.tokenizer, &state, on_token);
         for (size_t j = 0; j < input.length; j++) {
             char c = input.data[j]; // to ensure that pointers are not saved to the original data
             const lhtml_string_t ch = {
