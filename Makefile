@@ -1,7 +1,5 @@
 RAGEL = ragel
 RAGELFLAGS += --reduce-frontend -F1
-CFLAGS += -g $(shell pkg-config --cflags json-c)
-LDFLAGS += $(shell pkg-config --libs json-c)
 
 RL_FILES := $(wildcard syntax/*.rl)
 
