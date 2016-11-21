@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <string.h>
-#include <stdint.h>
 #include "tokenizer.h"
 #include "field-names.h"
 
@@ -58,35 +57,26 @@ void token_init_character(lhtml_token_t *token, lhtml_token_character_kind_t kin
     reset_string(&character->value);
 }
 
-HELPER(nonnull)
-void set_last_start_tag_name(lhtml_state_t *state, const lhtml_string_t name) {
-    size_t len = name.length;
-    if (len > sizeof(state->last_start_tag_name_buf)) {
-        len = sizeof(state->last_start_tag_name_buf);
+HELPER(const, warn_unused_result)
+uint64_t tag_type_append_char(uint64_t *code, char c) {
+    // protect against overflow
+    if (*code >> (64 - 5)) {
+        return *code = 0;
     }
-    memcpy(state->last_start_tag_name_buf, name.data, len);
-    state->last_start_tag_name_end = state->last_start_tag_name_buf + len;
+
+    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+        return *code = (*code << 5) | (c & 31);
+    } else {
+        return *code = 0;
+    }
 }
 
-HELPER(const, warn_unused_result)
-lhtml_tag_type_t get_tag_type(const lhtml_string_t name) {
+inline lhtml_tag_type_t lhtml_get_tag_type(const lhtml_string_t name) {
     uint64_t code = 0;
 
-    const char *data = name.data;
-    const char *const max = data + name.length;
-
-    for (; data < max; data++) {
-        char c = *data;
-
-        // protect against overflow
-        if (code >> (64 - 5)) {
-            return 0;
-        }
-
-        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-            code = (code << 5) | (c & 31);
-        } else {
-            return 0;
+    for (size_t i = 0; i < name.length; i++) {
+        if (!tag_type_append_char(&code, name.data[i])) {
+            break;
         }
     }
 
@@ -190,12 +180,11 @@ void lhtml_init(lhtml_state_t *state, const lhtml_options_t *options) {
     state->allow_cdata = options->allow_cdata;
     state->base_handler.next = NULL;
     state->last_handler = &state->base_handler;
-    set_last_start_tag_name(state, options->last_start_tag_name);
+    state->last_start_tag_type = options->last_start_tag_type;
     state->quote = 0;
     state->attribute = 0;
     state->start_slice = 0;
     state->mark = 0;
-    state->appropriate_end_tag_offset = 0;
     state->buffer = state->buffer_pos = options->buffer.items;
     state->buffer_end = options->buffer.items + options->buffer.count;
     state->attr_buffer = options->attr_buffer;

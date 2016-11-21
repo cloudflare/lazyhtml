@@ -60,9 +60,7 @@ int main(int argc, char **argv) {
 
         const lhtml_options_t options = {
             .allow_cdata = false,
-            .last_start_tag_name = {
-                .length = 0
-            },
+            .last_start_tag_type = LHTML_TAG_UNKNOWN,
             .initial_state = LHTML_STATE_DATA,
             .buffer = {
                 .items = buffer,

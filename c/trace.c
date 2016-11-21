@@ -122,7 +122,7 @@ int main(const int argc, const char *const argv[]) {
             if (sscanf(arg, "buffer=%zd", &buffer_size) > 0) {
                 continue;
             }
-            if (strncmp(arg, "feedback", sizeof("feedback")) == 0) {
+            if (strncmp(arg, "feedback", sizeof("feedback")) == 0 || sscanf(arg, "feedback=%zd", &max_ns_depth) > 0) {
                 with_feedback = true;
                 continue;
             }
@@ -160,7 +160,7 @@ int main(const int argc, const char *const argv[]) {
     lhtml_ns_t ns_depth[with_feedback ? max_ns_depth : 0];
     const lhtml_options_t options = {
         .allow_cdata = false,
-        .last_start_tag_name = { .length = 0 },
+        .last_start_tag_type = LHTML_TAG_UNKNOWN,
         .initial_state = initial_state,
         .buffer = {
             .items = buffer,

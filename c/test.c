@@ -360,7 +360,7 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
     lhtml_attribute_t attr_buffer[256];
     lhtml_ns_t ns_buf[64];
     lhtml_options_t options = {
-        .last_start_tag_name = to_tok_string(test->last_start_tag),
+        .last_start_tag_type = lhtml_get_tag_type(to_tok_string(test->last_start_tag)),
         .buffer = {
             .items = buffer,
             .count = sizeof(buffer)

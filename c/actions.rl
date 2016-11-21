@@ -24,15 +24,15 @@
     }
 
     action StartAppropriateEndTag {
-        state->appropriate_end_tag_offset = state->last_start_tag_name_buf;
+        state->special_end_tag_type = 0;
     }
 
-    action IsAppropriateEndTagFed { state->appropriate_end_tag_offset == state->last_start_tag_name_end }
+    action FeedAppropriateEndTag { tag_type_append_char(&state->special_end_tag_type, fc) }
 
-    action FeedAppropriateEndTag { state->appropriate_end_tag_offset != state->last_start_tag_name_end && *(state->appropriate_end_tag_offset++) == (fc | 0x20) }
+    action IsAppropriateEndTagFed { state->special_end_tag_type == state->last_start_tag_type }
 
     action SetAppropriateEndTagName {
-        set_string(&GET_TOKEN(END_TAG)->name, state->last_start_tag_name_buf, state->last_start_tag_name_end);
+        set_string(&GET_TOKEN(END_TAG)->name, state->start_slice + 2, p);
     }
 
     action StartSlice {
@@ -82,17 +82,17 @@
     action SetStartTagName {
         lhtml_token_starttag_t *start_tag = GET_TOKEN(START_TAG);
         set_string(&start_tag->name, state->start_slice, p);
-        start_tag->type = get_tag_type(start_tag->name);
+        start_tag->type = lhtml_get_tag_type(start_tag->name);
     }
 
     action SetEndTagName {
         lhtml_token_endtag_t *end_tag = GET_TOKEN(END_TAG);
         set_string(&end_tag->name, state->start_slice, p);
-        end_tag->type = get_tag_type(end_tag->name);
+        end_tag->type = lhtml_get_tag_type(end_tag->name);
     }
 
     action SetLastStartTagName {
-        set_last_start_tag_name(state, GET_TOKEN(START_TAG)->name);
+        state->last_start_tag_type = GET_TOKEN(START_TAG)->type;
     }
 
     action SetSelfClosingFlag {

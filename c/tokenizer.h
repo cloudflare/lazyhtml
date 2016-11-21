@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 extern const int LHTML_STATE_ERROR;
 extern const int LHTML_STATE_DATA;
@@ -64,6 +65,9 @@ typedef struct {
 typedef LHTML_LIST_T(lhtml_attribute_t) lhtml_attributes_t;
 
 typedef enum {
+    // Custom elements
+    LHTML_TAG_UNKNOWN = 0,
+
     // Regular elements
     LHTML_TAG_A = 1,
     LHTML_TAG_ABBR = 34898,
@@ -268,14 +272,13 @@ typedef struct {
     int cs;
     bool allow_cdata;
     char quote;
-    char last_start_tag_name_buf[18]; // all the tags that might need this, fit
+    lhtml_tag_type_t last_start_tag_type;
+    uint64_t special_end_tag_type;
     lhtml_token_handler_t *last_handler;
-    const char *last_start_tag_name_end;
     lhtml_token_t token;
     lhtml_attribute_t *attribute;
     const char *start_slice;
     const char *mark;
-    const char *appropriate_end_tag_offset;
     char *buffer;
     char *buffer_pos;
     const char *buffer_end;
@@ -285,7 +288,7 @@ typedef struct {
 typedef struct {
     int initial_state;
     bool allow_cdata;
-    lhtml_string_t last_start_tag_name;
+    lhtml_tag_type_t last_start_tag_type;
     lhtml_buffer_t buffer;
     lhtml_attr_buffer_t attr_buffer;
 } lhtml_options_t;
@@ -302,8 +305,11 @@ void lhtml_emit(lhtml_token_t *token, void *extra);
 __attribute__((warn_unused_result, nonnull(1)))
 bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
 
-__attribute__((const, warn_unused_result))
+__attribute__((pure, warn_unused_result))
 bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected);
+
+__attribute__((pure, warn_unused_result))
+lhtml_tag_type_t lhtml_get_tag_type(const lhtml_string_t name);
 
 __attribute__((nonnull, pure, warn_unused_result))
 lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml_string_t name);
