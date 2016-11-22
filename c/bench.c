@@ -76,11 +76,13 @@ int main(int argc, char **argv) {
 
         lhtml_init(&state);
 
-        lhtml_feedback_state_t pf_state;
-        lhtml_feedback_inject(&state, &pf_state, (lhtml_ns_buffer_t) {
-            .data = ns_buffer,
-            .capacity = MAX_NS_DEPTH
-        });
+        lhtml_feedback_state_t pf_state = {
+            .ns_stack = {
+                .data = ns_buffer,
+                .capacity = MAX_NS_DEPTH
+            }
+        };
+        lhtml_feedback_inject(&state, &pf_state);
 
         bench_state_t bench_state = {
             .feedback = &pf_state

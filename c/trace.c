@@ -170,12 +170,14 @@ int main(const int argc, const char *const argv[]) {
         }
     };
     lhtml_init(&state);
-    lhtml_feedback_state_t pf_state;
-    if (with_feedback) {
-        lhtml_feedback_inject(&state, &pf_state, (lhtml_ns_buffer_t) {
+    lhtml_feedback_state_t pf_state = {
+        .ns_stack = {
             .data = ns_depth,
             .capacity = max_ns_depth
-        });
+        }
+    };
+    if (with_feedback) {
+        lhtml_feedback_inject(&state, &pf_state);
     }
     lhtml_token_handler_t handler;
     lhtml_add_handler(&state, &handler, on_token);

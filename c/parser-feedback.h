@@ -21,7 +21,7 @@ typedef struct {
 } lhtml_feedback_state_t;
 
 __attribute__((nonnull))
-void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state, lhtml_ns_buffer_t ns_buffer);
+void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state);
 
 __attribute__((nonnull, pure, warn_unused_result))
 lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_state_t *state);
