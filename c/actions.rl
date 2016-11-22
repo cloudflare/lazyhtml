@@ -73,9 +73,8 @@
         reset_string(&start_tag->name);
         start_tag->self_closing = false;
         start_tag->attributes = (lhtml_attributes_t) {
-            .items = state->attr_buffer.items,
-            .count = 0,
-            .capacity = state->attr_buffer.count
+            .buffer = state->attr_buffer,
+            .length = 0
         };
     }
 
@@ -111,7 +110,7 @@
 
     action CreateAttribute {
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
-        lhtml_attribute_t *attr = state->attribute = &attributes->items[attributes->count];
+        lhtml_attribute_t *attr = state->attribute = &attributes->data[attributes->length];
         reset_string(&attr->name);
         reset_string(&attr->value);
     }
@@ -125,11 +124,11 @@
     action AppendAttribute {
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
         lhtml_attribute_t *attr = state->attribute;
-        assert(&attributes->items[attributes->count] == attr);
+        assert(&attributes->data[attributes->length] == attr);
         set_string(&attr->name, state->start_slice, p);
         attr->raw.has_value = true;
         attr->raw.value = attr->name;
-        attributes->count++;
+        attributes->length++;
     }
 
     action IsCDataAllowed { state->allow_cdata }

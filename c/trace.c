@@ -57,8 +57,8 @@ static void on_token(lhtml_token_t *token, __attribute__((unused)) void *extra) 
             print_string(&token->start_tag.name);
             printf(", .self_closing = %s, .attributes = { ", token->start_tag.self_closing ? "true" : "false");
             const lhtml_attributes_t *attributes = &token->start_tag.attributes;
-            const size_t count = attributes->count;
-            const lhtml_attribute_t *items = attributes->items;
+            const size_t count = attributes->length;
+            const lhtml_attribute_t *items = attributes->data;
             for (size_t i = 0; i < count; i++) {
                 if (i > 0) {
                     printf(", ");
@@ -161,19 +161,19 @@ int main(const int argc, const char *const argv[]) {
         .cs = initial_state,
         .buffer = {
             .data = buffer,
-            .length = buffer_size
+            .capacity = buffer_size
         },
         .attr_buffer = {
-            .items = attr_buf,
-            .count = max_attr_count
+            .data = attr_buf,
+            .capacity = max_attr_count
         }
     };
     lhtml_init(&state);
     lhtml_feedback_state_t pf_state;
     if (with_feedback) {
         lhtml_feedback_inject(&state, &pf_state, (lhtml_ns_buffer_t) {
-            .items = ns_depth,
-            .count = max_ns_depth
+            .data = ns_depth,
+            .capacity = max_ns_depth
         });
     }
     lhtml_token_handler_t handler;

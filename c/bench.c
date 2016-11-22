@@ -66,11 +66,11 @@ int main(int argc, char **argv) {
         lhtml_state_t state = {
             .buffer = {
                 .data = buffer,
-                .length = BUFFER_SIZE
+                .capacity = BUFFER_SIZE
             },
             .attr_buffer = {
-                .items = attr_buffer,
-                .count = MAX_ATTR_COUNT
+                .data = attr_buffer,
+                .capacity = MAX_ATTR_COUNT
             }
         };
 
@@ -78,8 +78,8 @@ int main(int argc, char **argv) {
 
         lhtml_feedback_state_t pf_state;
         lhtml_feedback_inject(&state, &pf_state, (lhtml_ns_buffer_t) {
-            .items = ns_buffer,
-            .count = MAX_NS_DEPTH
+            .data = ns_buffer,
+            .capacity = MAX_NS_DEPTH
         });
 
         bench_state_t bench_state = {

@@ -17,14 +17,14 @@ static void handle_token(lhtml_token_t *token, lhtml_decoder_state_t *extra) {
         lhtml_token_starttag_t *start_tag = &token->start_tag;
         lhtml_attributes_t *attrs = &start_tag->attributes;
         size_t buf_size = start_tag->name.length;
-        for (size_t i = 0; i < attrs->count; i++) {
-            buf_size += attrs->items[i].name.length;
+        for (size_t i = 0; i < attrs->length; i++) {
+            buf_size += attrs->data[i].name.length;
         }
         char buffer[buf_size];
         char *buf_pos = buffer;
         buf_pos = to_ascii_lower(&start_tag->name, buf_pos);
-        for (size_t i = 0; i < attrs->count; i++) {
-            lhtml_attribute_t *attr = &attrs->items[i];
+        for (size_t i = 0; i < attrs->length; i++) {
+            lhtml_attribute_t *attr = &attrs->data[i];
             buf_pos = to_ascii_lower(&attr->name, buf_pos);
         }
         lhtml_emit(token, extra);

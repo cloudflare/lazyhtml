@@ -155,8 +155,8 @@ inline bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t 
 }
 
 inline lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml_string_t name) {
-    size_t count = attrs->count;
-    lhtml_attribute_t *items = attrs->items;
+    size_t count = attrs->length;
+    lhtml_attribute_t *items = attrs->data;
     for (size_t i = 0; i < count; i++) {
         lhtml_attribute_t *attr = &items[i];
         if (lhtml_name_equals(attr->name, name)) {
@@ -168,11 +168,11 @@ inline lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml
 
 HELPER(nonnull)
 bool can_create_attr(lhtml_attributes_t *attrs) {
-    return attrs->count < attrs->capacity;
+    return attrs->length < attrs->capacity;
 }
 
 inline lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs) {
-    return can_create_attr(attrs) ? &attrs->items[attrs->count++] : NULL;
+    return can_create_attr(attrs) ? &attrs->data[attrs->length++] : NULL;
 }
 
 void lhtml_init(lhtml_state_t *state) {
@@ -219,7 +219,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     do {
         token->raw.value.data = state->buffer.data;
 
-        size_t available_space = (size_t) (state->buffer.data + state->buffer.length - state->buffer_pos);
+        size_t available_space = (size_t) (state->buffer.data + state->buffer.capacity - state->buffer_pos);
 
         if (unprocessed.length <= available_space) {
             available_space = unprocessed.length;
@@ -293,8 +293,8 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 case LHTML_TOKEN_START_TAG: {
                     token->start_tag.name.data -= shift;
                     lhtml_attributes_t *attrs = &token->start_tag.attributes;
-                    for (size_t i = 0; i < attrs->count; i++) {
-                        lhtml_attribute_t *attr = &attrs->items[i];
+                    for (size_t i = 0; i < attrs->length; i++) {
+                        lhtml_attribute_t *attr = &attrs->data[i];
                         attr->name.data -= shift;
                         attr->value.data -= shift;
                         attr->raw.value.data -= shift;

@@ -3,7 +3,7 @@
 #include "parser-feedback.h"
 
 lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_state_t *state) {
-    return state->ns_stack.items[state->ns_stack.count - 1];
+    return state->ns_stack.data[state->ns_stack.length - 1];
 }
 
 static bool is_foreign_ns(lhtml_ns_t ns) {
@@ -15,8 +15,8 @@ static bool is_in_foreign_content(const lhtml_feedback_state_t *state) {
 }
 
 static void enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
-    if (state->ns_stack.count < state->ns_stack.capacity) {
-        state->ns_stack.items[state->ns_stack.count++] = ns;
+    if (state->ns_stack.length < state->ns_stack.capacity) {
+        state->ns_stack.data[state->ns_stack.length++] = ns;
     } else {
         state->tokenizer->cs = 0;
     }
@@ -24,8 +24,8 @@ static void enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
 }
 
 static void leave_ns(lhtml_feedback_state_t *state) {
-    if (state->ns_stack.count > 1) {
-        state->ns_stack.count--;
+    if (state->ns_stack.length > 1) {
+        state->ns_stack.length--;
     } else {
         state->tokenizer->cs = 0;
     }
@@ -114,8 +114,8 @@ static bool foreign_causes_exit(const lhtml_token_starttag_t *start_tag) {
             return true;
         case LHTML_TAG_FONT: {
             const lhtml_attributes_t *attrs = &start_tag->attributes;
-            for (size_t i = 0; i < attrs->count; i++) {
-                const lhtml_string_t name = attrs->items[i].name;
+            for (size_t i = 0; i < attrs->length; i++) {
+                const lhtml_string_t name = attrs->data[i].name;
                 if (LHTML_NAME_EQUALS(name, "color") || LHTML_NAME_EQUALS(name, "size") || LHTML_NAME_EQUALS(name, "face")) {
                     return true;
                 }
@@ -142,8 +142,8 @@ static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, c
 
                 default: {
                     if (attrs && LHTML_NAME_EQUALS(name, "annotation-xml")) {
-                        for (size_t i = 0; i < attrs->count; i++) {
-                            const lhtml_attribute_t *attr = &attrs->items[i];
+                        for (size_t i = 0; i < attrs->length; i++) {
+                            const lhtml_attribute_t *attr = &attrs->data[i];
                             if (LHTML_NAME_EQUALS(attr->name, "encoding") && (LHTML_NAME_EQUALS(attr->value, "text/html") || LHTML_NAME_EQUALS(attr->value, "application/xhtml+xml"))) {
                                 return true;
                             }
@@ -213,8 +213,8 @@ static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_toke
         if (type == (lhtml_tag_type_t) ns) {
             leave_ns(state);
         }
-    } else if (state->ns_stack.count >= 2) {
-        lhtml_ns_t prev_ns = state->ns_stack.items[state->ns_stack.count - 2];
+    } else if (state->ns_stack.length >= 2) {
+        lhtml_ns_t prev_ns = state->ns_stack.data[state->ns_stack.length - 2];
 
         if (foreign_is_integration_point(prev_ns, type, tag->name, NULL)) {
             leave_ns(state);
@@ -265,9 +265,8 @@ static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
 void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state, lhtml_ns_buffer_t ns_buffer) {
     state->tokenizer = tokenizer;
     state->ns_stack = (lhtml_ns_stack_t) {
-        .items = ns_buffer.items,
-        .count = 0,
-        .capacity = ns_buffer.count
+        .buffer = ns_buffer,
+        .length = 0
     };
     state->skip_next_newline = false;
     enter_ns(state, LHTML_NS_HTML);

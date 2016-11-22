@@ -203,7 +203,7 @@ static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
         actual.token_case = SUITE__TEST__TOKEN__TOKEN_##CAP_TYPE;\
         actual.LHTML_FIELD_NAME_##CAP_TYPE = (Suite__Test__##TYPE *) &LHTML_FIELD_NAME_##CAP_TYPE;
 
-    const size_t n_attributes = src->type == LHTML_TOKEN_START_TAG ? src->start_tag.attributes.count : 0;
+    const size_t n_attributes = src->type == LHTML_TOKEN_START_TAG ? src->start_tag.attributes.length : 0;
     Suite__Test__Attribute attributes[n_attributes];
     Suite__Test__Attribute *attribute_pointers[n_attributes];
 
@@ -237,7 +237,7 @@ static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
             for (size_t i = 0; i < n_attributes; i++) {
                 Suite__Test__Attribute *attr = attribute_pointers[start_tag.n_attributes] = &attributes[start_tag.n_attributes];
                 suite__test__attribute__init(attr);
-                const lhtml_attribute_t *src_attr = &src->start_tag.attributes.items[i];
+                const lhtml_attribute_t *src_attr = &src->start_tag.attributes.data[i];
                 ProtobufCBinaryData name = to_test_string(src_attr->name);
                 if (remove_attr_ns) {
                     if (name.len >= sizeof("xlink") && memcmp(name.data, "xlink:", sizeof("xlink")) == 0) {
@@ -388,24 +388,24 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
                 .last_start_tag_type = last_start_tag_type,
                 .buffer = {
                     .data = buffer,
-                    .length = sizeof(buffer)
+                    .capacity = sizeof(buffer)
                 },
                 .attr_buffer = {
-                    .items = attr_buffer,
-                    .count = sizeof(attr_buffer) / sizeof(attr_buffer[0])
+                    .data = attr_buffer,
+                    .capacity = sizeof(attr_buffer) / sizeof(attr_buffer[0])
                 }
             }
         };
         lhtml_init(&state.tokenizer);
         if (with_feedback) {
             lhtml_feedback_inject(&state.tokenizer, &state.feedback, (lhtml_ns_buffer_t) {
-                .items = ns_buf,
-                .count = sizeof(ns_buf) / sizeof(ns_buf[0])
+                .data = ns_buf,
+                .capacity = sizeof(ns_buf) / sizeof(ns_buf[0])
             });
         }
         lhtml_concat_inject(&state.tokenizer, &state.concat, (lhtml_buffer_t) {
             .data = concat_buf,
-            .length = sizeof(concat_buf)
+            .capacity = sizeof(concat_buf)
         });
         lhtml_decoder_inject(&state.tokenizer, &state.decoder);
         LHTML_ADD_HANDLER(&state.tokenizer, &state, on_token);

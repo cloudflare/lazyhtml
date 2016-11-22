@@ -13,19 +13,27 @@ extern const int LHTML_STATE_RAWTEXT;
 extern const int LHTML_STATE_PLAINTEXT;
 extern const int LHTML_STATE_SCRIPTDATA;
 
-#define LHTML_ARRAY_T(ITEM_T) struct { ITEM_T *const items; size_t count; }
-#define LHTML_LIST_T(ITEM_T) struct { LHTML_ARRAY_T(ITEM_T); const size_t capacity; }
-#define LHTML_BUFFER_T(ITEM_T) struct { ITEM_T *const items; const size_t count; }
+// Ideally would use const fields, but gcc :(
+// (they work in clang)
+#define LHTML_BUFFER_T(ITEM_T) struct {\
+    ITEM_T *const data;\
+    const size_t capacity;\
+}
+
+#define LHTML_LIST_T(BUFFER_T) struct {\
+    union {\
+        BUFFER_T buffer;\
+        const LHTML_BUFFER_T(__typeof__(((BUFFER_T *)0)->data[0]));\
+    };\
+    size_t length;\
+}
 
 typedef struct {
     const char *data;
     size_t length;
 } lhtml_string_t;
 
-typedef struct {
-    char *const data;
-    const size_t length;
-} lhtml_buffer_t;
+typedef LHTML_BUFFER_T(char) lhtml_buffer_t;
 
 typedef struct {
     bool has_value;
@@ -67,7 +75,8 @@ typedef struct {
     lhtml_opt_string_t raw;
 } lhtml_attribute_t;
 
-typedef LHTML_LIST_T(lhtml_attribute_t) lhtml_attributes_t;
+typedef LHTML_BUFFER_T(lhtml_attribute_t) lhtml_attr_buffer_t;
+typedef LHTML_LIST_T(lhtml_attr_buffer_t) lhtml_attributes_t;
 
 typedef struct {
     lhtml_string_t name;
@@ -110,8 +119,6 @@ struct lhtml_token_handler_s {
     lhtml_token_callback_t callback;
     lhtml_token_handler_t *next;
 };
-
-typedef LHTML_BUFFER_T(lhtml_attribute_t) lhtml_attr_buffer_t;
 
 typedef struct {
     lhtml_token_handler_t base_handler; // needs to be the first one

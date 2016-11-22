@@ -59,8 +59,8 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
             write(LHTML_STRING("<"), extra);
             write(token->start_tag.name, extra); // non-empty, starts with ASCII letter
             lhtml_attributes_t *attrs = &token->start_tag.attributes;
-            for (size_t i = 0; i < attrs->count; i++) {
-                lhtml_attribute_t *attr = &attrs->items[i];
+            for (size_t i = 0; i < attrs->length; i++) {
+                lhtml_attribute_t *attr = &attrs->data[i];
                 write(LHTML_STRING(" "), extra);
                 if (attr->raw.has_value) {
                     write(attr->raw.value, extra);
