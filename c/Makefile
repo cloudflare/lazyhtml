@@ -1,73 +1,100 @@
 RAGEL = ragel
 RAGELFLAGS = -G2
-CFLAGS = $(EXTRA_CFLAGS) -g -O3 -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wuninitialized -Wcast-align -Werror -Wmissing-field-initializers
-LDFLAGS =
-TESTS = $(wildcard ../tests*.dat)
+CFLAGS = -g -O3
+override CFLAGS += -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wuninitialized -Wcast-align -Wmissing-field-initializers -Werror -Wno-error=missing-field-initializers
+TESTS := $(wildcard ../tests*.dat)
+OUT = out
+TARGET := $(shell $(CC) -dumpmachine)
+OUT_TARGET := $(OUT)/$(TARGET)
+RAGEL_SOURCES := tokenizer.rl $(wildcard ../syntax/*.rl)
+SOURCES := $(wildcard *.c)
+
+## Phony tasks
+
+.PHONY: all
+all: lib quick-test
+
+.PHONY: lib
+lib: $(OUT_TARGET)/liblhtml.a
 
 .PHONY: print-builddeps
 print-builddeps:
 	@echo pkg-config nodejs libprotobuf-c-dev ragel
 
-tokenizer.c: tokenizer.rl actions.rl $(wildcard syntax/*.rl)
-	$(RAGEL) $(RAGELFLAGS) -s $<
-	sed -i.bak -E 's/^static const int ([^ ]+) = ([0-9]+);/#define \1 \2/g' $@
-	rm $@.bak
+# doesn't print test names, error details etc., but useful for quick checks
+.PHONY: quick-test
+quick-test: $(OUT_TARGET)/test-runner $(TESTS)
+	prove --exec $+
 
-tokenizer.o: tokenizer.c tokenizer.h
-	$(CC) $(CFLAGS) -Wno-unused -c $< -o $@
+.PHONY: test
+test: $(OUT_TARGET)/test-runner $(OUT)/node_modules/.bin/tap-summary $(TESTS)
+	($(patsubst %, $(OUT_TARGET)/test-runner %;, $(TESTS))) | $(OUT)/node_modules/.bin/tap-summary
+
+.PHONY: bamboo-test
+$(OUT_TARGET)/%.xml: ../%.dat $(OUT_TARGET)/test-runner $(OUT)/node_modules/.bin/tap-xunit
+	$(OUT_TARGET)/test-runner $< | tail -n +2 | $(OUT)/node_modules/tap-xunit/bin/tap-xunit > $@
+
+bamboo-test: $(patsubst ../%.dat, $(OUT_TARGET)/%.xml, $(TESTS))
+
+.PHONY: clean-obj
+clean-obj:
+	rm -rf $(OUT_TARGET)
+
+.PHONY: clean
+clean:
+	rm -rf $(OUT)
+
+.PHONY: bench
+bench: $(OUT_TARGET)/bench
+	@for f in ../bench-fixtures/*.html; do echo $$f; $< $$f /dev/null; done
+
+## Intermediate dependencies
+
+$(OUT) $(OUT_TARGET):
+	mkdir -p $@
+
+$(OUT)/tokenizer.c: $(RAGEL_SOURCES) | $(OUT)
+	$(RAGEL) $(RAGELFLAGS) -s $< -o /dev/stdout | sed -E 's/^static const int ([^ ]+) = ([0-9]+);/#define \1 \2/g' > $@
 
 tests.pb-c.c: tests.proto
 	protoc-c --c_out=$(@D) --proto_path=$(<D) $<
 
-tests.pb-c.h: tests.pb-c.c
+tests.pb-c.h: | tests.pb-c.c
 
-parser-feedback.o: parser-feedback.c parser-feedback.h
-serializer.o: serializer.c serializer.h
-concat-char-tokens.o: concat-char-tokens.c concat-char-tokens.h
-decoder.o: decoder.c decoder.h
-tests.pb-c.o: tests.pb-c.c tests.pb-c.h
-trace.o: trace.c
-bench.o: bench.c
+$(OUT)/%.d: %.c | $(OUT)
+	$(CC) $(CFLAGS) -DPROTOBUF_C_tests_2eproto__INCLUDED -MM $< -MT "\$$(OUT)/$(@F)" -MT "\$$(OUT_TARGET)/$(@F:.d=.o)" -MP -MF $@
 
-parser-feedback.o serializer.o concat-char-tokens.o decoder.o tests.pb-c.o trace.o bench.o:
-	$(CC) $(CFLAGS) -c $< -o $@
+$(OUT)/tokenizer.d: tokenizer.rl | $(OUT)
+	$(CC) $(CFLAGS) -xc -iquote. -MM $< -MT "\$$(OUT)/$(@F)" -MT "\$$(OUT_TARGET)/$(@F:.d=.o)" -MP -MF $@
 
-transformer.a: tokenizer.o parser-feedback.o serializer.o
-	ar rcs $@ $+
-
-trace: trace.o tokenizer.o parser-feedback.o
-bench: bench.o transformer.a
-	$(CC) $(CFLAGS) $(LDFLAGS) $+ -o $@
-
-test.o: test.c tests.pb-c.h
-	$(CC) $(CFLAGS) -Wno-cast-qual -Wno-cast-align -c $< -o $@
-
-test-runner: test.o tests.pb-c.o tokenizer.o parser-feedback.o concat-char-tokens.o decoder.o
-	$(CC) $(CFLAGS) $(shell pkg-config --cflags 'libprotobuf-c >= 1.0.0') $(LDFLAGS) $(shell pkg-config --libs 'libprotobuf-c >= 1.0.0') $+ -o $@
-
-# doesn't print test names, error details etc., but useful for quick checks
-.PHONY: quick-test
-quick-test: test-runner $(TESTS)
-	prove --exec ./test-runner $(TESTS)
-
-package.json:
+$(OUT)/package.json:
 	echo "{}" > $@
 
-node_modules/.bin/%: package.json
-	npm i $(@F)
+$(OUT)/node_modules/.bin/%: | $(OUT)/package.json
+	cd $(OUT); npm i $(@F)
 	touch $@
 
-.PHONY: test
-ifndef CI
-test: test-runner node_modules/.bin/tap-summary $(TESTS)
-	($(patsubst %, ./test-runner %;, $(TESTS))) | ./node_modules/.bin/tap-summary
-else
-%.xml: ../%.dat test-runner node_modules/.bin/tap-xunit
-	./test-runner $< | tail -n +2 | ./node_modules/tap-xunit/bin/tap-xunit > $@
+-include $(patsubst %.c, $(OUT)/%.d, $(SOURCES))
+-include $(OUT)/tokenizer.d
 
-test: $(patsubst ../%.dat, %.xml, $(TESTS))
-endif
+## Object files
 
-.PHONY: clean
-clean:
-	rm -rf *.dot *.png *.o *.a *. tokenizer.c
+$(OUT_TARGET)/%.o: | $(OUT_TARGET)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OUT_TARGET)/tokenizer.o: $(OUT)/tokenizer.c | $(OUT_TARGET)
+	$(CC) $(CFLAGS) -iquote. -c $< -o $@
+
+$(OUT_TARGET)/test.o: | $(OUT_TARGET)
+	$(CC) $(CFLAGS) -Wno-cast-qual -Wno-cast-align -c $< -o $@
+
+## Final library and binaries
+
+$(OUT_TARGET)/liblhtml.a: $(OUT_TARGET)/tokenizer.o $(OUT_TARGET)/parser-feedback.o $(OUT_TARGET)/serializer.o
+	ar rcs $@ $?
+
+$(OUT_TARGET)/trace: $(OUT_TARGET)/trace.o $(OUT_TARGET)/tokenizer.o $(OUT_TARGET)/parser-feedback.o
+$(OUT_TARGET)/bench: $(OUT_TARGET)/bench.o $(OUT_TARGET)/liblhtml.a
+
+$(OUT_TARGET)/test-runner: $(OUT_TARGET)/test.o $(OUT_TARGET)/tests.pb-c.o $(OUT_TARGET)/tokenizer.o $(OUT_TARGET)/parser-feedback.o $(OUT_TARGET)/concat-char-tokens.o $(OUT_TARGET)/decoder.o
+	$(CC) $(CFLAGS) $(shell pkg-config --cflags 'libprotobuf-c >= 1.0.0') $(shell pkg-config --libs 'libprotobuf-c >= 1.0.0') $+ -o $@

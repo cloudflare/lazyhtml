@@ -14,6 +14,11 @@
     write data nofinal noprefix;
 }%%
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+%%write data nofinal noprefix;
+#pragma GCC diagnostic pop
+
 const int LHTML_STATE_ERROR = error;
 const int LHTML_STATE_DATA = en_Data;
 const int LHTML_STATE_RCDATA = en_RCData;

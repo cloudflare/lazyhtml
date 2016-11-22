@@ -1,13 +1,3 @@
-/tokenizer.c
-/tokenizer.c.bak
-/tokenizer
 /*.dSYM
-/*.o
-/*.a
-/bench
-/trace
-/test-runner
-/results.tap
-/package.json
 /node_modules
-/*.xml
+/out

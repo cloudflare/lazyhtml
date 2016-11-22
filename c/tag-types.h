@@ -1,3 +1,6 @@
+#ifndef LHTML_TAG_TYPES_H
+#define LHTML_TAG_TYPES_H
+
 typedef enum {
     // Custom elements
     LHTML_TAG_UNKNOWN = 0,
@@ -155,3 +158,5 @@ typedef enum {
     // LHTML_TAG_TITLE // already exists,
     LHTML_TAG_FOREIGNOBJECT = 7478413254770103412,
 } lhtml_tag_type_t;
+
+#endif

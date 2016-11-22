@@ -3,6 +3,10 @@ RAGELFLAGS += --reduce-frontend -F1
 
 RL_FILES := $(wildcard syntax/*.rl)
 
+.PHONY: c-tokenizer
+c-tokenizer:
+	make -C c
+
 %.dot: js/tokenizer.rl $(RL_FILES)
 	$(RAGEL) $(RAGELFLAGS) -PVp -M $(notdir $(basename $@)) $< > $@
 	node simplify-graph.js $@
@@ -26,7 +30,3 @@ clean:
 .PHONY: js-tokenizer
 js-tokenizer:
 	make -C js tokenizer.js
-
-.PHONY: c-tokenizer
-c-tokenizer:
-	make -C c transformer.a
