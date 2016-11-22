@@ -394,6 +394,12 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
                     .data = attr_buffer,
                     .capacity = sizeof(attr_buffer) / sizeof(attr_buffer[0])
                 }
+            },
+            .concat = {
+                .buffer = {
+                    .data = concat_buf,
+                    .capacity = sizeof(concat_buf)
+                }
             }
         };
         lhtml_init(&state.tokenizer);
@@ -403,10 +409,7 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
                 .capacity = sizeof(ns_buf) / sizeof(ns_buf[0])
             });
         }
-        lhtml_concat_inject(&state.tokenizer, &state.concat, (lhtml_buffer_t) {
-            .data = concat_buf,
-            .capacity = sizeof(concat_buf)
-        });
+        lhtml_concat_inject(&state.tokenizer, &state.concat);
         lhtml_decoder_inject(&state.tokenizer, &state.decoder);
         LHTML_ADD_HANDLER(&state.tokenizer, &state, on_token);
         for (size_t j = 0; j < input.length; j++) {
