@@ -13,11 +13,16 @@ extern const int LHTML_STATE_RAWTEXT;
 extern const int LHTML_STATE_PLAINTEXT;
 extern const int LHTML_STATE_SCRIPTDATA;
 
-// Ideally would use const fields, but gcc :(
-// (they work in clang)
+// gcc :(
+#ifdef __clang__
+#define LHTML_IMMUTABLE const
+#else
+#define LHTML_IMMUTABLE
+#endif
+
 #define LHTML_BUFFER_T(ITEM_T) struct {\
-    ITEM_T *const data;\
-    const size_t capacity;\
+    ITEM_T *LHTML_IMMUTABLE data;\
+    LHTML_IMMUTABLE size_t capacity;\
 }
 
 #define LHTML_LIST_T(BUFFER_T) struct {\

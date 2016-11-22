@@ -71,6 +71,7 @@ uint64_t tag_type_append_char(uint64_t *code, char c) {
     }
 }
 
+__attribute__((always_inline))
 inline lhtml_tag_type_t lhtml_get_tag_type(const lhtml_string_t name) {
     uint64_t code = 0;
 

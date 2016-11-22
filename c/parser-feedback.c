@@ -264,10 +264,8 @@ static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
 
 void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state, lhtml_ns_buffer_t ns_buffer) {
     state->tokenizer = tokenizer;
-    state->ns_stack = (lhtml_ns_stack_t) {
-        .buffer = ns_buffer,
-        .length = 0
-    };
+    state->ns_stack.buffer = ns_buffer;
+    state->ns_stack.length = 0;
     state->skip_next_newline = false;
     enter_ns(state, LHTML_NS_HTML);
     LHTML_ADD_HANDLER(tokenizer, state, handle_token);

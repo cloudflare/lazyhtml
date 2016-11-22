@@ -72,10 +72,8 @@
         lhtml_token_starttag_t *start_tag = CREATE_TOKEN(START_TAG);
         reset_string(&start_tag->name);
         start_tag->self_closing = false;
-        start_tag->attributes = (lhtml_attributes_t) {
-            .buffer = state->attr_buffer,
-            .length = 0
-        };
+        start_tag->attributes.buffer = state->attr_buffer;
+        start_tag->attributes.length = 0;
     }
 
     action SetStartTagName {
