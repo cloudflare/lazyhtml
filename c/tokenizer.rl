@@ -116,7 +116,7 @@ bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
         token->type = LHTML_TOKEN_ERROR;
         token->raw.has_value = true;
         lhtml_emit(token, &state->base_handler);
-        token->raw.value.data = state->buffer_pos = state->buffer.items;
+        token->raw.value.data = state->buffer_pos = state->buffer.data;
     }
     return already_errored(state, unprocessed);
 }
@@ -183,7 +183,7 @@ void lhtml_init(lhtml_state_t *state) {
     }
 
     state->last_handler = &state->base_handler;
-    state->buffer_pos = state->buffer.items;
+    state->buffer_pos = state->buffer.data;
 }
 
 void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback) {
@@ -217,9 +217,9 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     }
 
     do {
-        token->raw.value.data = state->buffer.items;
+        token->raw.value.data = state->buffer.data;
 
-        size_t available_space = (size_t) (state->buffer.items + state->buffer.count - state->buffer_pos);
+        size_t available_space = (size_t) (state->buffer.data + state->buffer.length - state->buffer_pos);
 
         if (unprocessed.length <= available_space) {
             available_space = unprocessed.length;
@@ -269,7 +269,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             token->raw.value.data = state->start_slice = middle;
         }
 
-        size_t shift = (size_t) (token->raw.value.data - state->buffer.items);
+        size_t shift = (size_t) (token->raw.value.data - state->buffer.data);
 
         if (shift != 0) {
             switch (token->type) {
@@ -307,7 +307,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
                 }
             }
 
-            memmove(state->buffer.items, token->raw.value.data, (size_t) (state->buffer_pos - token->raw.value.data));
+            memmove(state->buffer.data, token->raw.value.data, (size_t) (state->buffer_pos - token->raw.value.data));
             state->buffer_pos -= shift;
             state->start_slice -= shift;
 

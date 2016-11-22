@@ -38,8 +38,8 @@ static void on_token(lhtml_token_t *token, lhtml_concat_state_t *state) {
 }
 
 void lhtml_concat_inject(lhtml_state_t *tokenizer, lhtml_concat_state_t *state, lhtml_buffer_t buffer) {
-    state->char_token_buf = buffer.items;
-    state->char_token_buf_end = buffer.items + buffer.count;
+    state->char_token_buf = buffer.data;
+    state->char_token_buf_end = buffer.data + buffer.length;
     state->char_token_buf_pos = NULL;
     LHTML_ADD_HANDLER(tokenizer, state, on_token);
 }

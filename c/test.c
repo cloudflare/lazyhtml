@@ -387,8 +387,8 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
             .cs = to_tok_state(state.initial_state),
             .last_start_tag_type = last_start_tag_type,
             .buffer = {
-                .items = buffer,
-                .count = sizeof(buffer)
+                .data = buffer,
+                .length = sizeof(buffer)
             },
             .attr_buffer = {
                 .items = attr_buffer,
@@ -403,8 +403,8 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
             });
         }
         lhtml_concat_inject(&state.tokenizer, &state.concat, (lhtml_buffer_t) {
-            .items = concat_buf,
-            .count = sizeof(concat_buf)
+            .data = concat_buf,
+            .length = sizeof(concat_buf)
         });
         lhtml_decoder_inject(&state.tokenizer, &state.decoder);
         LHTML_ADD_HANDLER(&state.tokenizer, &state, on_token);

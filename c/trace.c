@@ -160,8 +160,8 @@ int main(const int argc, const char *const argv[]) {
     lhtml_state_t state = {
         .cs = initial_state,
         .buffer = {
-            .items = buffer,
-            .count = buffer_size
+            .data = buffer,
+            .length = buffer_size
         },
         .attr_buffer = {
             .items = attr_buf,

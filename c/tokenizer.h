@@ -22,6 +22,11 @@ typedef struct {
 } lhtml_string_t;
 
 typedef struct {
+    char *const data;
+    const size_t length;
+} lhtml_buffer_t;
+
+typedef struct {
     bool has_value;
     lhtml_string_t value;
 } lhtml_opt_string_t;
@@ -262,8 +267,6 @@ struct lhtml_token_handler_s {
     lhtml_token_callback_t callback;
     lhtml_token_handler_t *next;
 };
-
-typedef LHTML_BUFFER_T(char) lhtml_buffer_t;
 
 typedef LHTML_BUFFER_T(lhtml_attribute_t) lhtml_attr_buffer_t;
 

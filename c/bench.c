@@ -65,8 +65,8 @@ int main(int argc, char **argv) {
 
         lhtml_state_t state = {
             .buffer = {
-                .items = buffer,
-                .count = BUFFER_SIZE
+                .data = buffer,
+                .length = BUFFER_SIZE
             },
             .attr_buffer = {
                 .items = attr_buffer,
