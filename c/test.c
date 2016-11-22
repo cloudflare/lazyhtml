@@ -340,17 +340,12 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         (char *) test->description.data,
         with_feedback ? " (with feedback)" : ""
     );
-    test_state_t state = {
-        .expected_length = test->n_output,
-        .test = test,
-        .needs_decoding = false,
-        .with_feedback = with_feedback
-    };
     bool has_cr = false;
+    bool needs_decoding = false;
     for (size_t i = 0; i < test->input.len; i++) {
         char c = (char) test->input.data[i];
         if (c == '&' || c == '\0') {
-            state.needs_decoding = true;
+            needs_decoding = true;
         } else if (c == '\r') {
             has_cr = true;
         }
@@ -379,20 +374,26 @@ static void run_test(const Suite__Test *test, bool with_feedback) {
         input.length = j;
     }
     for (size_t i = 0; i < test->n_initial_states; i++) {
-        state.initial_state = test->initial_states[i];
-        state.error = false;
-        state.raw_pos = input.data;
-        state.expected_pos = 0;
-        state.tokenizer = (lhtml_state_t) {
-            .cs = to_tok_state(state.initial_state),
-            .last_start_tag_type = last_start_tag_type,
-            .buffer = {
-                .data = buffer,
-                .length = sizeof(buffer)
-            },
-            .attr_buffer = {
-                .items = attr_buffer,
-                .count = sizeof(attr_buffer) / sizeof(attr_buffer[0])
+        int initial_state = test->initial_states[i];
+        test_state_t state = {
+            .expected_length = test->n_output,
+            .test = test,
+            .needs_decoding = needs_decoding,
+            .with_feedback = with_feedback,
+            .initial_state = initial_state,
+            .raw_pos = input.data,
+            .expected_pos = 0,
+            .tokenizer = {
+                .cs = to_tok_state(initial_state),
+                .last_start_tag_type = last_start_tag_type,
+                .buffer = {
+                    .data = buffer,
+                    .length = sizeof(buffer)
+                },
+                .attr_buffer = {
+                    .items = attr_buffer,
+                    .count = sizeof(attr_buffer) / sizeof(attr_buffer[0])
+                }
             }
         };
         lhtml_init(&state.tokenizer);
