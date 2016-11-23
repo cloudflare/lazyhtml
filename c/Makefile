@@ -17,22 +17,18 @@ all: lib quick-test
 .PHONY: lib
 lib: $(OUT_TARGET)/liblhtml.a
 
-.PHONY: print-builddeps
-print-builddeps:
-	@echo pkg-config nodejs libprotobuf-c-dev ragel
-
 # doesn't print test names, error details etc., but useful for quick checks
 .PHONY: quick-test
 quick-test: $(OUT_TARGET)/test-runner $(TESTS)
 	prove --exec $+
 
 .PHONY: test
-test: $(OUT_TARGET)/test-runner $(OUT)/node_modules/.bin/tap-summary $(TESTS)
-	($(patsubst %, $(OUT_TARGET)/test-runner %;, $(TESTS))) | $(OUT)/node_modules/.bin/tap-summary
+test: $(OUT_TARGET)/test-runner $(TESTS)
+	($(patsubst %, $(OUT_TARGET)/test-runner %;, $(TESTS))) | tap-summary
 
 .PHONY: bamboo-test
-$(OUT_TARGET)/%.xml: ../%.dat $(OUT_TARGET)/test-runner $(OUT)/node_modules/.bin/tap-xunit
-	$(OUT_TARGET)/test-runner $< | tail -n +2 | $(OUT)/node_modules/tap-xunit/bin/tap-xunit > $@
+$(OUT_TARGET)/%.xml: ../%.dat $(OUT_TARGET)/test-runner
+	$(OUT_TARGET)/test-runner $< | tail -n +2 | tap-xunit > $@
 
 bamboo-test: $(patsubst ../%.dat, $(OUT_TARGET)/%.xml, $(TESTS))
 
@@ -67,15 +63,10 @@ $(OUT)/%.d: %.c | $(OUT)
 $(OUT)/tokenizer.d: tokenizer.rl | $(OUT)
 	$(CC) $(CFLAGS) -xc -iquote. -MM $< -MT "\$$(OUT)/$(@F)" -MT "\$$(OUT_TARGET)/$(@F:.d=.o)" -MP -MF $@
 
-$(OUT)/package.json:
-	echo "{}" > $@
-
-$(OUT)/node_modules/.bin/%: | $(OUT)/package.json
-	cd $(OUT); npm i $(@F)
-	touch $@
-
+ifneq (, $(filter all lib %test bench $(OUT)/%.d $(OUT_TARGET)/%, $(MAKECMDGOALS)))
 -include $(patsubst %.c, $(OUT)/%.d, $(SOURCES))
 -include $(OUT)/tokenizer.d
+endif
 
 ## Object files
 

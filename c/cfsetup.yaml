@@ -1,0 +1,26 @@
+jessie:
+    build:
+        builddeps:
+            - ragel
+        post-cache:
+            - make lib
+    test:
+        builddeps:
+            - ragel
+            - pkg-config
+            - nodejs
+            - libprotobuf-c-dev
+        pre-cache:
+            - npm i -g tap-summary
+        post-cache:
+            - make test
+    bamboo-test:
+        builddeps:
+            - ragel
+            - pkg-config
+            - nodejs
+            - libprotobuf-c-dev
+        pre-cache:
+            - npm i -g tap-xunit
+        post-cache:
+            - make bamboo-test
