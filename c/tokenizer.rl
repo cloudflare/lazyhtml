@@ -188,14 +188,14 @@ void lhtml_init(lhtml_state_t *state) {
         state->cs = LHTML_STATE_DATA;
     }
 
-    state->last_handler = &state->base_handler;
     state->buffer_pos = state->buffer.data;
 }
 
-void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback) {
-    handler->callback = callback;
-    handler->next = NULL;
-    state->last_handler = state->last_handler->next = handler;
+void lhtml_append_handlers(lhtml_token_handler_t *dest, lhtml_token_handler_t *src) {
+    while (dest->next != NULL) {
+        dest = dest->next;
+    }
+    dest->next = src;
 }
 
 bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {

@@ -10,8 +10,7 @@
 
 static FILE *out;
 
-static void writehbstr(lhtml_string_t str, void *extra) {
-    (void) extra;
+static void writehbstr(lhtml_string_t str, __attribute__((unused)) lhtml_serializer_state_t *serializer) {
     fwrite(str.data, str.length, 1, out);
 }
 

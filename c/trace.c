@@ -179,8 +179,10 @@ int main(const int argc, const char *const argv[]) {
     if (with_feedback) {
         lhtml_feedback_inject(&state, &pf_state);
     }
-    lhtml_token_handler_t handler;
-    lhtml_add_handler(&state, &handler, on_token);
+    lhtml_token_handler_t handler = {
+        .callback = on_token
+    };
+    lhtml_append_handlers(&state.base_handler, &handler);
     const size_t total_len = strlen(data);
     for (size_t i = 0; i < total_len; i += chunk_size) {
         const lhtml_string_t str = {

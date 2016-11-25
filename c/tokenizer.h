@@ -136,7 +136,6 @@ typedef struct {
     lhtml_attr_buffer_t attr_buffer;
 
     uint64_t special_end_tag_type;
-    lhtml_token_handler_t *last_handler;
     lhtml_token_t token;
     lhtml_attribute_t *attribute;
     const char *start_slice;
@@ -148,7 +147,7 @@ __attribute__((nonnull))
 void lhtml_init(lhtml_state_t *state);
 
 __attribute__((nonnull))
-void lhtml_add_handler(lhtml_state_t *state, lhtml_token_handler_t *handler, lhtml_token_callback_t callback);
+void lhtml_append_handlers(lhtml_token_handler_t *dest, lhtml_token_handler_t *src);
 
 __attribute__((nonnull))
 void lhtml_emit(lhtml_token_t *token, void *extra);
@@ -174,10 +173,16 @@ lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs);
 
 #define LHTML_FIND_ATTR(attrs, name) lhtml_find_attr(attrs, LHTML_STRING(name))
 
-#define LHTML_ADD_HANDLER(tokenizer, state, callback) {\
+#define LHTML_INIT_HANDLER(state, cb) {\
     _Static_assert(offsetof(__typeof__(*(state)), handler) == 0, ".handler is the first item in the state");\
-    LHTML_TOKEN_CALLBACK_T(cb, __typeof__(*(state))) = callback;\
-    lhtml_add_handler(tokenizer, &(state)->handler, (lhtml_token_callback_t) cb);\
+    LHTML_TOKEN_CALLBACK_T(_cb, __typeof__(*(state))) = (cb);\
+    (state)->handler = (lhtml_token_handler_t) { .callback = (lhtml_token_callback_t) _cb };\
+}
+
+#define LHTML_ADD_HANDLER(tokenizer, state, cb) {\
+    __typeof__((state)) _state = (state);\
+    LHTML_INIT_HANDLER(_state, (cb));\
+    lhtml_append_handlers(&(tokenizer)->base_handler, &_state->handler);\
 }
 
 #endif
