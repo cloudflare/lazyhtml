@@ -122,7 +122,6 @@ bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
         token->type = LHTML_TOKEN_ERROR;
         token->raw.has_value = true;
         lhtml_emit(token, &state->base_handler);
-        token->raw.value.data = state->buffer_pos = state->buffer.data;
     }
     return already_errored(state, unprocessed);
 }
