@@ -10,26 +10,20 @@ static bool is_foreign_ns(lhtml_ns_t ns) {
     return ns != LHTML_NS_HTML;
 }
 
-static bool is_in_foreign_content(const lhtml_feedback_state_t *state) {
-    return is_foreign_ns(lhtml_get_current_ns(state));
-}
-
-static void enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
-    if (state->ns_stack.length < state->ns_stack.capacity) {
-        state->ns_stack.data[state->ns_stack.length++] = ns;
-    } else {
-        state->tokenizer->cs = 0;
+__attribute__((warn_unused_result))
+static bool enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
+    if (state->ns_stack.length >= state->ns_stack.capacity) {
+        return false;
     }
+    state->ns_stack.data[state->ns_stack.length++] = ns;
     state->tokenizer->allow_cdata = is_foreign_ns(ns);
+    return true;
 }
 
 static void leave_ns(lhtml_feedback_state_t *state) {
-    if (state->ns_stack.length > 1) {
-        state->ns_stack.length--;
-    } else {
-        state->tokenizer->cs = 0;
-    }
-    state->tokenizer->allow_cdata = is_in_foreign_content(state);
+    assert(state->ns_stack.length > 1);
+    state->ns_stack.length--;
+    state->tokenizer->allow_cdata = is_foreign_ns(lhtml_get_current_ns(state));
 }
 
 static void ensure_tokenizer_mode(lhtml_state_t *tokenizer, lhtml_tag_type_t tag_type) {
@@ -164,12 +158,12 @@ static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, c
     }
 }
 
-static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_starttag_t *tag) {
+__attribute__((warn_unused_result))
+static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_starttag_t *tag, bool *delayed_enter_html) {
     lhtml_tag_type_t type = tag->type;
 
     if (type == LHTML_TAG_SVG || type == LHTML_TAG_MATH) {
-        enter_ns(state, (lhtml_ns_t) type);
-        return false;
+        return enter_ns(state, (lhtml_ns_t) type);
     }
 
     lhtml_ns_t ns = lhtml_get_current_ns(state);
@@ -177,10 +171,9 @@ static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
     if (is_foreign_ns(ns)) {
         if (foreign_causes_exit(tag)) {
             leave_ns(state);
-            return false;
+        } else {
+            *delayed_enter_html = !tag->self_closing && foreign_is_integration_point(ns, type, tag->name, &tag->attributes);
         }
-
-        return !tag->self_closing && foreign_is_integration_point(ns, type, tag->name, &tag->attributes);
     } else {
         switch (type) {
             case LHTML_TAG_PRE:
@@ -199,17 +192,17 @@ static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
         }
 
         ensure_tokenizer_mode(state->tokenizer, type);
-
-        return false;
     }
+
+    return true;
 }
 
 static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_token_endtag_t *tag) {
     lhtml_tag_type_t type = tag->type;
 
-    if (is_in_foreign_content(state)) {
-        lhtml_ns_t ns = lhtml_get_current_ns(state);
+    lhtml_ns_t ns = lhtml_get_current_ns(state);
 
+    if (is_foreign_ns(ns)) {
         if (type == (lhtml_tag_type_t) ns) {
             leave_ns(state);
         }
@@ -249,10 +242,16 @@ static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
     }
 
     if (token->type == LHTML_TOKEN_START_TAG) {
-        bool enter_html = handle_start_tag_token(state, &token->start_tag);
+        bool delayed_enter_html = false;
+        if (!handle_start_tag_token(state, &token->start_tag, &delayed_enter_html)) {
+            token->type = LHTML_TOKEN_ERROR;
+            state->tokenizer->cs = 0;
+        }
         lhtml_emit(token, state);
-        if (enter_html) {
-            enter_ns(state, LHTML_NS_HTML);
+        if (delayed_enter_html) {
+            if (!enter_ns(state, LHTML_NS_HTML)) {
+                state->tokenizer->cs = 0;
+            }
         }
     } else {
         lhtml_emit(token, state);
@@ -264,6 +263,6 @@ static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
 
 void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state) {
     state->tokenizer = tokenizer;
-    enter_ns(state, LHTML_NS_HTML);
+    assert(enter_ns(state, LHTML_NS_HTML));
     LHTML_ADD_HANDLER(tokenizer, state, handle_token);
 }
