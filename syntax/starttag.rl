@@ -32,7 +32,7 @@
         any >0 @Reconsume @To_AttributeValueUnquoted
     );
 
-    _AttrValue = (any+ >StartSlice %SetAttributeValue)?;
+    _AttrValue = (any* >StartSlice %SetAttributeValue)?;
 
     AttributeValueQuoted := _AttrValue :> _EndQuote @To_BeforeAttributeName;
 
