@@ -169,6 +169,12 @@ lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs);
 
 #define LHTML_STRING(str) ((lhtml_string_t) { .data = str, .length = sizeof(str) - 1 })
 
+#define LHTML_STR_EQUALS(actual, expected) ({\
+    lhtml_string_t _actual = (actual);\
+    lhtml_string_t _expected = LHTML_STRING(expected);\
+    _actual.length == _expected.length && memcmp(_actual.data, _expected.data, _expected.length) == 0;\
+})
+
 #define LHTML_NAME_EQUALS(actual, expected) lhtml_name_equals(actual, LHTML_STRING(expected))
 
 #define LHTML_FIND_ATTR(attrs, name) lhtml_find_attr(attrs, LHTML_STRING(name))
