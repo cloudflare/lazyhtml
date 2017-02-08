@@ -10,8 +10,6 @@
     include '../syntax/index.rl';
 
     access state->;
-
-    write data nofinal noprefix;
 }%%
 
 #pragma GCC diagnostic push
