@@ -32,7 +32,9 @@
     action IsAppropriateEndTagFed { state->special_end_tag_type == state->last_start_tag_type }
 
     action SetAppropriateEndTagName {
+        lhtml_token_endtag_t *end_tag = GET_TOKEN(END_TAG);
         set_string(&GET_TOKEN(END_TAG)->name, state->start_slice + 2, p);
+        end_tag->type = state->special_end_tag_type;
     }
 
     action StartSlice {

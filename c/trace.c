@@ -56,7 +56,7 @@ static void on_token(lhtml_token_t *token, __attribute__((unused)) void *extra) 
         case LHTML_TOKEN_START_TAG:
             printf(".name = ");
             print_string(&token->start_tag.name);
-            printf(", .self_closing = %s, .attributes = { ", token->start_tag.self_closing ? "true" : "false");
+            printf(" (%lu), .self_closing = %s, .attributes = { ", token->start_tag.type, token->start_tag.self_closing ? "true" : "false");
             const lhtml_attributes_t *attributes = &token->start_tag.attributes;
             const size_t count = attributes->length;
             const lhtml_attribute_t *items = attributes->data;
@@ -78,7 +78,7 @@ static void on_token(lhtml_token_t *token, __attribute__((unused)) void *extra) 
         case LHTML_TOKEN_END_TAG:
             printf(".name = ");
             print_string(&token->end_tag.name);
-            printf(", ");
+            printf(" (%lu), ", token->end_tag.type);
             break;
 
         case LHTML_TOKEN_DOCTYPE:

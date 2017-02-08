@@ -185,6 +185,19 @@ static void fprint_fail_end(FILE *file) {
     fprintf(file, "  ...\n");
 }
 
+static bool validate_tag_type(test_state_t *state, lhtml_string_t name, lhtml_tag_type_t type) {
+    lhtml_tag_type_t expected_type = lhtml_get_tag_type(name);
+    if (type != expected_type) {
+        fprint_fail(stdout, state, "Tag type was not properly calculated");
+        fprintf(stdout, "  name: '%.*s'", (int)name.length, name.data);
+        fprintf(stdout, "  actual:   %zu\n", type);
+        fprintf(stdout, "  expected: %zu\n", expected_type);
+        fprint_fail_end(stdout);
+        return false;
+    }
+    return true;
+}
+
 static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
     if (state->expected_pos >= state->expected_length) {
         fprint_fail(stdout, state, "Extraneous tokens");
@@ -227,10 +240,16 @@ static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
             break;
 
         case_token(EndTag, END_TAG)
+            if (!validate_tag_type(state, src->end_tag.name, src->end_tag.type)) {
+                return;
+            }
             end_tag.name = to_test_string(src->end_tag.name);
             break;
 
         case_token(StartTag, START_TAG)
+            if (!validate_tag_type(state, src->start_tag.name, src->start_tag.type)) {
+                return;
+            }
             start_tag.name = to_test_string(src->start_tag.name);
             start_tag.n_attributes = 0;
             bool remove_attr_ns = state->with_feedback && lhtml_get_current_ns(&state->feedback) != LHTML_NS_HTML;
