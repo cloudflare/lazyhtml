@@ -137,7 +137,7 @@ void lhtml_emit(lhtml_token_t *token, void *extra) {
     }
 }
 
-inline bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected) {
+inline bool lhtml_str_nocase_equals(const lhtml_string_t actual, const lhtml_string_t expected) {
     size_t length = expected.length;
 
     if (actual.length != length) {
@@ -146,7 +146,7 @@ inline bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t 
 
     for (size_t i = 0; i < length; i++) {
         char c = actual.data[i];
-        c |= (char) (((unsigned char) c - 'A' < 26) << 5);
+        c |= ((unsigned char) (c - 'A') < 26) << 5; // tolower that vectorizes
         char e = expected.data[i];
 
         if (c != e) {
@@ -162,7 +162,7 @@ inline lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml
     lhtml_attribute_t *items = attrs->data;
     for (size_t i = 0; i < count; i++) {
         lhtml_attribute_t *attr = &items[i];
-        if (lhtml_name_equals(attr->name, name)) {
+        if (lhtml_str_nocase_equals(attr->name, name)) {
             return attr;
         }
     }

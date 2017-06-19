@@ -156,7 +156,7 @@ __attribute__((warn_unused_result, nonnull(1)))
 bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
 
 __attribute__((pure, warn_unused_result))
-bool lhtml_name_equals(const lhtml_string_t actual, const lhtml_string_t expected);
+bool lhtml_str_nocase_equals(const lhtml_string_t actual, const lhtml_string_t expected);
 
 __attribute__((pure, warn_unused_result))
 lhtml_tag_type_t lhtml_get_tag_type(const lhtml_string_t name);
@@ -175,7 +175,7 @@ lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs);
     _actual.length == _expected.length && memcmp(_actual.data, _expected.data, _expected.length) == 0;\
 })
 
-#define LHTML_NAME_EQUALS(actual, expected) lhtml_name_equals(actual, LHTML_STRING(expected))
+#define LHTML_STR_NOCASE_EQUALS(actual, expected) lhtml_str_nocase_equals(actual, LHTML_STRING(expected))
 
 #define LHTML_FIND_ATTR(attrs, name) lhtml_find_attr(attrs, LHTML_STRING(name))
 
