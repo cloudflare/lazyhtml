@@ -1,11 +1,13 @@
 jessie:
     build:
         builddeps:
+            - build-essential
             - ragel
         post-cache:
             - make lib
     test:
-        builddeps:
+        builddeps: &testdeps
+            - build-essential
             - ragel
             - pkg-config
             - nodejs
@@ -15,11 +17,7 @@ jessie:
         post-cache:
             - make test
     bamboo-test:
-        builddeps:
-            - ragel
-            - pkg-config
-            - nodejs
-            - libprotobuf-c-dev
+        builddeps: *testdeps
         pre-cache:
             - npm i -g tap-xunit
         post-cache:
