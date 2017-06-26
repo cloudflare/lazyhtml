@@ -50,7 +50,7 @@ $(OUT) $(OUT_TARGET):
 	mkdir -p $@
 
 $(OUT)/tokenizer.c: $(RAGEL_SOURCES) | $(OUT)
-	$(RAGEL) $(RAGELFLAGS) -s $< -o /dev/stdout | sed -E 's/^static const int ([^ ]+) = ([0-9]+);/#define \1 \2/g' > $@
+	$(RAGEL) $(RAGELFLAGS) $< -o /dev/stdout | sed -E 's/^static const int ([^ ]+) = ([0-9]+);/#define \1 \2/g' > $@
 
 tests.pb-c.c: tests.proto
 	protoc-c --c_out=$(@D) --proto_path=$(<D) $<
