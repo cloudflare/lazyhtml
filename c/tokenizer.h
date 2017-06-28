@@ -137,7 +137,6 @@ typedef struct {
 
     uint64_t special_end_tag_type;
     lhtml_token_t token;
-    lhtml_attribute_t *attribute;
     const char *start_slice;
     const char *mark;
     char *buffer_pos;

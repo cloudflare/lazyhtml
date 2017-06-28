@@ -110,26 +110,23 @@
 
     action CanCreateAttribute { can_create_attr(&GET_TOKEN(START_TAG)->attributes) }
 
-    action CreateAttribute {
-        lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
-        lhtml_attribute_t *attr = state->attribute = &attributes->data[attributes->length];
-        *attr = (lhtml_attribute_t) {};
-    }
-
     action SetAttributeValue {
-        lhtml_attribute_t *attr = state->attribute;
+        lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
+        lhtml_attribute_t *attr = &attributes->data[attributes->length - 1];
         attr->value = range_string(state->start_slice, p);
         attr->raw.value.length = (size_t) (p + (*p == '"' || *p == '\'') - attr->name.data);
     }
 
     action AppendAttribute {
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
-        lhtml_attribute_t *attr = state->attribute;
-        assert(&attributes->data[attributes->length] == attr);
-        attr->name = range_string(state->start_slice, p);
-        attr->raw.has_value = true;
-        attr->raw.value = attr->name;
-        attributes->length++;
+        lhtml_string_t name = range_string(state->start_slice, p);
+        attributes->data[attributes->length++] = (lhtml_attribute_t) {
+            .name = name,
+            .raw = (lhtml_opt_string_t) {
+                .has_value = true,
+                .value = name
+            }
+        };
     }
 
     action IsCDataAllowed { state->allow_cdata }

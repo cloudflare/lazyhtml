@@ -125,19 +125,15 @@
 
     action CanCreateAttribute { true }
 
-    action CreateAttribute {
-        this.attribute = {
-            name: '',
-            value: ''
-        };
-    }
-
     action SetAttributeValue {
         this.attribute.value = data.slice(this.startSlice, p);
     }
 
     action AppendAttribute {
-        this.attribute.name = data.slice(this.startSlice, p);
+        this.attribute = {
+            name: data.slice(this.startSlice, p),
+            value: ''
+        };
         this.token.attributes.push(this.attribute);
     }
 

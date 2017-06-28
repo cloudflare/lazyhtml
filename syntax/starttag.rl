@@ -11,7 +11,7 @@
 
     BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |
-        any >0 when CanCreateAttribute @CreateAttribute @StartSlice @To_AttributeName
+        any >0 when CanCreateAttribute @StartSlice @To_AttributeName
     );
 
     AttributeName := any* %AppendAttribute :> (
@@ -24,7 +24,7 @@
             _StartTagEnd |
             '=' @To_BeforeAttributeValue
         ) >1 |
-        any >0 when CanCreateAttribute @CreateAttribute @StartSlice @To_AttributeName
+        any >0 when CanCreateAttribute @StartSlice @To_AttributeName
     );
 
     BeforeAttributeValue := TagNameSpace* <: (
