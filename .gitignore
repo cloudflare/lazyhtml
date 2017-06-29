@@ -1,3 +1,4 @@
 *.dot
 *.png
 *.ri
+node_modules
