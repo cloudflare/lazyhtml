@@ -8,19 +8,27 @@
     action IsMatchingQuote { fc == state->quote }
 
     action StartData {
-        token_init_character(token, LHTML_TOKEN_CHARACTER_DATA);
+        CREATE_TOKEN(CHARACTER, {
+            .kind = LHTML_TOKEN_CHARACTER_DATA
+        });
     }
 
     action StartRCData {
-        token_init_character(token, LHTML_TOKEN_CHARACTER_RCDATA);
+        CREATE_TOKEN(CHARACTER, {
+            .kind = LHTML_TOKEN_CHARACTER_RCDATA
+        });
     }
 
     action StartCData {
-        token_init_character(token, LHTML_TOKEN_CHARACTER_CDATA);
+        CREATE_TOKEN(CHARACTER, {
+            .kind = LHTML_TOKEN_CHARACTER_CDATA
+        });
     }
 
     action StartSafe {
-        token_init_character(token, LHTML_TOKEN_CHARACTER_SAFE);
+        CREATE_TOKEN(CHARACTER, {
+            .kind = LHTML_TOKEN_CHARACTER_SAFE
+        });
     }
 
     action StartAppropriateEndTag {
@@ -62,7 +70,9 @@
     }
 
     action AsRawSlice {
-        token_init_character(token, LHTML_TOKEN_CHARACTER_RAW);
+        CREATE_TOKEN(CHARACTER, {
+            .kind = LHTML_TOKEN_CHARACTER_SAFE
+        });
     }
 
     action EmitSlice {

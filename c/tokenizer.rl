@@ -50,13 +50,6 @@ lhtml_opt_string_t opt_range_string(const char *begin, const char *end) {
     };
 }
 
-HELPER(nonnull)
-void token_init_character(lhtml_token_t *token, lhtml_token_character_kind_t kind) {
-    CREATE_TOKEN(CHARACTER, {
-        .kind = kind
-    });
-}
-
 HELPER(const, warn_unused_result)
 uint64_t tag_type_append_char(uint64_t *code, char c) {
     // protect against overflow
