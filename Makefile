@@ -1,5 +1,5 @@
 RAGEL = ragel
-RAGELFLAGS += --reduce-frontend -F1
+RAGELFLAGS =
 
 RL_FILES := $(wildcard syntax/*.rl)
 
@@ -7,8 +7,8 @@ RL_FILES := $(wildcard syntax/*.rl)
 c-tokenizer:
 	make -C c
 
-%.dot: js/tokenizer.rl $(RL_FILES)
-	$(RAGEL) $(RAGELFLAGS) -PVp -M $(notdir $(basename $@)) $< > $@
+%.dot: c/tokenizer.rl $(RL_FILES)
+	$(RAGEL) $(RAGELFLAGS) -Vp -M $(notdir $(basename $@)) $< > $@
 	node simplify-graph.js $@
 
 %.png: %.dot
