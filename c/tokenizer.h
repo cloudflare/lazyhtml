@@ -28,7 +28,7 @@ extern const int LHTML_STATE_SCRIPTDATA;
 #define LHTML_LIST_T(BUFFER_T) struct {\
     union {\
         BUFFER_T buffer;\
-        const LHTML_BUFFER_T(__typeof__(((BUFFER_T *)0)->data[0]));\
+        LHTML_IMMUTABLE LHTML_BUFFER_T(__typeof__(((BUFFER_T *)0)->data[0]));\
     };\
     size_t length;\
 }

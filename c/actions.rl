@@ -33,7 +33,7 @@
 
     action SetAppropriateEndTagName {
         lhtml_token_endtag_t *end_tag = GET_TOKEN(END_TAG);
-        set_string(&end_tag->name, state->start_slice + 2, p);
+        end_tag->name = range_string(state->start_slice + 2, p);
         end_tag->type = state->special_end_tag_type;
     }
 
@@ -71,22 +71,22 @@
     }
 
     action CreateStartTagToken {
-        lhtml_token_starttag_t *start_tag = CREATE_TOKEN(START_TAG);
-        reset_string(&start_tag->name);
-        start_tag->self_closing = false;
-        start_tag->attributes.buffer = state->attr_buffer;
-        start_tag->attributes.length = 0;
+        CREATE_TOKEN(START_TAG, {
+            .attributes = (lhtml_attributes_t) {
+                .buffer = state->attr_buffer
+            }
+        });
     }
 
     action SetStartTagName {
         lhtml_token_starttag_t *start_tag = GET_TOKEN(START_TAG);
-        set_string(&start_tag->name, state->start_slice, p);
+        start_tag->name = range_string(state->start_slice, p);
         start_tag->type = lhtml_get_tag_type(start_tag->name);
     }
 
     action SetEndTagName {
         lhtml_token_endtag_t *end_tag = GET_TOKEN(END_TAG);
-        set_string(&end_tag->name, state->start_slice, p);
+        end_tag->name = range_string(state->start_slice, p);
         end_tag->type = lhtml_get_tag_type(end_tag->name);
     }
 
@@ -99,11 +99,13 @@
     }
 
     action EndComment {
-        set_string(&CREATE_TOKEN(COMMENT)->value, state->start_slice, state->mark);
+        CREATE_TOKEN(COMMENT, {
+            .value = range_string(state->start_slice, state->mark)
+        });
     }
 
     action CreateEndTagToken {
-        reset_string(&CREATE_TOKEN(END_TAG)->name);
+        CREATE_TOKEN(END_TAG, {});
     }
 
     action CanCreateAttribute { can_create_attr(&GET_TOKEN(START_TAG)->attributes) }
@@ -111,13 +113,12 @@
     action CreateAttribute {
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
         lhtml_attribute_t *attr = state->attribute = &attributes->data[attributes->length];
-        reset_string(&attr->name);
-        reset_string(&attr->value);
+        *attr = (lhtml_attribute_t) {};
     }
 
     action SetAttributeValue {
         lhtml_attribute_t *attr = state->attribute;
-        set_string(&attr->value, state->start_slice, p);
+        attr->value = range_string(state->start_slice, p);
         attr->raw.value.length = (size_t) (p + (*p == '"' || *p == '\'') - attr->name.data);
     }
 
@@ -125,7 +126,7 @@
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
         lhtml_attribute_t *attr = state->attribute;
         assert(&attributes->data[attributes->length] == attr);
-        set_string(&attr->name, state->start_slice, p);
+        attr->name = range_string(state->start_slice, p);
         attr->raw.has_value = true;
         attr->raw.value = attr->name;
         attributes->length++;
@@ -134,15 +135,11 @@
     action IsCDataAllowed { state->allow_cdata }
 
     action CreateDocType {
-        lhtml_token_doctype_t *doc_type = CREATE_TOKEN(DOCTYPE);
-        reset_opt_string(&doc_type->name);
-        reset_opt_string(&doc_type->public_id);
-        reset_opt_string(&doc_type->system_id);
-        doc_type->force_quirks = false;
+        CREATE_TOKEN(DOCTYPE, {});
     }
 
     action SetDocTypeName {
-        set_opt_string(&GET_TOKEN(DOCTYPE)->name, state->start_slice, p);
+        GET_TOKEN(DOCTYPE)->name = opt_range_string(state->start_slice, p);
     }
 
     action SetForceQuirksFlag {
@@ -150,10 +147,10 @@
     }
 
     action SetDocTypePublicIdentifier {
-        set_opt_string(&GET_TOKEN(DOCTYPE)->public_id, state->start_slice, p);
+        GET_TOKEN(DOCTYPE)->public_id = opt_range_string(state->start_slice, p);
     }
 
     action SetDocTypeSystemIdentifier {
-        set_opt_string(&GET_TOKEN(DOCTYPE)->system_id, state->start_slice, p);
+        GET_TOKEN(DOCTYPE)->system_id = opt_range_string(state->start_slice, p);
     }
 }%%

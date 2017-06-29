@@ -26,38 +26,35 @@ const int LHTML_STATE_SCRIPTDATA = en_ScriptData;
 
 #define GET_TOKEN(TYPE) (assert(token->type == LHTML_TOKEN_##TYPE), &token->LHTML_FIELD_NAME_##TYPE)
 
-#define CREATE_TOKEN(TYPE) (token->type = LHTML_TOKEN_##TYPE, &token->LHTML_FIELD_NAME_##TYPE)
+#define CREATE_TOKEN(TYPE, VALUE) {\
+    token->type = LHTML_TOKEN_##TYPE;\
+    token->LHTML_FIELD_NAME_##TYPE = (__typeof__(token->LHTML_FIELD_NAME_##TYPE)) VALUE;\
+}
 
 #define HELPER(...) __attribute__((always_inline, __VA_ARGS__)) inline static
 
 HELPER(nonnull)
-void set_string(lhtml_string_t *dest, const char *begin, const char *end) {
+lhtml_string_t range_string(const char *begin, const char *end) {
     assert(end >= begin);
-    dest->length = (size_t) (end - begin);
-    dest->data = begin;
+    return (lhtml_string_t) {
+        .data = begin,
+        .length = (size_t) (end - begin)
+    };
 }
 
 HELPER(nonnull)
-void reset_string(lhtml_string_t *dest) {
-    dest->length = 0;
-}
-
-HELPER(nonnull)
-void set_opt_string(lhtml_opt_string_t *dest, const char *begin, const char *end) {
-    dest->has_value = true;
-    set_string(&dest->value, begin, end);
-}
-
-HELPER(nonnull)
-void reset_opt_string(lhtml_opt_string_t *dest) {
-    dest->has_value = false;
+lhtml_opt_string_t opt_range_string(const char *begin, const char *end) {
+    return (lhtml_opt_string_t) {
+        .has_value = true,
+        .value = range_string(begin, end)
+    };
 }
 
 HELPER(nonnull)
 void token_init_character(lhtml_token_t *token, lhtml_token_character_kind_t kind) {
-    lhtml_token_character_t *character = CREATE_TOKEN(CHARACTER);
-    character->kind = kind;
-    reset_string(&character->value);
+    CREATE_TOKEN(CHARACTER, {
+        .kind = kind
+    });
 }
 
 HELPER(const, warn_unused_result)
@@ -127,7 +124,10 @@ bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
 HELPER(nonnull)
 void end_text(lhtml_state_t *state, const char *p) {
     lhtml_token_t *token = &state->token;
-    set_string(&GET_TOKEN(CHARACTER)->value, state->start_slice, state->mark != NULL ? state->mark : p);
+    GET_TOKEN(CHARACTER)->value = range_string(
+        state->start_slice,
+        state->mark != NULL ? state->mark : p
+    );
 }
 
 void lhtml_emit(lhtml_token_t *token, void *extra) {
@@ -260,7 +260,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
         if (token->type == LHTML_TOKEN_CHARACTER) {
             const char *middle = state->mark != NULL ? state->mark : pe;
-            set_string(&token->character.value, state->start_slice, middle);
+            token->character.value = range_string(state->start_slice, middle);
             token->raw.value.length = (size_t) (middle - token->raw.value.data);
             if (token->raw.value.length) {
                 lhtml_token_character_kind_t kind = token->character.kind;

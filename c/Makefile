@@ -1,7 +1,7 @@
 RAGEL = ragel
 RAGELFLAGS = -G2
 CFLAGS = -g -O3
-override CFLAGS += -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wuninitialized -Wcast-align -Wmissing-field-initializers -Werror -Wno-error=missing-field-initializers
+override CFLAGS += -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -Winline -Wdisabled-optimization -Wuninitialized -Wcast-align -Wno-missing-field-initializers -Werror
 TESTS := $(wildcard ../tests*.dat)
 OUT = out
 TARGET := $(shell $(CC) -dumpmachine)
