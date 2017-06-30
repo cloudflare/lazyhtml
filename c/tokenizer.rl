@@ -23,6 +23,7 @@ const int LHTML_STATE_RCDATA = en_RCData;
 const int LHTML_STATE_RAWTEXT = en_RawText;
 const int LHTML_STATE_PLAINTEXT = en_PlainText;
 const int LHTML_STATE_SCRIPTDATA = en_ScriptData;
+const int LHTML_STATE_CDATA = en_CDataSection;
 
 #define GET_TOKEN(TYPE) (assert(token->type == LHTML_TOKEN_##TYPE), &token->LHTML_FIELD_NAME_##TYPE)
 

@@ -12,6 +12,7 @@ extern const int LHTML_STATE_RCDATA;
 extern const int LHTML_STATE_RAWTEXT;
 extern const int LHTML_STATE_PLAINTEXT;
 extern const int LHTML_STATE_SCRIPTDATA;
+extern const int LHTML_STATE_CDATA;
 
 // gcc :(
 #ifdef __clang__
@@ -125,6 +126,7 @@ struct lhtml_token_handler_s {
     lhtml_token_handler_t *next;
 };
 
+/// <div rustbindgen nocopy></div>
 typedef struct {
     lhtml_token_handler_t base_handler; // needs to be the first one
 
