@@ -2,9 +2,6 @@
 #define LHTML_TAG_TYPES_H
 
 typedef enum {
-    // Custom elements
-    LHTML_TAG_UNKNOWN = 0,
-
     // Regular elements
     LHTML_TAG_A = 1,
     LHTML_TAG_ABBR = 34898,
