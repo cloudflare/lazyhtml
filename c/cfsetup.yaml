@@ -20,5 +20,6 @@ jessie:
         builddeps: *testdeps
         pre-cache:
             - npm i -g tap-xunit
+            - chmod o+r -R /usr/local/lib/node_modules
         post-cache:
             - make bamboo-test
