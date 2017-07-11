@@ -71,7 +71,7 @@
 
     action AsRawSlice {
         CREATE_TOKEN(CHARACTER, {
-            .kind = LHTML_TOKEN_CHARACTER_SAFE
+            .kind = LHTML_TOKEN_CHARACTER_RAW
         });
     }
 
