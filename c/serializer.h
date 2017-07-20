@@ -10,7 +10,6 @@ typedef void (*lhtml_string_callback_t)(lhtml_string_t string, lhtml_serializer_
 struct lhtml_serializer_state_s {
     lhtml_token_handler_t handler; // needs to be the first one
     lhtml_string_callback_t writer;
-    bool compact;
 };
 
 __attribute__((nonnull))

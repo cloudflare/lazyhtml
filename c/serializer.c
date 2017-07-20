@@ -6,10 +6,6 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
     lhtml_string_callback_t write = extra->writer;
 
     if (token->raw.has_value) {
-        if (extra->compact && token->type == LHTML_TOKEN_COMMENT) {
-            return;
-        }
-
         write(token->raw.value, extra);
         return;
     }
