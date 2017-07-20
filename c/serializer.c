@@ -1,6 +1,32 @@
 #include <stdbool.h>
 #include <assert.h>
+#include <string.h>
 #include "serializer.h"
+
+typedef struct {
+    lhtml_string_t str;
+    const char separator;
+    bool done;
+} split_iterator_t;
+
+static lhtml_string_t split_iterator_next(split_iterator_t *iter) {
+    lhtml_string_t str = iter->str;
+    const char *ptr = memchr(str.data, iter->separator, str.length);
+    if (ptr == NULL) {
+        iter->done = true;
+        return str;
+    }
+    const char *next = ptr + 1;
+    const char *end = str.data + str.length;
+    iter->str = (lhtml_string_t) {
+        .data = next,
+        .length = end - next
+    };
+    return (lhtml_string_t) {
+        .data = str.data,
+        .length = ptr - str.data
+    };
+}
 
 static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
     lhtml_string_callback_t write = extra->writer;
@@ -63,7 +89,21 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
                 } else {
                     write(attr->name, extra);
                     write(LHTML_STRING("=\""), extra);
-                    write(attr->value, extra); // shouldn't contain '"'
+                    split_iterator_t iter = {
+                        .str = attr->value,
+                        .separator = '"'
+                    };
+                    for(;;) {
+                        // escape double-quotes in attribute values by splitting
+                        // the string and emitting &quot; between chunks
+                        lhtml_string_t chunk = split_iterator_next(&iter);
+                        write(chunk, extra);
+                        if (iter.done) {
+                            // last chunk, no quote afterwards
+                            break;
+                        }
+                        write(LHTML_STRING("&quot;"), extra);
+                    }
                     write(LHTML_STRING("\""), extra);
                 }
             }
