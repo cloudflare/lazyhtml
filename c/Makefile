@@ -6,7 +6,7 @@ TESTS := $(wildcard ../tests*.dat)
 OUT = out
 TARGET := $(shell $(CC) -dumpmachine)
 OUT_TARGET := $(OUT)/$(TARGET)
-RAGEL_SOURCES := tokenizer.rl $(wildcard ../syntax/*.rl)
+RAGEL_SOURCES := tokenizer.rl actions.rl $(wildcard ../syntax/*.rl)
 SOURCES := $(wildcard *.c)
 
 ## Phony tasks
