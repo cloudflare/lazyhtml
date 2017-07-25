@@ -19,12 +19,6 @@
         });
     }
 
-    action StartCData {
-        CREATE_TOKEN(CHARACTER, {
-            .kind = LHTML_TOKEN_CHARACTER_CDATA
-        });
-    }
-
     action StartSafe {
         CREATE_TOKEN(CHARACTER, {
             .kind = LHTML_TOKEN_CHARACTER_SAFE

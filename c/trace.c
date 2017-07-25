@@ -22,7 +22,6 @@ const char *TOKEN_CHARACTER_KIND_NAMES[] = {
     "Raw",
     "Data",
     "RCData",
-    "CData",
     "Safe"
 };
 

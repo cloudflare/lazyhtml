@@ -15,5 +15,5 @@
             '>' >1 -> final |
             any >0 @UnmarkPosition -> start
         ) @eof(UnmarkPosition)
-    ) >StartCData >StartSlice @EmitSlice @CreateCDataEnd @EmitToken @UnmarkPosition <>eof(EmitSlice) @To_Data;
+    ) >StartSlice >AsRawSlice @EmitSlice @CreateCDataEnd @EmitToken @UnmarkPosition <>eof(EmitSlice) @To_Data;
 }%%
