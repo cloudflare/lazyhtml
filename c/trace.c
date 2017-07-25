@@ -13,7 +13,9 @@ const char *TOKEN_TYPE_NAMES[] = {
     "EndTag",
     "DocType",
     "EOF",
-    "Error"
+    "Error",
+    "CDataStart",
+    "CDataEnd"
 };
 
 const char *TOKEN_CHARACTER_KIND_NAMES[] = {

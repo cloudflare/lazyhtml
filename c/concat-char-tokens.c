@@ -3,6 +3,9 @@
 #include "concat-char-tokens.h"
 
 static void on_token(lhtml_token_t *token, lhtml_concat_state_t *state) {
+    if (token->type == LHTML_TOKEN_CDATA_START || token->type == LHTML_TOKEN_CDATA_END) {
+        return;
+    }
     if (token->type == LHTML_TOKEN_CHARACTER) {
         const lhtml_string_t *value = &token->character.value;
         assert(state->buffer_pos + value->length < state->buffer.data + state->buffer.capacity);

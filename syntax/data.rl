@@ -23,7 +23,7 @@
         (
             '--' @To_Comment |
             /DOCTYPE/i @To_DocType |
-            '[' when IsCDataAllowed 'CDATA[' @To_CDataSection
+            '[' when IsCDataAllowed 'CDATA[' @CreateCDataStart @EmitToken @To_CDataSection
         ) @1 |
         _BogusComment $0
     );

@@ -337,18 +337,26 @@ static void tokens_match(test_state_t *state, const lhtml_token_t *src) {
 }
 
 static void on_token(lhtml_token_t *token, test_state_t *state) {
-    if (state->error || token->type == LHTML_TOKEN_EOF || (token->type == LHTML_TOKEN_CHARACTER && token->character.value.length == 0)) {
+    if (state->error) {
         return;
     }
-    if (token->type == LHTML_TOKEN_ERROR) {
-        fprint_fail(stdout, state, "tokenization error");
-        fprintf(stdout, "    leftover: \"%.*s\"\n", (int) token->raw.value.length, token->raw.value.data);
-        fprint_fail_end(stdout);
-        return;
-    }
-    tokens_match(state, token);
-    if (!state->error) {
-        state->expected_pos++;
+    switch (token->type) {
+        case LHTML_TOKEN_ERROR: {
+            fprint_fail(stdout, state, "tokenization error");
+            fprintf(stdout, "    leftover: \"%.*s\"\n", (int) token->raw.value.length, token->raw.value.data);
+            fprint_fail_end(stdout);
+            break;
+        }
+        case LHTML_TOKEN_EOF: {
+            break;
+        }
+        default: {
+            tokens_match(state, token);
+            if (!state->error) {
+                state->expected_pos++;
+            }
+            break;
+        }
     }
 }
 

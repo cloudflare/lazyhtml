@@ -65,19 +65,22 @@
         emit_token(state, p + (p != eof));
     }
 
-    action EndText {
-        end_text(state, p);
-    }
-
     action AsRawSlice {
         CREATE_TOKEN(CHARACTER, {
             .kind = LHTML_TOKEN_CHARACTER_RAW
         });
     }
 
+    action CreateCDataStart {
+        token->type = LHTML_TOKEN_CDATA_START;
+    }
+
+    action CreateCDataEnd {
+        token->type = LHTML_TOKEN_CDATA_END;
+    }
+
     action EmitSlice {
-        end_text(state, p);
-        emit_token(state, p);
+        emit_slice(state, p);
     }
 
     action CreateStartTagToken {

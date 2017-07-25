@@ -104,23 +104,25 @@ bool already_errored(lhtml_state_t *state, lhtml_string_t unprocessed) {
 
 HELPER(nonnull)
 bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
-    lhtml_token_t *token = &state->token;
-    token->raw.value.length = (size_t) (state->buffer_pos - token->raw.value.data);
-    if (token->raw.value.length > 0) {
-        token->type = LHTML_TOKEN_ERROR;
-        token->raw.has_value = true;
-        lhtml_emit(token, &state->base_handler);
-    }
+    state->token.type = LHTML_TOKEN_ERROR;
+    emit_token(state, state->buffer_pos);
     return already_errored(state, unprocessed);
 }
 
 HELPER(nonnull)
-void end_text(lhtml_state_t *state, const char *p) {
+void emit_slice(lhtml_state_t *state, const char *p) {
     lhtml_token_t *token = &state->token;
-    GET_TOKEN(CHARACTER)->value = range_string(
-        state->start_slice,
-        state->mark != NULL ? state->mark : p
-    );
+    const char *end_slice = state->mark != NULL ? state->mark : p;
+    GET_TOKEN(CHARACTER)->value = range_string(state->start_slice, end_slice);
+    emit_token(state, end_slice);
+}
+
+HELPER(nonnull)
+void emit_eof(lhtml_state_t *state) {
+    lhtml_token_t *token = &state->token;
+    token->type = LHTML_TOKEN_EOF;
+    token->raw.has_value = true;
+    lhtml_emit(token, &state->base_handler);
 }
 
 void lhtml_emit(lhtml_token_t *token, void *extra) {
@@ -191,26 +193,22 @@ void lhtml_append_handlers(lhtml_token_handler_t *dest, lhtml_token_handler_t *s
 bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
     lhtml_token_t *const token = &state->token;
 
+    if (token->type == LHTML_TOKEN_EOF) {
+        // if already saw an EOF, ignore any further input
+        return false;
+    }
+
     if (state->cs == 0) {
         if (chunk != NULL) {
             return already_errored(state, *chunk);
         } else {
-            token->type = LHTML_TOKEN_EOF;
             token->raw.value.length = 0;
-            token->raw.has_value = true;
-            lhtml_emit(token, &state->base_handler);
+            emit_eof(state);
             return false;
         }
     }
 
-    lhtml_string_t unprocessed;
-
-    if (chunk != NULL) {
-        unprocessed = *chunk;
-    } else {
-        unprocessed.data = NULL;
-        unprocessed.length = 0;
-    }
+    lhtml_string_t unprocessed = chunk != NULL ? *chunk : LHTML_STRING("");
 
     do {
         token->raw.value.data = state->buffer.data;
@@ -243,26 +241,16 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         }
 
         if (chunk == NULL) {
-            token->type = LHTML_TOKEN_EOF;
             token->raw.value.length = (size_t) (pe - token->raw.value.data);
-            token->raw.has_value = true;
-            lhtml_emit(token, &state->base_handler);
-            state->cs = 0; // treat any further input as error
+            emit_eof(state);
             return true;
         }
 
         if (token->type == LHTML_TOKEN_CHARACTER) {
-            const char *middle = state->mark != NULL ? state->mark : pe;
-            token->character.value = range_string(state->start_slice, middle);
-            token->raw.value.length = (size_t) (middle - token->raw.value.data);
-            if (token->raw.value.length) {
-                lhtml_token_character_kind_t kind = token->character.kind;
-                token->raw.has_value = true;
-                lhtml_emit(token, &state->base_handler);
-                token->type = LHTML_TOKEN_CHARACTER; // restore just in case
-                token->character.kind = kind;
-            }
-            token->raw.value.data = state->start_slice = middle;
+            lhtml_token_character_kind_t kind = token->character.kind;
+            emit_slice(state, pe);
+            CREATE_TOKEN(CHARACTER, { .kind = kind });
+            state->start_slice = token->raw.value.data;
         }
 
         size_t shift = (size_t) (token->raw.value.data - state->buffer.data);

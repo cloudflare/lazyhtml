@@ -37,6 +37,16 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
     }
 
     switch (token->type) {
+        case LHTML_TOKEN_CDATA_START: {
+            write(LHTML_STRING("<![CDATA["), extra);
+            break;
+        }
+
+        case LHTML_TOKEN_CDATA_END: {
+            write(LHTML_STRING("]]>"), extra);
+            break;
+        }
+
         case LHTML_TOKEN_CHARACTER: {
             write(token->character.value, extra);
             break;
