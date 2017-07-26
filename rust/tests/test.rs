@@ -29,8 +29,16 @@ use std::fs::File;
 use std::io::Read;
 use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};
 
-const TOKEN_TYPES: &'static [&'static str] =
-    &["Character", "Comment", "StartTag", "EndTag", "DOCTYPE"];
+#[derive(Clone, Copy, Deserialize)]
+enum TokenKind {
+    Character,
+    Comment,
+    StartTag,
+    EndTag,
+
+    #[serde(rename = "DOCTYPE")]
+    Doctype,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 enum Token {
@@ -72,74 +80,64 @@ impl<'de> Deserialize<'de> for Token {
             where
                 A: ::serde::de::SeqAccess<'de>,
             {
-                let kind = match seq.next_element()? {
-                    Some(value) => value,
-                    None => return Err(::serde::de::Error::invalid_length(0, &"2 or more")),
-                };
+                let mut actual_length = 0;
 
-                let token = match kind {
-                    "Character" => Token::Character(match seq.next_element()? {
-                        Some(value) => value,
-                        None => return Err(::serde::de::Error::invalid_length(1, &"2")),
-                    }),
-                    "Comment" => Token::Comment(match seq.next_element()? {
-                        Some(value) => value,
-                        None => return Err(::serde::de::Error::invalid_length(1, &"2")),
-                    }),
-                    "StartTag" => Token::StartTag {
-                        name: match seq.next_element::<String>()? {
-                            Some(mut value) => {
-                                value.make_ascii_lowercase();
-                                value
+                macro_rules! next {
+                    ($expected: expr) => (match seq.next_element()? {
+                        Some(value) => {
+                            #[allow(unused_assignments)] {
+                                actual_length += 1;
                             }
-                            None => return Err(::serde::de::Error::invalid_length(1, &"3 or 4")),
+
+                            value
                         },
-                        attributes: match seq.next_element::<HashMap<String, String>>()? {
-                            Some(value) => HashMap::from_iter(value.into_iter().map(|(mut k, v)| {
+                        None => return Err(serde::de::Error::invalid_length(
+                            actual_length,
+                            &$expected
+                        ))
+                    })
+                }
+
+                let kind = next!("2 or more");
+
+                Ok(match kind {
+                    TokenKind::Character => Token::Character(next!("2")),
+                    TokenKind::Comment => Token::Comment(next!("2")),
+                    TokenKind::StartTag => Token::StartTag {
+                        name: {
+                            let mut value: String = next!("3 or 4");
+                            value.make_ascii_lowercase();
+                            value
+                        },
+                        attributes: {
+                            let value: HashMap<String, String> = next!("3 or 4");
+                            HashMap::from_iter(value.into_iter().map(|(mut k, v)| {
                                 k.make_ascii_lowercase();
                                 (k, v)
-                            })),
-                            None => return Err(::serde::de::Error::invalid_length(2, &"3 or 4")),
+                            }))
                         },
                         self_closing: seq.next_element()?.unwrap_or(false),
                     },
-                    "EndTag" => Token::EndTag {
-                        name: match seq.next_element::<String>()? {
-                            Some(mut value) => {
+                    TokenKind::EndTag => Token::EndTag {
+                        name: {
+                            let mut value: String = next!("2");
+                            value.make_ascii_lowercase();
+                            value
+                        },
+                    },
+                    TokenKind::Doctype => Token::Doctype {
+                        name: {
+                            let mut value: Option<String> = next!("5");
+                            if let Some(ref mut value) = value {
                                 value.make_ascii_lowercase();
-                                value
                             }
-                            None => return Err(::serde::de::Error::invalid_length(1, &"2")),
+                            value
                         },
+                        public_id: next!("5"),
+                        system_id: next!("5"),
+                        correctness: next!("5"),
                     },
-                    "DOCTYPE" => Token::Doctype {
-                        name: match seq.next_element::<Option<String>>()? {
-                            Some(value) => value.map(|mut value| {
-                                value.make_ascii_lowercase();
-                                value
-                            }),
-                            None => return Err(::serde::de::Error::invalid_length(1, &"5")),
-                        },
-                        public_id: match seq.next_element()? {
-                            Some(value) => value,
-                            None => return Err(::serde::de::Error::invalid_length(2, &"5")),
-                        },
-                        system_id: match seq.next_element()? {
-                            Some(value) => value,
-                            None => return Err(::serde::de::Error::invalid_length(3, &"5")),
-                        },
-                        correctness: match seq.next_element()? {
-                            Some(value) => value,
-                            None => return Err(::serde::de::Error::invalid_length(4, &"5")),
-                        },
-                    },
-                    _ => return Err(::serde::de::Error::unknown_variant(kind, TOKEN_TYPES)),
-                };
-
-                match seq.next_element::<::serde::de::IgnoredAny>()? {
-                    None => Ok(token),
-                    Some(_) => Err(::serde::de::Error::custom("too many elements")),
-                }
+                })
             }
         }
 
