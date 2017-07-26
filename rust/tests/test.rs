@@ -18,7 +18,6 @@ use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::fmt::{self, Formatter};
 use lazyhtml_sys::*;
-use lhtml_token_type_t::*;
 use std::mem::{replace, zeroed};
 use std::os::raw::{c_char, c_int, c_void};
 use std::ascii::AsciiExt;
@@ -190,6 +189,9 @@ struct Test {
     pub input: String,
     pub output: Vec<Token>,
 
+    #[serde(skip)]
+    pub with_feedback: bool,
+
     #[serde(default = "default_initial_states")]
     pub initial_states: Vec<InitialState>,
 
@@ -275,31 +277,37 @@ unsafe fn lhtml_to_name(s: lhtml_string_t) -> String {
     lhtml_to_str(&s).to_ascii_lowercase()
 }
 
-struct HandlerState {
+struct HandlerState<'a> {
     handler: lhtml_token_handler_t,
+    feedback: Option<&'a lhtml_feedback_state_t>,
     tokens: Vec<Token>,
     saw_eof: bool,
 }
 
-impl Default for HandlerState {
-    fn default() -> HandlerState {
+impl<'a> HandlerState<'a> {
+    fn new(feedback: Option<&'a lhtml_feedback_state_t>) -> Self {
         HandlerState {
             handler: lhtml_token_handler_t {
                 callback: Some(HandlerState::callback),
                 next: null_mut(),
             },
+            feedback,
             tokens: Vec::new(),
             saw_eof: false,
         }
     }
-}
 
-impl HandlerState {
     unsafe extern "C" fn callback(token: *mut lhtml_token_t, state: *mut c_void) {
+        use lhtml_token_type_t::*;
+        use lhtml_ns_t::*;
+
         let state = state as *mut Self;
         let data = &(*token).__bindgen_anon_1;
 
         (*state).tokens.push(match (*token).type_ {
+            LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END => {
+                return;
+            }
             LHTML_TOKEN_CHARACTER => {
                 let value = lhtml_to_str(&data.character.value);
 
@@ -317,10 +325,22 @@ impl HandlerState {
                     start_tag.attributes.__bindgen_anon_1.buffer.data,
                     start_tag.attributes.length,
                 );
+                let in_foreign_context = (*state)
+                    .feedback
+                    .map(|feedback| lhtml_get_current_ns(feedback) != LHTML_NS_HTML)
+                    .unwrap_or(false);
                 Token::StartTag {
                     name: lhtml_to_name(start_tag.name),
                     attributes: HashMap::from_iter(attrs.iter().rev().map(|attr| {
-                        (lhtml_to_name(attr.name), lhtml_to_string(attr.value))
+                        let mut name = lhtml_to_str(&attr.name);
+                        if in_foreign_context {
+                            if name.starts_with("xlink:") {
+                                name = &name[6..];
+                            } else if name.starts_with("xml:") {
+                                name = &name[4..];
+                            }
+                        }
+                        (name.to_ascii_lowercase(), lhtml_to_string(attr.value))
                     })),
                     self_closing: start_tag.self_closing,
                 }
@@ -388,6 +408,7 @@ impl Test {
         for &cs in &self.initial_states {
             let buffer: [c_char; 2048] = zeroed();
             let attr_buffer: [lhtml_attribute_t; 256] = zeroed();
+            let ns_buffer: [lhtml_ns_t; 64] = zeroed();
 
             let mut tokenizer = lhtml_state_t {
                 cs: cs.to_lhtml(),
@@ -403,9 +424,30 @@ impl Test {
                 ..zeroed()
             };
 
+            let mut feedback = lhtml_feedback_state_t {
+                ns_stack: lhtml_ns_stack_t {
+                    __bindgen_anon_1: lhtml_ns_stack_t__bindgen_ty_1 {
+                        buffer: lhtml_ns_buffer_t {
+                            data: ns_buffer.as_ptr(),
+                            capacity: ns_buffer.len(),
+                        },
+                    },
+                    length: 0,
+                },
+                ..zeroed()
+            };
+
             lhtml_init(&mut tokenizer);
 
-            let mut test_state = HandlerState::default();
+            if self.with_feedback {
+                lhtml_feedback_inject(&mut tokenizer, &mut feedback);
+            }
+
+            let mut test_state = HandlerState::new(if self.with_feedback {
+                Some(&feedback)
+            } else {
+                None
+            });
 
             lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
 
@@ -434,14 +476,27 @@ struct Suite {
 fn main() {
     let args: Vec<_> = ::std::env::args().collect();
 
-    let tests = glob::glob(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../html5lib-tests/tokenizer/*.test"
-    )).unwrap()
-        .map(|path| path.unwrap())
-        .flat_map(|path| {
-            let file = File::open(&path).unwrap();
-            serde_json::from_reader::<_, Suite>(file).unwrap().tests
+    let tests = [
+        ("html5lib-tests/tokenizer", false),
+        ("parser-feedback-tests", true),
+    ].iter()
+        .flat_map(|&(path, with_feedback)| {
+            glob::glob(&format!(
+                "{}/../{}/*.test",
+                env!("CARGO_MANIFEST_DIR"),
+                path
+            )).unwrap()
+                .map(move |path| (path.unwrap(), with_feedback))
+        })
+        .flat_map(|(path, with_feedback)| {
+            serde_json::from_reader::<_, Suite>(File::open(&path).unwrap())
+                .unwrap()
+                .tests
+                .into_iter()
+                .map(move |mut test| {
+                    test.with_feedback = with_feedback;
+                    test
+                })
         })
         .map(|mut test| {
             let ignore = test.unescape().is_err() || test.input.chars().any(|c| match c {
