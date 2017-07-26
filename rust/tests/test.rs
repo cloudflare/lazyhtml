@@ -17,7 +17,6 @@ use serde::{Deserialize, Deserializer};
 
 use std::collections::HashMap;
 use std::fmt::{self, Formatter};
-use serde::de::Error as DeError;
 use lazyhtml_sys::*;
 use lhtml_token_type_t::*;
 use std::mem::{replace, zeroed};
@@ -26,7 +25,6 @@ use std::ascii::AsciiExt;
 use std::iter::FromIterator;
 use std::ptr::{null, null_mut};
 use std::fs::File;
-use std::io::Read;
 use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};
 
 #[derive(Clone, Copy, Deserialize)]
@@ -145,57 +143,44 @@ impl<'de> Deserialize<'de> for Token {
     }
 }
 
-const INITIAL_STATES: &'static [&'static str] = &[
-    "Data state",
-    "PLAINTEXT state",
-    "RCDATA state",
-    "RAWTEXT state",
-    "Script data state",
-    "CDATA section state",
-];
+#[derive(Clone, Copy, Deserialize, Debug)]
+enum InitialState {
+    #[serde(rename = "Data state")]
+    Data,
 
-fn default_initial_states() -> Vec<c_int> {
-    vec![unsafe { LHTML_STATE_DATA }]
+    #[serde(rename = "PLAINTEXT state")]
+    PlainText,
+
+    #[serde(rename = "RCDATA state")]
+    RCData,
+
+    #[serde(rename = "RAWTEXT state")]
+    RawText,
+
+    #[serde(rename = "Script data state")]
+    ScriptData,
+
+    #[serde(rename = "CDATA section state")]
+    CData,
 }
 
-fn parse_initial_states<'de, D>(deserializer: D) -> Result<Vec<c_int>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    struct Visitor;
+impl InitialState {
+    unsafe fn to_lhtml(self) -> c_int {
+        use InitialState::*;
 
-    impl<'de> ::serde::de::Visitor<'de> for Visitor {
-        type Value = Vec<c_int>;
-
-        fn expecting(&self, f: &mut Formatter) -> fmt::Result {
-            f.write_str("['state name 1', ...]")
-        }
-
-        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: ::serde::de::SeqAccess<'de>,
-        {
-            let mut result = Vec::with_capacity(seq.size_hint().unwrap_or_default());
-
-            while let Some(name) = seq.next_element()? {
-                unsafe {
-                    result.push(match name {
-                        "Data state" => LHTML_STATE_DATA,
-                        "PLAINTEXT state" => LHTML_STATE_PLAINTEXT,
-                        "RCDATA state" => LHTML_STATE_RCDATA,
-                        "RAWTEXT state" => LHTML_STATE_RAWTEXT,
-                        "Script data state" => LHTML_STATE_SCRIPTDATA,
-                        "CDATA section state" => LHTML_STATE_CDATA,
-                        _ => return Err(A::Error::unknown_variant(name, INITIAL_STATES)),
-                    });
-                }
-            }
-
-            Ok(result)
+        match self {
+            Data => LHTML_STATE_DATA,
+            PlainText => LHTML_STATE_PLAINTEXT,
+            RCData => LHTML_STATE_RCDATA,
+            RawText => LHTML_STATE_RAWTEXT,
+            ScriptData => LHTML_STATE_SCRIPTDATA,
+            CData => LHTML_STATE_CDATA,
         }
     }
+}
 
-    deserializer.deserialize_seq(Visitor)
+fn default_initial_states() -> Vec<InitialState> {
+    vec![InitialState::Data]
 }
 
 #[derive(Deserialize)]
@@ -205,8 +190,8 @@ struct Test {
     pub input: String,
     pub output: Vec<Token>,
 
-    #[serde(default = "default_initial_states", deserialize_with = "parse_initial_states")]
-    pub initial_states: Vec<c_int>,
+    #[serde(default = "default_initial_states")]
+    pub initial_states: Vec<InitialState>,
 
     #[serde(default)]
     pub double_escaped: bool,
@@ -389,7 +374,7 @@ impl Unescape for Test {
 }
 
 impl Test {
-    pub unsafe fn run(&mut self) {
+    pub unsafe fn run(&self) {
         let input = lhtml_string_t {
             data: self.input.as_ptr() as _,
             length: self.input.len(),
@@ -405,7 +390,7 @@ impl Test {
             let attr_buffer: [lhtml_attribute_t; 256] = zeroed();
 
             let mut tokenizer = lhtml_state_t {
-                cs,
+                cs: cs.to_lhtml(),
                 last_start_tag_type,
                 buffer: lhtml_buffer_t {
                     data: buffer.as_ptr(),
@@ -427,7 +412,15 @@ impl Test {
             lhtml_feed(&mut tokenizer, &input);
             lhtml_feed(&mut tokenizer, null());
 
-            assert_eq!(test_state.tokens, self.output);
+            assert!(
+                test_state.tokens == self.output,
+                "Token mismatch in {:?} state\n\
+                 actual: {:?}\n\
+                 expected: {:?}",
+                cs,
+                test_state.tokens,
+                self.output
+            );
         }
     }
 }
@@ -447,10 +440,8 @@ fn main() {
     )).unwrap()
         .map(|path| path.unwrap())
         .flat_map(|path| {
-            let mut file = File::open(&path).unwrap();
-            let mut json = String::new();
-            file.read_to_string(&mut json).unwrap();
-            serde_json::from_str::<Suite>(&json).unwrap().tests
+            let file = File::open(&path).unwrap();
+            serde_json::from_reader::<_, Suite>(file).unwrap().tests
         })
         .map(|mut test| {
             let ignore = test.unescape().is_err() || test.input.chars().any(|c| match c {
