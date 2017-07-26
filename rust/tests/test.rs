@@ -27,7 +27,7 @@ use std::iter::FromIterator;
 use std::ptr::{null, null_mut};
 use std::fs::File;
 use std::io::Read;
-use test::{test_main, TestDesc, TestDescAndFn, TestFn, TestName};
+use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};
 
 const TOKEN_TYPES: &'static [&'static str] =
     &["Character", "Comment", "StartTag", "EndTag", "DOCTYPE"];
@@ -218,34 +218,35 @@ struct Test {
 }
 
 trait Unescape {
-    fn unescape(&mut self);
+    fn unescape(&mut self) -> Result<(), serde_json::error::Error>;
 }
 
 impl Unescape for String {
     // dummy but does the job
-    fn unescape(&mut self) {
-        *self = serde_json::de::from_str(&format!(r#""{}""#, self))
-            .expect("Could not unescape a string");
+    fn unescape(&mut self) -> Result<(), serde_json::error::Error> {
+        *self = serde_json::de::from_str(&format!(r#""{}""#, self))?;
+        Ok(())
     }
 }
 
 impl<T: Unescape> Unescape for Option<T> {
-    fn unescape(&mut self) {
+    fn unescape(&mut self) -> Result<(), serde_json::error::Error> {
         if let Some(ref mut inner) = *self {
-            inner.unescape();
+            inner.unescape()?;
         }
+        Ok(())
     }
 }
 
 impl Unescape for Token {
-    fn unescape(&mut self) {
+    fn unescape(&mut self) -> Result<(), serde_json::error::Error> {
         match *self {
             Token::Character(ref mut s) | Token::Comment(ref mut s) => {
-                s.unescape();
+                s.unescape()?;
             }
 
             Token::EndTag { ref mut name } => {
-                name.unescape();
+                name.unescape()?;
             }
 
             Token::StartTag {
@@ -253,9 +254,9 @@ impl Unescape for Token {
                 ref mut attributes,
                 ..
             } => {
-                name.unescape();
+                name.unescape()?;
                 for value in attributes.values_mut() {
-                    value.unescape();
+                    value.unescape()?;
                 }
             }
 
@@ -265,11 +266,12 @@ impl Unescape for Token {
                 ref mut system_id,
                 ..
             } => {
-                name.unescape();
-                public_id.unescape();
-                system_id.unescape();
+                name.unescape()?;
+                public_id.unescape()?;
+                system_id.unescape()?;
             }
         }
+        Ok(())
     }
 }
 
@@ -376,21 +378,20 @@ impl HandlerState {
 }
 
 impl Unescape for Test {
-    fn unescape(&mut self) {
+    fn unescape(&mut self) -> Result<(), serde_json::error::Error> {
         if self.double_escaped {
             self.double_escaped = false;
-            self.input.unescape();
+            self.input.unescape()?;
             for token in &mut self.output {
-                token.unescape();
+                token.unescape()?;
             }
         }
+        Ok(())
     }
 }
 
 impl Test {
     pub unsafe fn run(&mut self) {
-        self.unescape();
-
         let input = lhtml_string_t {
             data: self.input.as_ptr() as _,
             length: self.input.len(),
@@ -454,10 +455,18 @@ fn main() {
             serde_json::from_str::<Suite>(&json).unwrap().tests
         })
         .map(|mut test| {
+            let ignore = test.unescape().is_err() || test.input.chars().any(|c| match c {
+                '\u{0}' | '\r' | '&' => true, // TODO: decoding support
+                _ => false,
+            });
+
             TestDescAndFn {
-                desc: TestDesc::new(TestName::DynTestName(
-                    replace(&mut test.description, String::new()),
-                )),
+                desc: TestDesc {
+                    name: TestName::DynTestName(replace(&mut test.description, String::new())),
+                    ignore,
+                    should_panic: ShouldPanic::No,
+                    allow_fail: false,
+                },
                 testfn: TestFn::DynTestFn(Box::new(move || unsafe {
                     test.run();
                 })),
