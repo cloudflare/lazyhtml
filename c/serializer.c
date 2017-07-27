@@ -62,21 +62,23 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
                     // with public id: `<!DOCTYPE PUBLIC "public-id"`
                     write(LHTML_STRING(" PUBLIC \""), extra);
                     write(token->doctype.public_id.value, extra); // shouldn't contain `"` or `>`
-                    if (token->doctype.system_id.has_value) {
-                        // with public and system ids: `<!DOCTYPE PUBLIC "public-id" "system-id">`
-                        write(LHTML_STRING("\" \""), extra);
-                        write(token->doctype.system_id.value, extra); // shouldn't contain `"` or `>`
+                    if (!(token->doctype.force_quirks && !token->doctype.system_id.has_value)) {
+                        write(LHTML_STRING("\""), extra);
                     }
-                    write(LHTML_STRING("\">"), extra);
                 } else if (token->doctype.system_id.has_value) {
-                    // with system id only: `<!DOCTYPE SYSTEM "system-id">`
-                    write(LHTML_STRING("SYSTEM \""), extra);
-                    write(token->doctype.system_id.value, extra); // shouldn't contain `"` or `>`
-                    write(LHTML_STRING("\">"), extra);
+                    write(LHTML_STRING(" SYSTEM"), extra);
+                } else if (token->doctype.force_quirks) {
+                    write(LHTML_STRING(" _"), extra);
                 }
-            } else {
-                write(LHTML_STRING(">"), extra);
+                if (token->doctype.system_id.has_value) {
+                    write(LHTML_STRING(" \""), extra);
+                    write(token->doctype.system_id.value, extra);
+                    if (!token->doctype.force_quirks) {
+                        write(LHTML_STRING("\""), extra);
+                    }
+                }
             }
+            write(LHTML_STRING(">"), extra);
             break;
         }
 
