@@ -22,7 +22,7 @@ fn main() {
     let out_path = PathBuf::from(&out_dir);
 
     bindgen::builder()
-        .header("../c/parser-feedback.h")
+        .header("wrapper.h")
         .unstable_rust(true)
         .prepend_enum_name(false)
         .whitelisted_function("lhtml_.*")

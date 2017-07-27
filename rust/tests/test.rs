@@ -297,42 +297,49 @@ impl<'a> HandlerState<'a> {
         }
     }
 
-    unsafe extern "C" fn callback(token: *mut lhtml_token_t, state: *mut c_void) {
+    unsafe extern "C" fn callback(token: *mut lhtml_token_t, extra: *mut c_void) {
         use lhtml_token_type_t::*;
         use lhtml_ns_t::*;
 
-        let state = state as *mut Self;
+        let state = extra as *mut Self;
         let data = &(*token).__bindgen_anon_1;
 
-        (*state).tokens.push(match (*token).type_ {
-            LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END => {
-                return;
-            }
+        let test_token = match (*token).type_ {
+            LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END => None,
             LHTML_TOKEN_CHARACTER => {
                 let value = lhtml_to_str(&data.character.value);
 
                 if let Some(&mut Token::Character(ref mut s)) = (*state).tokens.last_mut() {
                     *s += value;
-                    return;
+                    None
+                } else {
+                    Some(Token::Character(value.to_owned()))
                 }
-
-                Token::Character(value.to_owned())
             }
-            LHTML_TOKEN_COMMENT => Token::Comment(lhtml_to_string(data.comment.value)),
+            LHTML_TOKEN_COMMENT => Some(Token::Comment(lhtml_to_string(data.comment.value))),
             LHTML_TOKEN_START_TAG => {
                 let start_tag = &data.start_tag;
-                let attrs = ::std::slice::from_raw_parts(
-                    start_tag.attributes.__bindgen_anon_1.buffer.data,
+
+                let attrs = ::std::slice::from_raw_parts_mut(
+                    // need to cast mutability because
+                    // https://github.com/rust-lang-nursery/rust-bindgen/issues/511
+                    start_tag.attributes.__bindgen_anon_1.buffer.data as *mut lhtml_attribute_t,
                     start_tag.attributes.length,
                 );
+
                 let in_foreign_context = (*state)
                     .feedback
                     .map(|feedback| lhtml_get_current_ns(feedback) != LHTML_NS_HTML)
                     .unwrap_or(false);
-                Token::StartTag {
+
+                Some(Token::StartTag {
                     name: lhtml_to_name(start_tag.name),
-                    attributes: HashMap::from_iter(attrs.iter().rev().map(|attr| {
+
+                    attributes: HashMap::from_iter(attrs.iter_mut().rev().map(|attr| {
+                        attr.raw.has_value = false;
+
                         let mut name = lhtml_to_str(&attr.name);
+
                         if in_foreign_context {
                             if name.starts_with("xlink:") {
                                 name = &name[6..];
@@ -340,17 +347,20 @@ impl<'a> HandlerState<'a> {
                                 name = &name[4..];
                             }
                         }
+
                         (name.to_ascii_lowercase(), lhtml_to_string(attr.value))
                     })),
+
                     self_closing: start_tag.self_closing,
-                }
+                })
             }
-            LHTML_TOKEN_END_TAG => Token::EndTag {
+            LHTML_TOKEN_END_TAG => Some(Token::EndTag {
                 name: lhtml_to_name(data.end_tag.name),
-            },
+            }),
             LHTML_TOKEN_DOCTYPE => {
                 let doctype = &data.doctype;
-                Token::Doctype {
+
+                Some(Token::Doctype {
                     name: if doctype.name.has_value {
                         Some(lhtml_to_name(doctype.name.value))
                     } else {
@@ -367,16 +377,45 @@ impl<'a> HandlerState<'a> {
                         None
                     },
                     correctness: !doctype.force_quirks,
-                }
+                })
             }
             LHTML_TOKEN_EOF if !(*state).saw_eof => {
                 (*state).saw_eof = true;
-                return;
+                None
             }
             _ => {
                 panic!("Unexpected token type");
             }
-        });
+        };
+
+        if let Some(test_token) = test_token {
+            (*state).tokens.push(test_token);
+        }
+
+        (*token).raw.has_value = false;
+
+        lhtml_emit(token, extra);
+    }
+}
+
+struct SerializerState {
+    serializer: lhtml_serializer_state_t,
+    output: String,
+}
+
+impl SerializerState {
+    fn new() -> Self {
+        SerializerState {
+            serializer: lhtml_serializer_state_t {
+                writer: Some(SerializerState::callback),
+                ..unsafe { zeroed() }
+            },
+            output: String::new(),
+        }
+    }
+
+    unsafe extern "C" fn callback(s: lhtml_string_t, state: *mut lhtml_serializer_state_t) {
+        (*(state as *mut SerializerState)).output += lhtml_to_str(&s);
     }
 }
 
@@ -395,74 +434,94 @@ impl Unescape for Test {
 
 impl Test {
     pub unsafe fn run(&self) {
-        let input = lhtml_string_t {
-            data: self.input.as_ptr() as _,
-            length: self.input.len(),
-        };
-
         let last_start_tag_type = lhtml_get_tag_type(lhtml_string_t {
             data: self.last_start_tag.as_ptr() as _,
             length: self.last_start_tag.len(),
         });
 
         for &cs in &self.initial_states {
-            let buffer: [c_char; 2048] = zeroed();
-            let attr_buffer: [lhtml_attribute_t; 256] = zeroed();
-            let ns_buffer: [lhtml_ns_t; 64] = zeroed();
+            let mut serializer = SerializerState::new();
 
-            let mut tokenizer = lhtml_state_t {
-                cs: cs.to_lhtml(),
-                last_start_tag_type,
-                buffer: lhtml_buffer_t {
-                    data: buffer.as_ptr(),
-                    capacity: buffer.len(),
-                },
-                attr_buffer: lhtml_attr_buffer_t {
-                    data: attr_buffer.as_ptr(),
-                    capacity: attr_buffer.len(),
-                },
-                ..zeroed()
-            };
+            for pass in 0..2 {
+                let buffer: [c_char; 2048] = zeroed();
+                let attr_buffer: [lhtml_attribute_t; 256] = zeroed();
+                let ns_buffer: [lhtml_ns_t; 64] = zeroed();
 
-            let mut feedback = lhtml_feedback_state_t {
-                ns_stack: lhtml_ns_stack_t {
-                    __bindgen_anon_1: lhtml_ns_stack_t__bindgen_ty_1 {
-                        buffer: lhtml_ns_buffer_t {
-                            data: ns_buffer.as_ptr(),
-                            capacity: ns_buffer.len(),
-                        },
+                let mut tokenizer = lhtml_state_t {
+                    cs: cs.to_lhtml(),
+                    last_start_tag_type,
+                    buffer: lhtml_buffer_t {
+                        data: buffer.as_ptr(),
+                        capacity: buffer.len(),
                     },
-                    length: 0,
-                },
-                ..zeroed()
-            };
+                    attr_buffer: lhtml_attr_buffer_t {
+                        data: attr_buffer.as_ptr(),
+                        capacity: attr_buffer.len(),
+                    },
+                    ..zeroed()
+                };
 
-            lhtml_init(&mut tokenizer);
+                let mut feedback = lhtml_feedback_state_t {
+                    ns_stack: lhtml_ns_stack_t {
+                        __bindgen_anon_1: lhtml_ns_stack_t__bindgen_ty_1 {
+                            buffer: lhtml_ns_buffer_t {
+                                data: ns_buffer.as_ptr(),
+                                capacity: ns_buffer.len(),
+                            },
+                        },
+                        length: 0,
+                    },
+                    ..zeroed()
+                };
 
-            if self.with_feedback {
-                lhtml_feedback_inject(&mut tokenizer, &mut feedback);
+                lhtml_init(&mut tokenizer);
+
+                if self.with_feedback {
+                    lhtml_feedback_inject(&mut tokenizer, &mut feedback);
+                }
+
+                let mut test_state = HandlerState::new(if self.with_feedback {
+                    Some(&feedback)
+                } else {
+                    None
+                });
+
+                lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
+
+                let input = if pass == 0 {
+                    lhtml_serializer_inject(&mut tokenizer, &mut serializer.serializer);
+                    &self.input
+                } else {
+                    &serializer.output
+                };
+
+                lhtml_feed(
+                    &mut tokenizer,
+                    &lhtml_string_t {
+                        data: input.as_ptr() as _,
+                        length: input.len(),
+                    },
+                );
+
+                lhtml_feed(&mut tokenizer, null());
+
+                assert!(
+                    test_state.tokens == self.output,
+                    "Token mismatch\n\
+                     state: {:?}\n\
+                     with feedback: {:?}\n\
+                     original input: {:?}\n\
+                     input: {:?}\n\
+                     actual: {:#?}\n\
+                     expected: {:#?}",
+                    cs,
+                    self.with_feedback,
+                    if pass == 1 { Some(&self.input) } else { None },
+                    input,
+                    test_state.tokens,
+                    self.output
+                );
             }
-
-            let mut test_state = HandlerState::new(if self.with_feedback {
-                Some(&feedback)
-            } else {
-                None
-            });
-
-            lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
-
-            lhtml_feed(&mut tokenizer, &input);
-            lhtml_feed(&mut tokenizer, null());
-
-            assert!(
-                test_state.tokens == self.output,
-                "Token mismatch in {:?} state\n\
-                 actual: {:?}\n\
-                 expected: {:?}",
-                cs,
-                test_state.tokens,
-                self.output
-            );
         }
     }
 }
