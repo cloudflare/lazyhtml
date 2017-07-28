@@ -6,6 +6,9 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
+#[macro_use]
+extern crate html5ever;
+
 // From 'rustc-test' crate.
 // Mirrors Rust's internal 'libtest'.
 // https://doc.rust-lang.org/1.1.0/test/index.html
@@ -13,10 +16,10 @@ extern crate test;
 
 extern crate glob;
 
-use serde::{Deserialize, Deserializer};
+mod token;
+mod feedback_tokens;
 
 use std::collections::HashMap;
-use std::fmt::{self, Formatter};
 use lazyhtml_sys::*;
 use std::mem::{replace, zeroed};
 use std::os::raw::{c_char, c_int, c_void};
@@ -25,122 +28,9 @@ use std::iter::FromIterator;
 use std::ptr::{null, null_mut};
 use std::fs::File;
 use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};
-
-#[derive(Clone, Copy, Deserialize)]
-enum TokenKind {
-    Character,
-    Comment,
-    StartTag,
-    EndTag,
-
-    #[serde(rename = "DOCTYPE")]
-    Doctype,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-enum Token {
-    Character(String),
-
-    Comment(String),
-
-    StartTag {
-        name: String,
-        attributes: HashMap<String, String>,
-        self_closing: bool,
-    },
-
-    EndTag { name: String },
-
-    Doctype {
-        name: Option<String>,
-        public_id: Option<String>,
-        system_id: Option<String>,
-        correctness: bool,
-    },
-}
-
-impl<'de> Deserialize<'de> for Token {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct Visitor;
-
-        impl<'de> ::serde::de::Visitor<'de> for Visitor {
-            type Value = Token;
-
-            fn expecting(&self, f: &mut Formatter) -> fmt::Result {
-                f.write_str("['TokenKind', ...]")
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: ::serde::de::SeqAccess<'de>,
-            {
-                let mut actual_length = 0;
-
-                macro_rules! next {
-                    ($expected: expr) => (match seq.next_element()? {
-                        Some(value) => {
-                            #[allow(unused_assignments)] {
-                                actual_length += 1;
-                            }
-
-                            value
-                        },
-                        None => return Err(serde::de::Error::invalid_length(
-                            actual_length,
-                            &$expected
-                        ))
-                    })
-                }
-
-                let kind = next!("2 or more");
-
-                Ok(match kind {
-                    TokenKind::Character => Token::Character(next!("2")),
-                    TokenKind::Comment => Token::Comment(next!("2")),
-                    TokenKind::StartTag => Token::StartTag {
-                        name: {
-                            let mut value: String = next!("3 or 4");
-                            value.make_ascii_lowercase();
-                            value
-                        },
-                        attributes: {
-                            let value: HashMap<String, String> = next!("3 or 4");
-                            HashMap::from_iter(value.into_iter().map(|(mut k, v)| {
-                                k.make_ascii_lowercase();
-                                (k, v)
-                            }))
-                        },
-                        self_closing: seq.next_element()?.unwrap_or(false),
-                    },
-                    TokenKind::EndTag => Token::EndTag {
-                        name: {
-                            let mut value: String = next!("2");
-                            value.make_ascii_lowercase();
-                            value
-                        },
-                    },
-                    TokenKind::Doctype => Token::Doctype {
-                        name: {
-                            let mut value: Option<String> = next!("5");
-                            if let Some(ref mut value) = value {
-                                value.make_ascii_lowercase();
-                            }
-                            value
-                        },
-                        public_id: next!("5"),
-                        system_id: next!("5"),
-                        correctness: next!("5"),
-                    },
-                })
-            }
-        }
-
-        deserializer.deserialize_seq(Visitor)
-    }
-}
+use token::Token;
+use std::io::{BufRead, BufReader};
+use feedback_tokens::tokenize_with_tree_builder;
 
 #[derive(Clone, Copy, Deserialize, Debug)]
 enum InitialState {
@@ -277,29 +167,28 @@ unsafe fn lhtml_to_name(s: lhtml_string_t) -> String {
     lhtml_to_str(&s).to_ascii_lowercase()
 }
 
-struct HandlerState<'a> {
+struct HandlerState {
     handler: lhtml_token_handler_t,
-    feedback: Option<&'a lhtml_feedback_state_t>,
     tokens: Vec<Token>,
     saw_eof: bool,
 }
 
-impl<'a> HandlerState<'a> {
-    fn new(feedback: Option<&'a lhtml_feedback_state_t>) -> Self {
+impl Default for HandlerState {
+    fn default() -> Self {
         HandlerState {
             handler: lhtml_token_handler_t {
                 callback: Some(HandlerState::callback),
                 next: null_mut(),
             },
-            feedback,
             tokens: Vec::new(),
             saw_eof: false,
         }
     }
+}
 
+impl HandlerState {
     unsafe extern "C" fn callback(token: *mut lhtml_token_t, extra: *mut c_void) {
         use lhtml_token_type_t::*;
-        use lhtml_ns_t::*;
 
         let state = extra as *mut Self;
         let data = &(*token).__bindgen_anon_1;
@@ -327,28 +216,13 @@ impl<'a> HandlerState<'a> {
                     start_tag.attributes.length,
                 );
 
-                let in_foreign_context = (*state)
-                    .feedback
-                    .map(|feedback| lhtml_get_current_ns(feedback) != LHTML_NS_HTML)
-                    .unwrap_or(false);
-
                 Some(Token::StartTag {
                     name: lhtml_to_name(start_tag.name),
 
                     attributes: HashMap::from_iter(attrs.iter_mut().rev().map(|attr| {
                         attr.raw.has_value = false;
 
-                        let mut name = lhtml_to_str(&attr.name);
-
-                        if in_foreign_context {
-                            if name.starts_with("xlink:") {
-                                name = &name[6..];
-                            } else if name.starts_with("xml:") {
-                                name = &name[4..];
-                            }
-                        }
-
-                        (name.to_ascii_lowercase(), lhtml_to_string(attr.value))
+                        (lhtml_to_name(attr.name), lhtml_to_string(attr.value))
                     })),
 
                     self_closing: start_tag.self_closing,
@@ -480,12 +354,7 @@ impl Test {
                     lhtml_feedback_inject(&mut tokenizer, &mut feedback);
                 }
 
-                let mut test_state = HandlerState::new(if self.with_feedback {
-                    Some(&feedback)
-                } else {
-                    None
-                });
-
+                let mut test_state = HandlerState::default();
                 lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
 
                 let input = if pass == 0 {
@@ -532,31 +401,59 @@ struct Suite {
     pub tests: Vec<Test>,
 }
 
+macro_rules! read_tests {
+    ($path: expr) => (
+        glob::glob(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../html5lib-tests/",
+            $path
+        )).unwrap()
+        .map(|path| BufReader::new(File::open(path.unwrap()).unwrap()))
+    )
+}
+
 fn main() {
     let args: Vec<_> = ::std::env::args().collect();
 
-    let tests = [
-        ("html5lib-tests/tokenizer", false),
-        ("parser-feedback-tests", true),
-    ].iter()
-        .flat_map(|&(path, with_feedback)| {
-            glob::glob(&format!(
-                "{}/../{}/*.test",
-                env!("CARGO_MANIFEST_DIR"),
-                path
-            )).unwrap()
-                .map(move |path| (path.unwrap(), with_feedback))
+    let tests = read_tests!("tokenizer/*.test")
+        .flat_map(|file| {
+            serde_json::from_reader::<_, Suite>(file).unwrap().tests
         })
-        .flat_map(|(path, with_feedback)| {
-            serde_json::from_reader::<_, Suite>(File::open(&path).unwrap())
-                .unwrap()
-                .tests
-                .into_iter()
-                .map(move |mut test| {
-                    test.with_feedback = with_feedback;
-                    test
+        .chain(
+            read_tests!("tree-construction/*.dat")
+                .flat_map(|file| {
+                    let mut inputs = Vec::new();
+                    let mut in_data = 0;
+                    for line in file.lines().map(|line| line.unwrap()) {
+                        if line == "#data" {
+                            in_data = 1;
+                        } else if line.starts_with('#') {
+                            in_data = 0;
+                        } else if in_data > 0 {
+                            if in_data > 1 {
+                                let s: &mut String = inputs.last_mut().unwrap();
+                                s.push('\n');
+                                s.push_str(&line);
+                            } else {
+                                inputs.push(line);
+                            }
+                            in_data += 1;
+                        }
+                    }
+                    inputs
                 })
-        })
+                .map(|input| {
+                    Test {
+                        description: input.chars().flat_map(|c| c.escape_default()).collect(),
+                        output: tokenize_with_tree_builder(&input),
+                        input,
+                        with_feedback: true,
+                        initial_states: default_initial_states(),
+                        double_escaped: false,
+                        last_start_tag: String::new(),
+                    }
+                }),
+        )
         .map(|mut test| {
             let ignore = test.unescape().is_err() || test.input.chars().any(|c| match c {
                 '\u{0}' | '\r' | '&' => true, // TODO: decoding support
