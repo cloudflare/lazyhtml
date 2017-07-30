@@ -21,6 +21,7 @@ mod feedback_tokens;
 
 use std::collections::HashMap;
 use lazyhtml_sys::*;
+use lhtml_token_character_kind_t::*;
 use std::mem::{replace, zeroed};
 use std::os::raw::{c_char, c_int, c_void};
 use std::ascii::AsciiExt;
@@ -150,7 +151,7 @@ impl Unescape for Token {
     }
 }
 
-unsafe fn lhtml_to_str(s: &lhtml_string_t) -> &str {
+unsafe fn lhtml_to_raw_str(s: &lhtml_string_t) -> &str {
     let bytes = if s.data.is_null() {
         b""
     } else {
@@ -159,18 +160,47 @@ unsafe fn lhtml_to_str(s: &lhtml_string_t) -> &str {
     ::std::str::from_utf8_unchecked(bytes)
 }
 
-unsafe fn lhtml_to_string(s: lhtml_string_t) -> String {
-    lhtml_to_str(&s).to_owned()
+struct DecoderOpts {
+    null: bool,
+}
+
+fn decode(raw: &str, opts: DecoderOpts) -> String {
+    let mut result = String::with_capacity(raw.len());
+    let mut chars = raw.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '\r' => {
+                result.push('\n');
+                if let Some(&'\n') = chars.peek() {
+                    chars.next();
+                }
+            }
+            '\0' if opts.null => {
+                result.push('\u{FFFD}');
+            }
+            _ => {
+                result.push(c);
+            }
+        }
+    }
+    result
+}
+
+unsafe fn lhtml_to_string(s: lhtml_string_t, opts: DecoderOpts) -> String {
+    decode(lhtml_to_raw_str(&s), opts)
 }
 
 unsafe fn lhtml_to_name(s: lhtml_string_t) -> String {
-    lhtml_to_str(&s).to_ascii_lowercase()
+    let mut s = lhtml_to_string(s, DecoderOpts { null: true });
+    s.make_ascii_lowercase();
+    s
 }
 
 struct HandlerState {
     handler: lhtml_token_handler_t,
     tokens: Vec<Token>,
     saw_eof: bool,
+    last_char_kind: lhtml_token_character_kind_t,
 }
 
 impl Default for HandlerState {
@@ -182,6 +212,7 @@ impl Default for HandlerState {
             },
             tokens: Vec::new(),
             saw_eof: false,
+            last_char_kind: LHTML_TOKEN_CHARACTER_RAW,
         }
     }
 }
@@ -193,10 +224,42 @@ impl HandlerState {
         let state = extra as *mut Self;
         let data = &(*token).__bindgen_anon_1;
 
+        if let Some(&mut Token::Character(ref mut s)) = (*state).tokens.last_mut() {
+            if (*token).type_ != LHTML_TOKEN_CHARACTER {
+                if (*state).last_char_kind == LHTML_TOKEN_CHARACTER_RAW {
+                    println!("Raw character token: {:?}", s);
+                }
+                *s = decode(
+                    s,
+                    match (*state).last_char_kind {
+                        LHTML_TOKEN_CHARACTER_RCDATA | LHTML_TOKEN_CHARACTER_SAFE => {
+                            DecoderOpts { null: true }
+                        }
+                        _ => DecoderOpts { null: false },
+                    },
+                );
+                (*state).last_char_kind = LHTML_TOKEN_CHARACTER_RAW;
+            }
+        }
+
         let test_token = match (*token).type_ {
             LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END => None,
             LHTML_TOKEN_CHARACTER => {
-                let value = lhtml_to_str(&data.character.value);
+                let value = lhtml_to_raw_str(&data.character.value);
+
+                match ((*state).last_char_kind, data.character.kind) {
+                    (LHTML_TOKEN_CHARACTER_RAW, kind) => {
+                        (*state).last_char_kind = kind;
+                    }
+                    (_, LHTML_TOKEN_CHARACTER_RAW) => {}
+                    (last_char_kind, kind) => {
+                        assert_eq!(
+                            last_char_kind,
+                            kind,
+                            "Consequent character tokens with different kinds"
+                        );
+                    }
+                }
 
                 if let Some(&mut Token::Character(ref mut s)) = (*state).tokens.last_mut() {
                     *s += value;
@@ -205,7 +268,10 @@ impl HandlerState {
                     Some(Token::Character(value.to_owned()))
                 }
             }
-            LHTML_TOKEN_COMMENT => Some(Token::Comment(lhtml_to_string(data.comment.value))),
+            LHTML_TOKEN_COMMENT => Some(Token::Comment(lhtml_to_string(
+                data.comment.value,
+                DecoderOpts { null: true },
+            ))),
             LHTML_TOKEN_START_TAG => {
                 let start_tag = &data.start_tag;
 
@@ -222,7 +288,10 @@ impl HandlerState {
                     attributes: HashMap::from_iter(attrs.iter_mut().rev().map(|attr| {
                         attr.raw.has_value = false;
 
-                        (lhtml_to_name(attr.name), lhtml_to_string(attr.value))
+                        (
+                            lhtml_to_name(attr.name),
+                            lhtml_to_string(attr.value, DecoderOpts { null: true }),
+                        )
                     })),
 
                     self_closing: start_tag.self_closing,
@@ -241,12 +310,18 @@ impl HandlerState {
                         None
                     },
                     public_id: if doctype.public_id.has_value {
-                        Some(lhtml_to_string(doctype.public_id.value))
+                        Some(lhtml_to_string(
+                            doctype.public_id.value,
+                            DecoderOpts { null: true },
+                        ))
                     } else {
                         None
                     },
                     system_id: if doctype.system_id.has_value {
-                        Some(lhtml_to_string(doctype.system_id.value))
+                        Some(lhtml_to_string(
+                            doctype.system_id.value,
+                            DecoderOpts { null: true },
+                        ))
                     } else {
                         None
                     },
@@ -289,7 +364,7 @@ impl SerializerState {
     }
 
     unsafe extern "C" fn callback(s: lhtml_string_t, state: *mut lhtml_serializer_state_t) {
-        (*(state as *mut SerializerState)).output += lhtml_to_str(&s);
+        (*(state as *mut SerializerState)).output += lhtml_to_raw_str(&s);
     }
 }
 
@@ -456,7 +531,7 @@ fn main() {
         )
         .map(|mut test| {
             let ignore = test.unescape().is_err() || test.input.chars().any(|c| match c {
-                '\u{0}' | '\r' | '&' => true, // TODO: decoding support
+                '&' => true, // TODO: decoding support
                 _ => false,
             });
 
