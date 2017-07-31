@@ -32,6 +32,7 @@ use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};
 use token::Token;
 use std::io::{BufRead, BufReader};
 use feedback_tokens::tokenize_with_tree_builder;
+use std::char;
 
 #[derive(Clone, Copy, Deserialize, Debug)]
 enum InitialState {
@@ -160,24 +161,115 @@ unsafe fn lhtml_to_raw_str(s: &lhtml_string_t) -> &str {
     ::std::str::from_utf8_unchecked(bytes)
 }
 
+#[derive(PartialEq, Eq)]
+enum Entities {
+    None,
+    Text,
+    Attribute,
+}
+
 struct DecoderOpts {
     null: bool,
+    entities: Entities,
 }
 
 fn decode(raw: &str, opts: DecoderOpts) -> String {
     let mut result = String::with_capacity(raw.len());
     let mut chars = raw.chars().peekable();
+
+    macro_rules! next_if {
+        ($($pattern: pat)|+) => (if let Some(&c) = chars.peek() {
+            match c {
+                $($pattern)|+ => chars.next(),
+                _ => None
+            }
+        } else {
+            None
+        })
+    }
+
+    macro_rules! next_if_digit {
+        ($radix: expr) => (if let Some(&c) = chars.peek() {
+            let maybe_digit = c.to_digit($radix);
+            if maybe_digit.is_some() {
+                chars.next();
+            }
+            maybe_digit
+        } else {
+            None
+        })
+    }
+
+    macro_rules! read_number {
+        ($radix: expr) => {
+            if let Some(mut code) = next_if_digit!($radix) {
+                while let Some(digit) = next_if_digit!($radix) {
+                    code = code.saturating_mul($radix).saturating_add(digit);
+                }
+                code = match code {
+                    0x00 => 0xFFFD,
+                    0x80 => 0x20AC,
+                    0x82 => 0x201A,
+                    0x83 => 0x0192,
+                    0x84 => 0x201E,
+                    0x85 => 0x2026,
+                    0x86 => 0x2020,
+                    0x87 => 0x2021,
+                    0x88 => 0x02C6,
+                    0x89 => 0x2030,
+                    0x8A => 0x0160,
+                    0x8B => 0x2039,
+                    0x8C => 0x0152,
+                    0x8E => 0x017D,
+                    0x91 => 0x2018,
+                    0x92 => 0x2019,
+                    0x93 => 0x201C,
+                    0x94 => 0x201D,
+                    0x95 => 0x2022,
+                    0x96 => 0x2013,
+                    0x97 => 0x2014,
+                    0x98 => 0x02DC,
+                    0x99 => 0x2122,
+                    0x9A => 0x0161,
+                    0x9B => 0x203A,
+                    0x9C => 0x0153,
+                    0x9E => 0x017E,
+                    0x9F => 0x0178,
+                    _ => code
+                };
+                result.push(char::from_u32(code).unwrap_or('\u{FFFD}'));
+                true
+            } else {
+                false
+            }
+        }
+    }
+
     while let Some(c) = chars.next() {
         match c {
             '\r' => {
                 result.push('\n');
-                if let Some(&'\n') = chars.peek() {
-                    chars.next();
-                }
+                next_if!('\n');
             }
             '\0' if opts.null => {
                 result.push('\u{FFFD}');
             }
+            '&' if opts.entities != Entities::None => if next_if!('#').is_some() {
+                if read_number!(10) {
+                    next_if!(';');
+                } else if let Some(x) = next_if!('x' | 'X') {
+                    if read_number!(16) {
+                        next_if!(';');
+                    } else {
+                        result += "&#";
+                        result.push(x);
+                    }
+                } else {
+                    result += "&#";
+                }
+            } else {
+                result += "&";
+            },
             _ => {
                 result.push(c);
             }
@@ -191,7 +283,13 @@ unsafe fn lhtml_to_string(s: lhtml_string_t, opts: DecoderOpts) -> String {
 }
 
 unsafe fn lhtml_to_name(s: lhtml_string_t) -> String {
-    let mut s = lhtml_to_string(s, DecoderOpts { null: true });
+    let mut s = lhtml_to_string(
+        s,
+        DecoderOpts {
+            entities: Entities::None,
+            null: true,
+        },
+    );
     s.make_ascii_lowercase();
     s
 }
@@ -232,10 +330,22 @@ impl HandlerState {
                 *s = decode(
                     s,
                     match (*state).last_char_kind {
-                        LHTML_TOKEN_CHARACTER_RCDATA | LHTML_TOKEN_CHARACTER_SAFE => {
-                            DecoderOpts { null: true }
-                        }
-                        _ => DecoderOpts { null: false },
+                        LHTML_TOKEN_CHARACTER_RAW => DecoderOpts {
+                            entities: Entities::None,
+                            null: false,
+                        },
+                        LHTML_TOKEN_CHARACTER_RCDATA => DecoderOpts {
+                            entities: Entities::Text,
+                            null: true,
+                        },
+                        LHTML_TOKEN_CHARACTER_SAFE => DecoderOpts {
+                            entities: Entities::None,
+                            null: true,
+                        },
+                        LHTML_TOKEN_CHARACTER_DATA => DecoderOpts {
+                            entities: Entities::Text,
+                            null: false,
+                        },
                     },
                 );
                 (*state).last_char_kind = LHTML_TOKEN_CHARACTER_RAW;
@@ -270,7 +380,10 @@ impl HandlerState {
             }
             LHTML_TOKEN_COMMENT => Some(Token::Comment(lhtml_to_string(
                 data.comment.value,
-                DecoderOpts { null: true },
+                DecoderOpts {
+                    entities: Entities::None,
+                    null: true,
+                },
             ))),
             LHTML_TOKEN_START_TAG => {
                 let start_tag = &data.start_tag;
@@ -290,7 +403,13 @@ impl HandlerState {
 
                         (
                             lhtml_to_name(attr.name),
-                            lhtml_to_string(attr.value, DecoderOpts { null: true }),
+                            lhtml_to_string(
+                                attr.value,
+                                DecoderOpts {
+                                    entities: Entities::Attribute,
+                                    null: true,
+                                },
+                            ),
                         )
                     })),
 
@@ -312,7 +431,10 @@ impl HandlerState {
                     public_id: if doctype.public_id.has_value {
                         Some(lhtml_to_string(
                             doctype.public_id.value,
-                            DecoderOpts { null: true },
+                            DecoderOpts {
+                                entities: Entities::None,
+                                null: true,
+                            },
                         ))
                     } else {
                         None
@@ -320,7 +442,10 @@ impl HandlerState {
                     system_id: if doctype.system_id.has_value {
                         Some(lhtml_to_string(
                             doctype.system_id.value,
-                            DecoderOpts { null: true },
+                            DecoderOpts {
+                                entities: Entities::None,
+                                null: true,
+                            },
                         ))
                     } else {
                         None
@@ -530,10 +655,10 @@ fn main() {
                 }),
         )
         .map(|mut test| {
-            let ignore = test.unescape().is_err() || test.input.chars().any(|c| match c {
-                '&' => true, // TODO: decoding support
-                _ => false,
-            });
+            let ignore = test.unescape().is_err()
+                || test.input.as_bytes().windows(2).any(|chunk| {
+                    chunk[0] == b'&' && (chunk[1] as char).is_alphabetic()
+                });
 
             TestDescAndFn {
                 desc: TestDesc {
