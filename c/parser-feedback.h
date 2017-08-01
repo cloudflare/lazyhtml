@@ -17,7 +17,6 @@ typedef struct {
 
     lhtml_state_t *tokenizer;
     lhtml_ns_stack_t ns_stack;
-    bool skip_next_newline;
 } lhtml_feedback_state_t;
 
 __attribute__((nonnull))

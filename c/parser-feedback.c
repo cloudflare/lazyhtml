@@ -175,20 +175,9 @@ static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
             *delayed_enter_html = !tag->self_closing && foreign_is_integration_point(ns, type, tag->name, &tag->attributes);
         }
     } else {
-        switch (type) {
-            case LHTML_TAG_PRE:
-            case LHTML_TAG_TEXTAREA:
-            case LHTML_TAG_LISTING:
-                state->skip_next_newline = true;
-                break;
-
-            case LHTML_TAG_IMAGE:
-                tag->type = LHTML_TAG_IMG;
-                tag->name = LHTML_STRING("img");
-                break;
-
-            default:
-                break;
+        if (type == LHTML_TAG_IMAGE) {
+            tag->type = LHTML_TAG_IMG;
+            tag->name = LHTML_STRING("img");
         }
 
         ensure_tokenizer_mode(state->tokenizer, type);
@@ -216,31 +205,6 @@ static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_toke
 }
 
 static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
-    if (state->skip_next_newline) {
-        state->skip_next_newline = false;
-
-        if (token->type == LHTML_TOKEN_CHARACTER) {
-            lhtml_string_t *value = &token->character.value;
-
-            if (value->length >= 1) {
-                size_t skip = 0;
-
-                if (value->data[0] == '\n') {
-                    skip = 1;
-                } else if (value->data[0] == '\r') {
-                    skip = value->length >= 2 && value->data[1] == '\n' ? 2 : 1;
-                }
-
-                if (value->length == skip) {
-                    return;
-                }
-
-                value->data += skip;
-                value->length -= skip;
-            }
-        }
-    }
-
     if (token->type == LHTML_TOKEN_START_TAG) {
         bool delayed_enter_html = false;
         if (!handle_start_tag_token(state, &token->start_tag, &delayed_enter_html)) {
