@@ -6,6 +6,5 @@
 #define LHTML_FIELD_NAME_START_TAG start_tag
 #define LHTML_FIELD_NAME_END_TAG end_tag
 #define LHTML_FIELD_NAME_DOCTYPE doctype
-#define LHTML_FIELD_NAME_EOF eof
 
 #endif
