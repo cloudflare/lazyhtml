@@ -1,19 +1,17 @@
 %%{
     machine html;
 
-    ScriptData := (
-        _SafeText
-    ) :> (
+    ScriptData := _UnsafeText :> (
         '<' @StartSlice @To_ScriptDataLessThanSign
     )?;
 
     ScriptDataLessThanSign := (
         _SpecialEndTag |
-        '!--' >StartSafe @To_ScriptDataEscapedDashDash
+        '!--' >CreateCharacter >UnsafeNull @To_ScriptDataEscapedDashDash
     ) @err(EmitSlice) @err(Reconsume) @err(To_ScriptData);
 
-    ScriptDataEscaped := _SafeText :> (
-        '-' @StartSafe @StartSlice @To_ScriptDataEscapedDash |
+    ScriptDataEscaped := _UnsafeText :> (
+        '-' @CreateCharacter @UnsafeNull @StartSlice @To_ScriptDataEscapedDash |
         '<' @StartSlice @To_ScriptDataEscapedLessThanSign
     );
 
@@ -35,8 +33,8 @@
 
     ScriptDataEscapedLessThanSign := (
         _SpecialEndTag |
-        (/script/i TagNameEnd) @StartSafe @To_ScriptDataDoubleEscaped
-    ) @err(AsRawSlice) @err(EmitSlice) @err(Reconsume) @err(To_ScriptDataEscaped);
+        (/script/i TagNameEnd) @CreateCharacter @UnsafeNull @To_ScriptDataDoubleEscaped
+    ) @err(CreateCharacter) @err(EmitSlice) @err(Reconsume) @err(To_ScriptDataEscaped);
 
     ScriptDataDoubleEscaped := any* :> (
         '-' @To_ScriptDataDoubleEscapedDash |

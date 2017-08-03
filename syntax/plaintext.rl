@@ -1,5 +1,5 @@
 %%{
     machine html;
 
-    PlainText := _SafeText;
+    PlainText := _UnsafeText;
 }%%

@@ -1,7 +1,7 @@
 %%{
     machine html;
 
-    RawText := _SafeText :> (
+    RawText := _UnsafeText :> (
         '<' @StartSlice @To_RawTextLessThanSign
     )?;
 

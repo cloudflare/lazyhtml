@@ -1,7 +1,7 @@
 %%{
     machine html;
 
-    RCData := (any+ >StartRCData >StartSlice %EmitSlice)? :> (
+    RCData := (any+ >CreateCharacter >UnsafeNull >AllowEntities >StartSlice %EmitSlice)? :> (
         '<' @StartSlice @To_RCDataLessThanSign
     )?;
 

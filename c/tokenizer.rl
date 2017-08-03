@@ -248,9 +248,8 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         }
 
         if (token->type == LHTML_TOKEN_CHARACTER) {
-            lhtml_token_character_kind_t kind = token->character.kind;
             emit_slice(state, pe);
-            CREATE_TOKEN(CHARACTER, { .kind = kind });
+            CREATE_TOKEN(CHARACTER, {});
             state->slice_start = token->raw.value.data;
         }
 

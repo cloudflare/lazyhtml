@@ -27,5 +27,5 @@
             '>' @To_Data
         ) >1 |
         any >0 @Reconsume @To_BogusComment
-    ) @eof(AsRawSlice) @eof(EmitSlice);
+    ) @eof(CreateCharacter) @eof(EmitSlice);
 }%%

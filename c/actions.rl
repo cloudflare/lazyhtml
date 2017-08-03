@@ -7,24 +7,6 @@
 
     action IsMatchingQuote { fc == state->quote }
 
-    action StartData {
-        CREATE_TOKEN(CHARACTER, {
-            .kind = LHTML_TOKEN_CHARACTER_DATA
-        });
-    }
-
-    action StartRCData {
-        CREATE_TOKEN(CHARACTER, {
-            .kind = LHTML_TOKEN_CHARACTER_RCDATA
-        });
-    }
-
-    action StartSafe {
-        CREATE_TOKEN(CHARACTER, {
-            .kind = LHTML_TOKEN_CHARACTER_SAFE
-        });
-    }
-
     action StartAppropriateEndTag {
         state->special_end_tag_type = 0;
     }
@@ -59,10 +41,18 @@
         emit_token(state, p + (p != eof));
     }
 
-    action AsRawSlice {
-        CREATE_TOKEN(CHARACTER, {
-            .kind = LHTML_TOKEN_CHARACTER_RAW
-        });
+    action CreateCharacter {
+        CREATE_TOKEN(CHARACTER, {});
+        state->unsafe_null = false;
+        state->entities = false;
+    }
+
+    action UnsafeNull {
+        state->unsafe_null = true;
+    }
+
+    action AllowEntities {
+        state->entities = true;
     }
 
     action CreateCDataStart {

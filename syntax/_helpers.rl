@@ -16,7 +16,7 @@
 
     _EndQuote = _Quote when IsMatchingQuote;
 
-    _SafeText = (any+ >StartSafe >StartSlice %EmitSlice)?;
+    _UnsafeText = (any+ >CreateCharacter >UnsafeNull >StartSlice %EmitSlice)?;
 
     _EndTagEnd = (
         TagNameSpace |
@@ -28,5 +28,5 @@
         '/' >StartAppropriateEndTag
         (alpha when FeedAppropriateEndTag)*
         _EndTagEnd when IsAppropriateEndTagFed >CreateEndTagToken >SetAppropriateEndTagName
-    ) @err(AsRawSlice) @err(EmitSlice) @err(Reconsume);
+    ) @err(CreateCharacter) @err(EmitSlice) @err(Reconsume);
 }%%

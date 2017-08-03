@@ -1,7 +1,7 @@
 %%{
     machine html;
 
-    Data := (any+ >StartData >StartSlice %EmitSlice)? :> (
+    Data := (any+ >CreateCharacter >AllowEntities >StartSlice %EmitSlice)? :> (
         '<' @StartSlice @To_TagOpen
     )?;
 
@@ -12,8 +12,8 @@
             alpha @CreateStartTagToken @StartSlice @To_StartTagName |
             '?' @Reconsume @To_BogusComment
         ) >1 |
-        any >0 @AsRawSlice @EmitSlice @Reconsume @To_Data
-    ) @eof(AsRawSlice) @eof(EmitSlice);
+        any >0 @CreateCharacter @EmitSlice @Reconsume @To_Data
+    ) @eof(CreateCharacter) @eof(EmitSlice);
 
     _BogusComment = any* >StartSlice %MarkPosition %EndComment %EmitToken %UnmarkPosition :> ('>' @To_Data)?;
 

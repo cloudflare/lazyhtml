@@ -22,7 +22,6 @@ mod decoder;
 
 use std::collections::HashMap;
 use lazyhtml_sys::*;
-use lhtml_token_character_kind_t::*;
 use std::mem::{replace, zeroed};
 use std::os::raw::{c_char, c_int, c_void};
 use std::ascii::AsciiExt;
@@ -172,26 +171,24 @@ unsafe fn lhtml_to_name(s: lhtml_string_t) -> String {
 
 struct HandlerState {
     handler: lhtml_token_handler_t,
+    tokenizer: *const lhtml_state_t,
     tokens: Vec<Token>,
     saw_eof: bool,
-    last_char_kind: lhtml_token_character_kind_t,
 }
 
-impl Default for HandlerState {
-    fn default() -> Self {
+impl HandlerState {
+    pub fn new(tokenizer: &lhtml_state_t) -> Self {
         HandlerState {
             handler: lhtml_token_handler_t {
                 callback: Some(HandlerState::callback),
                 next: null_mut(),
             },
+            tokenizer,
             tokens: Vec::new(),
             saw_eof: false,
-            last_char_kind: LHTML_TOKEN_CHARACTER_RAW,
         }
     }
-}
 
-impl HandlerState {
     unsafe extern "C" fn callback(token: *mut lhtml_token_t, extra: *mut c_void) {
         use lhtml_token_type_t::*;
 
@@ -200,21 +197,19 @@ impl HandlerState {
 
         if let Some(&mut Token::Character(ref mut s)) = (*state).tokens.last_mut() {
             if (*token).type_ != LHTML_TOKEN_CHARACTER {
-                if (*state).last_char_kind == LHTML_TOKEN_CHARACTER_RAW {
-                    println!("Raw character token: {:?}", s);
-                }
+                *s = {
+                    let mut decoder = Decoder::new(s);
 
-                *s = match (*state).last_char_kind {
-                    LHTML_TOKEN_CHARACTER_RAW => Decoder::new(s),
+                    if (*(*state).tokenizer).unsafe_null {
+                        decoder = decoder.unsafe_null();
+                    }
 
-                    LHTML_TOKEN_CHARACTER_RCDATA => Decoder::new(s).unsafe_null().text_entities(),
+                    if (*(*state).tokenizer).entities {
+                        decoder = decoder.text_entities();
+                    }
 
-                    LHTML_TOKEN_CHARACTER_SAFE => Decoder::new(s).unsafe_null(),
-
-                    LHTML_TOKEN_CHARACTER_DATA => Decoder::new(s).text_entities(),
-                }.run();
-
-                (*state).last_char_kind = LHTML_TOKEN_CHARACTER_RAW;
+                    decoder.run()
+                };
             }
         }
 
@@ -222,20 +217,6 @@ impl HandlerState {
             LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END => None,
             LHTML_TOKEN_CHARACTER => {
                 let value = lhtml_to_raw_str(&data.character.value);
-
-                match ((*state).last_char_kind, data.character.kind) {
-                    (LHTML_TOKEN_CHARACTER_RAW, kind) => {
-                        (*state).last_char_kind = kind;
-                    }
-                    (_, LHTML_TOKEN_CHARACTER_RAW) => {}
-                    (last_char_kind, kind) => {
-                        assert_eq!(
-                            last_char_kind,
-                            kind,
-                            "Consequent character tokens with different kinds"
-                        );
-                    }
-                }
 
                 if let Some(&mut Token::Character(ref mut s)) = (*state).tokens.last_mut() {
                     *s += value;
@@ -411,7 +392,7 @@ impl Test {
                     lhtml_feedback_inject(&mut tokenizer, &mut feedback);
                 }
 
-                let mut test_state = HandlerState::default();
+                let mut test_state = HandlerState::new(&tokenizer);
                 lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
 
                 let input = if pass == 0 {

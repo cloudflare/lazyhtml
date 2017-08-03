@@ -58,15 +58,7 @@ typedef enum {
     LHTML_TOKEN_CDATA_END
 } lhtml_token_type_t;
 
-typedef enum {
-    LHTML_TOKEN_CHARACTER_RAW,
-    LHTML_TOKEN_CHARACTER_DATA,
-    LHTML_TOKEN_CHARACTER_RCDATA,
-    LHTML_TOKEN_CHARACTER_SAFE
-} lhtml_token_character_kind_t;
-
 typedef struct {
-    lhtml_token_character_kind_t kind;
     lhtml_string_t value;
 } lhtml_token_character_t;
 
@@ -131,6 +123,8 @@ typedef struct {
     lhtml_token_handler_t base_handler; // needs to be the first one
 
     bool allow_cdata;
+    bool unsafe_null;
+    bool entities;
     char quote;
     int cs;
     lhtml_tag_type_t last_start_tag_type;
