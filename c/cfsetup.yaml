@@ -9,9 +9,7 @@ jessie:
         builddeps: &testdeps
             - build-essential
             - ragel
-            - pkg-config
             - nodejs=8.*
-            - libprotobuf-c-dev
         pre-cache:
             - npm i -g tap-summary
         post-cache:
