@@ -6,13 +6,8 @@
 #include <inttypes.h>
 #include "tag-types.h"
 
-extern const int LHTML_STATE_ERROR;
-extern const int LHTML_STATE_DATA;
-extern const int LHTML_STATE_RCDATA;
-extern const int LHTML_STATE_RAWTEXT;
-extern const int LHTML_STATE_PLAINTEXT;
-extern const int LHTML_STATE_SCRIPTDATA;
-extern const int LHTML_STATE_CDATA;
+// the only that should be publicly exposed
+static const int LHTML_STATE_ERROR = 0;
 
 // gcc :(
 #ifdef __clang__

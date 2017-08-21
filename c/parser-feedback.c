@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "parser-feedback.h"
+// #include "$OUT/states.h" - included with command option to respect env var
 
 lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_state_t *state) {
     return state->ns_stack.data[state->ns_stack.length - 1];
@@ -209,12 +210,12 @@ static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
         bool delayed_enter_html = false;
         if (!handle_start_tag_token(state, &token->start_tag, &delayed_enter_html)) {
             token->type = LHTML_TOKEN_ERROR;
-            state->tokenizer->cs = 0;
+            state->tokenizer->cs = LHTML_STATE_ERROR;
         }
         lhtml_emit(token, state);
         if (delayed_enter_html) {
             if (!enter_ns(state, LHTML_NS_HTML)) {
-                state->tokenizer->cs = 0;
+                state->tokenizer->cs = LHTML_STATE_ERROR;
             }
         }
     } else {

@@ -21,6 +21,17 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = PathBuf::from(&out_dir);
 
+    assert!(
+        Command::new("make")
+            .current_dir("../../c")
+            .arg("lib")
+            .arg(format!("OUT_TARGET={}", out_dir))
+            .status()
+            .unwrap()
+            .success(),
+        "building LazyHTML failed"
+    );
+
     bindgen::builder()
         .header("wrapper.h")
         .unstable_rust(true)
@@ -34,17 +45,6 @@ fn main() {
         .expect("Unable to generate bindings")
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Unable to write bindings");
-
-    assert!(
-        Command::new("make")
-            .current_dir("../c")
-            .arg("lib")
-            .arg(format!("OUT_TARGET={}", out_dir))
-            .status()
-            .unwrap()
-            .success(),
-        "building LazyHTML failed"
-    );
 
     println!("cargo:rustc-link-search=native={}", &out_dir);
     println!("cargo:rustc-link-lib=static=lhtml");

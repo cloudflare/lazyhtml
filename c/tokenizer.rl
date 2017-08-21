@@ -17,14 +17,6 @@
 %%write data nofinal noprefix;
 #pragma GCC diagnostic pop
 
-const int LHTML_STATE_ERROR = error;
-const int LHTML_STATE_DATA = en_Data;
-const int LHTML_STATE_RCDATA = en_RCData;
-const int LHTML_STATE_RAWTEXT = en_RawText;
-const int LHTML_STATE_PLAINTEXT = en_PlainText;
-const int LHTML_STATE_SCRIPTDATA = en_ScriptData;
-const int LHTML_STATE_CDATA = en_CDataSection;
-
 #define GET_TOKEN(TYPE) (assert(token->type == LHTML_TOKEN_##TYPE), &token->LHTML_FIELD_NAME_##TYPE)
 
 #define CREATE_TOKEN(TYPE, VALUE) {\
@@ -178,7 +170,7 @@ void lhtml_init(lhtml_state_t *state) {
     %%write init nocs;
 
     if (state->cs == 0) {
-        state->cs = LHTML_STATE_DATA;
+        state->cs = en_Data;
     }
 
     state->buffer_pos = state->buffer.data;
@@ -199,7 +191,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         return false;
     }
 
-    if (state->cs == 0) {
+    if (state->cs == error) {
         if (chunk != NULL) {
             return already_errored(state, *chunk);
         } else {
@@ -219,7 +211,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         if (unprocessed.length <= available_space) {
             available_space = unprocessed.length;
         } else if (available_space == 0) {
-            state->cs = 0;
+            state->cs = error;
             return emit_error(state, unprocessed);
         }
 
@@ -237,7 +229,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
         %%write exec;
 
-        if (state->cs == 0) {
+        if (state->cs == error) {
             return emit_error(state, unprocessed);
         }
 

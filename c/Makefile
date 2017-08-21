@@ -51,8 +51,12 @@ $(OUT) $(OUT_TARGET):
 
 $(OUT)/tokenizer.c: $(RAGEL_SOURCES) | $(OUT)
 	$(RAGEL) $(RAGELFLAGS) $< -o $@
-	sed -i.bak -E 's/^static const int ([^ ]+) = ([0-9]+);/#define \1 \2/g' $@
-	rm $@.bak
+
+$(OUT)/states.h: $(OUT)/tokenizer.c
+	awk \
+	'/^static\ const\ int\ en_(Data|RCData|RawText|PlainText|ScriptData|CDataSection)\ =/ { \
+		print "static const int LHTML_STATE_" toupper(substr($$4, 4)) " = " $$6 \
+	}' $< > $@
 
 tests.pb-c.c: tests.proto
 	protoc-c --c_out=$(@D) --proto_path=$(<D) $<
@@ -62,7 +66,7 @@ tests.pb-c.h: | tests.pb-c.c
 $(OUT)/%.d: %.c | $(OUT)
 	$(CC) $(CFLAGS) -DPROTOBUF_C_tests_2eproto__INCLUDED -MM $< -MT "\$$(OUT)/$(@F)" -MT "\$$(OUT_TARGET)/$(@F:.d=.o)" -MP -MF $@
 
-$(OUT)/tokenizer.d: tokenizer.rl | $(OUT)
+$(OUT)/tokenizer.d: $(OUT)/tokenizer.c
 	$(CC) $(CFLAGS) -xc -iquote. -MM $< -MT "\$$(OUT)/$(@F)" -MT "\$$(OUT_TARGET)/$(@F:.d=.o)" -MP -MF $@
 
 ifneq (, $(filter all lib %test bench $(OUT)/%.d $(OUT_TARGET)/%, $(MAKECMDGOALS)))
@@ -75,8 +79,11 @@ endif
 $(OUT_TARGET)/%.o: | $(OUT_TARGET)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OUT_TARGET)/tokenizer.o: $(OUT)/tokenizer.c | $(OUT_TARGET)
-	$(CC) $(CFLAGS) -iquote. -c $< -o $@
+$(OUT_TARGET)/tokenizer.o: | $(OUT_TARGET)
+	$(CC) $(CFLAGS) -iquote. -Wno-parentheses-equality -c $< -o $@
+
+$(OUT_TARGET)/parser-feedback.o: $(OUT)/states.h
+	$(CC) $(CFLAGS) -c $(@F:.o=.c) -include $< -o $@
 
 $(OUT_TARGET)/test.o: | $(OUT_TARGET)
 	$(CC) $(CFLAGS) -Wno-cast-qual -Wno-cast-align -c $< -o $@

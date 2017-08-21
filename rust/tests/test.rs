@@ -1,4 +1,4 @@
-extern crate lazyhtml_sys;
+extern crate lazyhtml;
 
 extern crate serde;
 extern crate serde_json;
@@ -21,7 +21,7 @@ mod feedback_tokens;
 mod decoder;
 
 use std::collections::HashMap;
-use lazyhtml_sys::*;
+use lazyhtml::*;
 use std::mem::{replace, zeroed};
 use std::os::raw::{c_char, c_int, c_void};
 use std::ascii::AsciiExt;
@@ -56,7 +56,7 @@ enum InitialState {
 }
 
 impl InitialState {
-    unsafe fn to_lhtml(self) -> c_int {
+    fn to_lhtml(self) -> c_int {
         use InitialState::*;
 
         match self {
@@ -65,7 +65,7 @@ impl InitialState {
             RCData => LHTML_STATE_RCDATA,
             RawText => LHTML_STATE_RAWTEXT,
             ScriptData => LHTML_STATE_SCRIPTDATA,
-            CData => LHTML_STATE_CDATA,
+            CData => LHTML_STATE_CDATASECTION,
         }
     }
 }

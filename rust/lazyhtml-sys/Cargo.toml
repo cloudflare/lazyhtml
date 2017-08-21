@@ -1,0 +1,8 @@
+[package]
+authors = ["Ingvar Stepanyan <me@rreverser.com>"]
+name = "lazyhtml-sys"
+version = "0.1.0"
+
+[build-dependencies]
+bindgen = "0.26.2"
+glob = "0.2.11"
