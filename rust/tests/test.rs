@@ -233,6 +233,8 @@ impl HandlerState {
             LHTML_TOKEN_START_TAG => {
                 let start_tag = &data.start_tag;
 
+                assert_eq!(lhtml_get_tag_type(start_tag.name), start_tag.type_);
+
                 let attrs = ::std::slice::from_raw_parts_mut(
                     // need to cast mutability because
                     // https://github.com/rust-lang-nursery/rust-bindgen/issues/511
@@ -258,9 +260,15 @@ impl HandlerState {
                     self_closing: start_tag.self_closing,
                 })
             }
-            LHTML_TOKEN_END_TAG => Some(Token::EndTag {
-                name: lhtml_to_name(data.end_tag.name),
-            }),
+            LHTML_TOKEN_END_TAG => {
+                let end_tag = &data.end_tag;
+
+                assert_eq!(lhtml_get_tag_type(end_tag.name), end_tag.type_);
+
+                Some(Token::EndTag {
+                    name: lhtml_to_name(end_tag.name),
+                })
+            }
             LHTML_TOKEN_DOCTYPE => {
                 let doctype = &data.doctype;
 
@@ -402,15 +410,15 @@ impl Test {
                     &serializer.output
                 };
 
-                lhtml_feed(
+                assert!(lhtml_feed(
                     &mut tokenizer,
                     &lhtml_string_t {
                         data: input.as_ptr() as _,
                         length: input.len(),
                     },
-                );
+                ));
 
-                lhtml_feed(&mut tokenizer, null());
+                assert!(lhtml_feed(&mut tokenizer, null()));
 
                 assert!(
                     test_state.tokens == self.output,
