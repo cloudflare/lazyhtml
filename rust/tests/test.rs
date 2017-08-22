@@ -159,6 +159,7 @@ struct HandlerState {
     handler: lhtml_token_handler_t,
     tokenizer: *const lhtml_state_t,
     tokens: Vec<Token>,
+    raw_output: String,
     saw_eof: bool,
 }
 
@@ -171,6 +172,7 @@ impl HandlerState {
             },
             tokenizer,
             tokens: Vec::new(),
+            raw_output: String::new(),
             saw_eof: false,
         }
     }
@@ -298,6 +300,8 @@ impl HandlerState {
             (*state).tokens.push(test_token);
         }
 
+        assert!((*token).raw.has_value);
+        (*state).raw_output += lhtml_to_raw_str(&(*token).raw.value);
         (*token).raw.has_value = false;
 
         lhtml_emit(token, extra);
@@ -405,6 +409,8 @@ impl Test {
                 ));
 
                 assert!(lhtml_feed(&mut tokenizer, null()));
+
+                assert_eq!(&test_state.raw_output, input);
 
                 assert!(
                     test_state.tokens == self.output,
