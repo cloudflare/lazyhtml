@@ -38,7 +38,7 @@ fn main() {
         .prepend_enum_name(false)
         .whitelisted_function("lhtml_.*")
         .whitelisted_type("lhtml_.*")
-        .whitelisted_var("LHTML_.*")
+        .whitelisted_var("LHTML_.*|html_en_.*")
         .constified_enum_module("lhtml_tag_type_t")
         .derive_debug(false)
         .generate()

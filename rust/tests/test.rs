@@ -23,7 +23,7 @@ mod decoder;
 use std::collections::HashMap;
 use lazyhtml::*;
 use std::mem::{replace, zeroed};
-use std::os::raw::{c_char, c_int, c_void};
+use std::os::raw::{c_char, c_void};
 use std::ascii::AsciiExt;
 use std::iter::FromIterator;
 use std::ptr::{null, null_mut};
@@ -35,39 +35,25 @@ use feedback_tokens::tokenize_with_tree_builder;
 use decoder::Decoder;
 
 #[derive(Clone, Copy, Deserialize, Debug)]
+#[repr(i32)]
 enum InitialState {
     #[serde(rename = "Data state")]
-    Data,
+    Data = html_en_Data,
 
     #[serde(rename = "PLAINTEXT state")]
-    PlainText,
+    PlainText = html_en_PlainText,
 
     #[serde(rename = "RCDATA state")]
-    RCData,
+    RCData = html_en_RCData,
 
     #[serde(rename = "RAWTEXT state")]
-    RawText,
+    RawText = html_en_RawText,
 
     #[serde(rename = "Script data state")]
-    ScriptData,
+    ScriptData = html_en_ScriptData,
 
     #[serde(rename = "CDATA section state")]
-    CData,
-}
-
-impl InitialState {
-    fn to_lhtml(self) -> c_int {
-        use InitialState::*;
-
-        match self {
-            Data => LHTML_STATE_DATA,
-            PlainText => LHTML_STATE_PLAINTEXT,
-            RCData => LHTML_STATE_RCDATA,
-            RawText => LHTML_STATE_RAWTEXT,
-            ScriptData => LHTML_STATE_SCRIPTDATA,
-            CData => LHTML_STATE_CDATASECTION,
-        }
-    }
+    CDataSection = html_en_CDataSection,
 }
 
 fn default_initial_states() -> Vec<InitialState> {
@@ -368,7 +354,7 @@ impl Test {
                 let ns_buffer: [lhtml_ns_t; 64] = zeroed();
 
                 let mut tokenizer = lhtml_state_t {
-                    cs: cs.to_lhtml(),
+                    cs: cs as _,
                     last_start_tag_type,
                     buffer: lhtml_buffer_t {
                         data: buffer.as_ptr(),

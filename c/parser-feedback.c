@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "parser-feedback.h"
-// #include "$OUT/states.h" - included with command option to respect env var
+// #include "$OUT/tokenizer-states.h" - included with command option to respect env var
 
 lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_state_t *state) {
     return state->ns_stack.data[state->ns_stack.length - 1];
@@ -33,15 +33,15 @@ static void ensure_tokenizer_mode(lhtml_state_t *tokenizer, lhtml_tag_type_t tag
     switch (tag_type) {
         case LHTML_TAG_TEXTAREA:
         case LHTML_TAG_TITLE:
-            new_state = LHTML_STATE_RCDATA;
+            new_state = html_en_RCData;
             break;
 
         case LHTML_TAG_PLAINTEXT:
-            new_state = LHTML_STATE_PLAINTEXT;
+            new_state = html_en_PlainText;
             break;
 
         case LHTML_TAG_SCRIPT:
-            new_state = LHTML_STATE_SCRIPTDATA;
+            new_state = html_en_ScriptData;
             break;
 
         case LHTML_TAG_STYLE:
@@ -50,7 +50,7 @@ static void ensure_tokenizer_mode(lhtml_state_t *tokenizer, lhtml_tag_type_t tag
         case LHTML_TAG_NOEMBED:
         case LHTML_TAG_NOFRAMES:
         case LHTML_TAG_NOSCRIPT:
-            new_state = LHTML_STATE_RAWTEXT;
+            new_state = html_en_RawText;
             break;
 
         default:
@@ -210,12 +210,12 @@ static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
         bool delayed_enter_html = false;
         if (!handle_start_tag_token(state, &token->start_tag, &delayed_enter_html)) {
             token->type = LHTML_TOKEN_ERROR;
-            state->tokenizer->cs = LHTML_STATE_ERROR;
+            state->tokenizer->cs = html_error;
         }
         lhtml_emit(token, state);
         if (delayed_enter_html) {
             if (!enter_ns(state, LHTML_NS_HTML)) {
-                state->tokenizer->cs = LHTML_STATE_ERROR;
+                state->tokenizer->cs = html_error;
             }
         }
     } else {

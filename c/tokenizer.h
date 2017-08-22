@@ -6,9 +6,6 @@
 #include <inttypes.h>
 #include "tag-types.h"
 
-// the only that should be publicly exposed
-static const int LHTML_STATE_ERROR = 0;
-
 // gcc :(
 #ifdef __clang__
 #define LHTML_IMMUTABLE const

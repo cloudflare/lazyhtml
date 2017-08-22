@@ -5,7 +5,7 @@ override CFLAGS += -std=c99 -Wall -Wextra -Wcast-qual -Wwrite-strings -Wshadow -
 OUT = out
 TARGET := $(shell $(CC) -dumpmachine)
 OUT_TARGET := $(OUT)/$(TARGET)
-RAGEL_SOURCES := tokenizer.rl actions.rl $(wildcard ../syntax/*.rl)
+RAGEL_SOURCES := actions.rl $(wildcard ../syntax/*.rl)
 SOURCES := $(wildcard *.c)
 
 ## Phony tasks
@@ -33,14 +33,11 @@ bench: $(OUT_TARGET)/bench
 $(OUT) $(OUT_TARGET):
 	mkdir -p $@
 
-$(OUT)/tokenizer.c: $(RAGEL_SOURCES) | $(OUT)
+$(OUT)/tokenizer.c: tokenizer.rl $(RAGEL_SOURCES) | $(OUT)
 	$(RAGEL) $(RAGELFLAGS) $< -o $@
 
-$(OUT)/states.h: $(OUT)/tokenizer.c
-	awk \
-	'/^static\ const\ int\ en_(Data|RCData|RawText|PlainText|ScriptData|CDataSection)\ =/ { \
-		print "static const int LHTML_STATE_" toupper(substr($$4, 4)) " = " $$6 \
-	}' $< > $@
+$(OUT)/tokenizer-states.h: tokenizer-states.rl $(RAGEL_SOURCES) | $(OUT)
+	$(RAGEL) $(RAGELFLAGS) $< -o $@
 
 $(OUT)/%.d: %.c | $(OUT)
 	$(CC) $(CFLAGS) -MM $< -MT "\$$(OUT)/$(@F)" -MT "\$$(OUT_TARGET)/$(@F:.d=.o)" -MP -MF $@
@@ -58,11 +55,13 @@ endif
 $(OUT_TARGET)/%.o: | $(OUT_TARGET)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OUT_TARGET)/tokenizer.o: | $(OUT_TARGET)
-	$(CC) $(CFLAGS) -iquote. -Wno-parentheses-equality -c $< -o $@
+$(OUT_TARGET)/tokenizer.o: $(OUT)/tokenizer-states.h
+$(OUT_TARGET)/tokenizer.o:
+	$(CC) $(CFLAGS) -c $< -include $(OUT)/tokenizer-states.h -iquote. -Wno-parentheses-equality -o $@
 
-$(OUT_TARGET)/parser-feedback.o: $(OUT)/states.h
-	$(CC) $(CFLAGS) -c $(@F:.o=.c) -include $< -o $@
+$(OUT_TARGET)/parser-feedback.o: $(OUT)/tokenizer-states.h
+$(OUT_TARGET)/parser-feedback.o:
+	$(CC) $(CFLAGS) -c $< -include $(OUT)/tokenizer-states.h -o $@
 
 ## Final library and binaries
 

@@ -2,6 +2,7 @@
 #include <string.h>
 #include "tokenizer.h"
 #include "field-names.h"
+// #include "$OUT/tokenizer-states.h" - included with command option to respect env var
 
 %%{
     machine html;
@@ -11,11 +12,6 @@
 
     access state->;
 }%%
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-%%write data nofinal noprefix;
-#pragma GCC diagnostic pop
 
 #define GET_TOKEN(TYPE) (assert(token->type == LHTML_TOKEN_##TYPE), &token->LHTML_FIELD_NAME_##TYPE)
 
@@ -170,7 +166,7 @@ void lhtml_init(lhtml_state_t *state) {
     %%write init nocs;
 
     if (state->cs == 0) {
-        state->cs = en_Data;
+        state->cs = html_en_Data;
     }
 
     state->buffer_pos = state->buffer.data;
@@ -191,7 +187,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         return false;
     }
 
-    if (state->cs == error) {
+    if (state->cs == html_error) {
         if (chunk != NULL) {
             return already_errored(state, *chunk);
         } else {
@@ -211,7 +207,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
         if (unprocessed.length <= available_space) {
             available_space = unprocessed.length;
         } else if (available_space == 0) {
-            state->cs = error;
+            state->cs = html_error;
             return emit_error(state, unprocessed);
         }
 
@@ -229,7 +225,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
         %%write exec;
 
-        if (state->cs == error) {
+        if (state->cs == html_error) {
             return emit_error(state, unprocessed);
         }
 
