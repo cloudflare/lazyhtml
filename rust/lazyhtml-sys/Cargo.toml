@@ -4,5 +4,5 @@ name = "lazyhtml-sys"
 version = "0.1.0"
 
 [build-dependencies]
-bindgen = "0.26.2"
+bindgen = "0.31.3"
 glob = "0.2.11"

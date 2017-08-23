@@ -53,10 +53,6 @@ impl TreeSink for NoopTreeSink {
         x == y
     }
 
-    fn same_tree(&self, _x: &usize, _y: &usize) -> bool {
-        true
-    }
-
     fn elem_name(&self, target: &usize) -> ExpandedName {
         self.names.get(target).expect("not an element").expanded()
     }
@@ -74,12 +70,6 @@ impl TreeSink for NoopTreeSink {
     #[allow(unused_variables)]
     fn create_pi(&mut self, target: StrTendril, value: StrTendril) -> usize {
         unimplemented!()
-    }
-
-    fn has_parent_node(&self, _node: &usize) -> bool {
-        // `node` will have a parent unless a script moved it, and we're
-        // not running scripts.  Therefore we can aways return true.
-        true
     }
 
     fn append_before_sibling(&mut self, _sibling: &usize, _new_node: NodeOrText<usize>) {}
@@ -101,4 +91,12 @@ impl TreeSink for NoopTreeSink {
     fn reparent_children(&mut self, _node: &usize, _new_parent: &usize) {}
 
     fn mark_script_already_started(&mut self, _node: &usize) {}
+
+    fn append_based_on_parent_node(
+        &mut self,
+        _element: &usize,
+        _prev_element: &usize,
+        _new_node: NodeOrText<usize>,
+    ) {
+    }
 }
