@@ -108,7 +108,7 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
                 }
             }
             if (token->start_tag.self_closing) {
-                write(LHTML_STRING("/"), extra);
+                write(LHTML_STRING(" /"), extra);
             }
             write(LHTML_STRING(">"), extra);
             break;
