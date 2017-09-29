@@ -124,19 +124,19 @@ impl HandlerState {
     unsafe extern "C" fn callback(token: *mut lhtml_token_t, extra: *mut c_void) {
         use lhtml_token_type_t::*;
 
-        let state = extra as *mut Self;
+        let state = &mut *(extra as *mut Self);
         let data = &(*token).__bindgen_anon_1;
 
-        if let Some(&mut Token::Character(ref mut s)) = (*state).tokens.last_mut() {
+        if let Some(&mut Token::Character(ref mut s)) = state.tokens.last_mut() {
             if (*token).type_ != LHTML_TOKEN_CHARACTER {
                 *s = {
                     let mut decoder = Decoder::new(s);
 
-                    if (*(*state).tokenizer).unsafe_null {
+                    if (*state.tokenizer).unsafe_null {
                         decoder = decoder.unsafe_null();
                     }
 
-                    if (*(*state).tokenizer).entities {
+                    if (*state.tokenizer).entities {
                         decoder = decoder.text_entities();
                     }
 
@@ -150,7 +150,7 @@ impl HandlerState {
             LHTML_TOKEN_CHARACTER => {
                 let value = lhtml_to_raw_str(&data.character.value);
 
-                if let Some(&mut Token::Character(ref mut s)) = (*state).tokens.last_mut() {
+                if let Some(&mut Token::Character(ref mut s)) = state.tokens.last_mut() {
                     *s += value;
                     None
                 } else {
@@ -231,8 +231,8 @@ impl HandlerState {
                     correctness: !doctype.force_quirks,
                 })
             }
-            LHTML_TOKEN_EOF if !(*state).saw_eof => {
-                (*state).saw_eof = true;
+            LHTML_TOKEN_EOF if !state.saw_eof => {
+                state.saw_eof = true;
                 None
             }
             _ => {
@@ -241,11 +241,11 @@ impl HandlerState {
         };
 
         if let Some(test_token) = test_token {
-            (*state).tokens.push(test_token);
+            state.tokens.push(test_token);
         }
 
         assert!((*token).raw.has_value);
-        (*state).raw_output += lhtml_to_raw_str(&(*token).raw.value);
+        state.raw_output += lhtml_to_raw_str(&(*token).raw.value);
         (*token).raw.has_value = false;
 
         lhtml_emit(token, extra);
