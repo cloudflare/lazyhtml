@@ -15,13 +15,8 @@ c-tokenizer:
 	dot -Tpng $< -o $@
 	open $@
 
-tests.dat: convert-tests.js js/tests.proto
-	node $< html5lib-tests/tokenizer $@
-
-tests-with-feedback.dat: convert-tests.js js/tests.proto
-	node $< parser-feedback-tests $@ --feedback
-
 .PHONY: clean
 clean:
 	rm -rf *.dot *.png
 	make -C c clean
+	cd rust; cargo clean
