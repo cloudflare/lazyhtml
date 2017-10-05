@@ -85,7 +85,7 @@ void emit_token(lhtml_state_t *state, const char *end) {
         token->raw.has_value = true;
         lhtml_emit(token, &state->base_handler);
     }
-    token->type = LHTML_TOKEN_UNKNOWN;
+    token->type = LHTML_TOKEN_ERROR;
     token->raw.value.data = end;
     token->raw.value.length = 0;
 }

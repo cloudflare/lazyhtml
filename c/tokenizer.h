@@ -46,14 +46,13 @@ typedef struct {
 } lhtml_opt_string_t;
 
 typedef enum {
-    LHTML_TOKEN_UNKNOWN,
+    LHTML_TOKEN_ERROR,
     LHTML_TOKEN_CHARACTER,
     LHTML_TOKEN_COMMENT,
     LHTML_TOKEN_START_TAG,
     LHTML_TOKEN_END_TAG,
     LHTML_TOKEN_DOCTYPE,
-    LHTML_TOKEN_EOF,
-    LHTML_TOKEN_ERROR
+    LHTML_TOKEN_EOF
 } lhtml_token_type_t;
 
 typedef enum {
