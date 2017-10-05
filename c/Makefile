@@ -68,5 +68,4 @@ $(OUT_TARGET)/parser-feedback.o:
 $(OUT_TARGET)/liblhtml.a: $(OUT_TARGET)/tokenizer.o $(OUT_TARGET)/parser-feedback.o $(OUT_TARGET)/serializer.o
 	ar rcs $@ $?
 
-$(OUT_TARGET)/trace: $(OUT_TARGET)/trace.o $(OUT_TARGET)/tokenizer.o $(OUT_TARGET)/parser-feedback.o
 $(OUT_TARGET)/bench: $(OUT_TARGET)/bench.o $(OUT_TARGET)/liblhtml.a
