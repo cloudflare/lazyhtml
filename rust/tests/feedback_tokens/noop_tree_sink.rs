@@ -3,27 +3,26 @@
 use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use html5ever::{Attribute, ExpandedName, QualName};
 use html5ever::tendril::StrTendril;
-use std::collections::HashMap;
 use std::borrow::Cow;
 
 pub struct NoopTreeSink {
-    next_id: usize,
-    names: HashMap<usize, QualName>,
+    names: Vec<Option<QualName>>,
 }
 
 impl Default for NoopTreeSink {
     fn default() -> Self {
-        NoopTreeSink {
-            next_id: 1,
-            names: HashMap::new(),
-        }
+        NoopTreeSink { names: Vec::new() }
     }
 }
 
 impl NoopTreeSink {
-    fn get_id(&mut self) -> usize {
-        let id = self.next_id;
-        self.next_id += 2;
+    fn get_name(&self, id: &usize) -> Option<&QualName> {
+        self.names.get(*id).and_then(|opt_name| opt_name.as_ref())
+    }
+
+    fn set_name(&mut self, name: Option<QualName>) -> usize {
+        let id = self.names.len();
+        self.names.push(name);
         id
     }
 }
@@ -41,8 +40,7 @@ impl TreeSink for NoopTreeSink {
     }
 
     fn get_template_contents(&mut self, target: &usize) -> usize {
-        if let Some(expanded_name!(html "template")) = self.names.get(target).map(|n| n.expanded())
-        {
+        if let Some(expanded_name!(html "template")) = self.get_name(target).map(|n| n.expanded()) {
             target + 1
         } else {
             panic!("not a template element")
@@ -54,17 +52,15 @@ impl TreeSink for NoopTreeSink {
     }
 
     fn elem_name(&self, target: &usize) -> ExpandedName {
-        self.names.get(target).expect("not an element").expanded()
+        self.get_name(target).expect("not an element").expanded()
     }
 
     fn create_element(&mut self, name: QualName, _: Vec<Attribute>, _: ElementFlags) -> usize {
-        let id = self.get_id();
-        self.names.insert(id, name);
-        id
+        self.set_name(Some(name))
     }
 
     fn create_comment(&mut self, _text: StrTendril) -> usize {
-        self.get_id()
+        self.set_name(None)
     }
 
     #[allow(unused_variables)]
@@ -83,7 +79,7 @@ impl TreeSink for NoopTreeSink {
     fn append_doctype_to_document(&mut self, _: StrTendril, _: StrTendril, _: StrTendril) {}
 
     fn add_attrs_if_missing(&mut self, target: &usize, _attrs: Vec<Attribute>) {
-        assert!(self.names.contains_key(target), "not an element");
+        self.get_name(target).expect("not an element");
     }
 
     fn remove_from_parent(&mut self, _target: &usize) {}
