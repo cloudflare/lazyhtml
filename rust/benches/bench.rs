@@ -1,9 +1,7 @@
+extern crate glob;
 extern crate html5ever;
 extern crate lazyhtml;
 extern crate test;
-
-#[macro_use]
-extern crate lazy_static;
 
 use lazyhtml::*;
 use test::black_box;
@@ -14,6 +12,9 @@ use std::os::raw::{c_char, c_void};
 use html5ever::tokenizer::{BufferQueue, Token, TokenSink, TokenSinkResult, Tokenizer,
                            TokenizerOpts, TokenizerResult};
 use html5ever::tendril::StrTendril;
+use test::{test_main, ShouldPanic, TDynBenchFn, TestDesc, TestDescAndFn, TestFn, TestName};
+use std::fs::File;
+use std::io::Read;
 
 unsafe extern "C" fn handle_token(token: *mut lhtml_token_t, _state: *mut c_void) {
     black_box(*token);
@@ -23,63 +24,68 @@ const CHUNK_SIZE: usize = 1024;
 const BUFFER_SIZE: usize = 100 << 10;
 const MAX_ATTR_COUNT: usize = 256;
 
-const HUGE_PAGE_1: &'static str = include_str!("../../bench-fixtures/huge-page.html");
-const HUGE_PAGE_2: &'static str = include_str!("../../bench-fixtures/huge-page-2.html");
-
-fn string_chunks(s: &'static str) -> Vec<&'static str> {
-    let mut last_offset = 0;
+fn string_chunks(mut s: &str) -> Vec<String> {
     let mut result = Vec::with_capacity((s.len() / CHUNK_SIZE) + 1);
-    for (offset, _) in s.char_indices() {
-        if offset - last_offset >= CHUNK_SIZE {
-            result.push(&s[last_offset..offset]);
-            last_offset = offset;
+
+    while !s.is_empty() {
+        let mut offset = CHUNK_SIZE;
+
+        if offset < s.len() {
+            while !s.is_char_boundary(offset) {
+                offset += 1;
+            }
+        } else {
+            offset = s.len();
         }
+
+        let (before, after) = s.split_at(offset);
+
+        result.push(before.to_owned());
+
+        s = after;
     }
-    result.push(&s[last_offset..]);
+
     result
 }
 
-lazy_static! {
-    static ref HUGE_PAGE_1_CHUNKS: Vec<&'static str> = string_chunks(HUGE_PAGE_1);
-    static ref HUGE_PAGE_2_CHUNKS: Vec<&'static str> = string_chunks(HUGE_PAGE_2);
-}
+fn bench_lhtml_tokenizer(chunks: &[String]) {
+    unsafe {
+        let mut buffer: [c_char; BUFFER_SIZE] = zeroed();
+        let mut attr_buffer: [lhtml_attribute_t; MAX_ATTR_COUNT] = zeroed();
 
-unsafe fn bench_lhtml_tokenizer(chunks: &[&str]) {
-    let mut buffer: [c_char; BUFFER_SIZE] = zeroed();
-    let mut attr_buffer: [lhtml_attribute_t; MAX_ATTR_COUNT] = zeroed();
+        let mut tokenizer = lhtml_state_t {
+            buffer: lhtml_buffer_t {
+                data: buffer.as_mut_ptr(),
+                capacity: buffer.len(),
+            },
+            attr_buffer: lhtml_attr_buffer_t {
+                data: attr_buffer.as_mut_ptr(),
+                capacity: attr_buffer.len(),
+            },
+            ..zeroed()
+        };
 
-    let mut tokenizer = lhtml_state_t {
-        buffer: lhtml_buffer_t {
-            data: buffer.as_mut_ptr(),
-            capacity: buffer.len(),
-        },
-        attr_buffer: lhtml_attr_buffer_t {
-            data: attr_buffer.as_mut_ptr(),
-            capacity: attr_buffer.len(),
-        },
-        ..zeroed()
-    };
+        lhtml_init(&mut tokenizer);
 
-    lhtml_init(&mut tokenizer);
+        let mut bench_handler = lhtml_token_handler_t {
+            callback: Some(handle_token),
+            next: null_mut(),
+        };
 
-    let mut bench_handler = lhtml_token_handler_t {
-        callback: Some(handle_token),
-        next: null_mut(),
-    };
+        lhtml_append_handlers(&mut tokenizer.base_handler, &mut bench_handler);
 
-    lhtml_append_handlers(&mut tokenizer.base_handler, &mut bench_handler);
+        for chunk in chunks {
+            assert!(lhtml_feed(
+                &mut tokenizer,
+                &lhtml_string_t {
+                    data: chunk.as_ptr() as _,
+                    length: chunk.len(),
+                }
+            ));
+        }
 
-    for chunk in chunks {
-        assert!(lhtml_feed(
-            &mut tokenizer,
-            &lhtml_string_t {
-                data: chunk.as_ptr() as _,
-                length: chunk.len(),
-            }
-        ));
+        assert!(lhtml_feed(&mut tokenizer, null()));
     }
-
-    assert!(lhtml_feed(&mut tokenizer, null()));
 }
 
 struct Sink;
@@ -93,7 +99,7 @@ impl TokenSink for Sink {
     }
 }
 
-fn bench_html5ever_tokenizer(chunks: &[&str]) {
+fn bench_html5ever_tokenizer(chunks: &[String]) {
     let mut tokenizer = Tokenizer::new(Sink, TokenizerOpts::default());
 
     let mut queue = BufferQueue::new();
@@ -109,30 +115,60 @@ fn bench_html5ever_tokenizer(chunks: &[&str]) {
     tokenizer.end();
 }
 
-#[bench]
-fn bench_lhtml_tokenizer_1(b: &mut Bencher) {
-    b.iter(|| unsafe {
-        bench_lhtml_tokenizer(&HUGE_PAGE_1_CHUNKS);
-    });
+struct Bench {
+    func: fn(&[String]),
+    chunks: Vec<String>,
 }
 
-#[bench]
-fn bench_lhtml_tokenizer_2(b: &mut Bencher) {
-    b.iter(|| unsafe {
-        bench_lhtml_tokenizer(&HUGE_PAGE_2_CHUNKS);
-    });
+impl TDynBenchFn for Bench {
+    fn run(&self, b: &mut Bencher) {
+        b.iter(|| {
+            (self.func)(&self.chunks);
+        });
+    }
 }
 
-#[bench]
-fn bench_html5ever_tokenizer_1(b: &mut Bencher) {
-    b.iter(|| {
-        bench_html5ever_tokenizer(&HUGE_PAGE_1_CHUNKS);
-    });
-}
+fn main() {
+    let args: Vec<_> = ::std::env::args().collect();
 
-#[bench]
-fn bench_html5ever_tokenizer_2(b: &mut Bencher) {
-    b.iter(|| {
-        bench_html5ever_tokenizer(&HUGE_PAGE_2_CHUNKS);
-    });
+    let fixtures: Vec<_> = glob::glob("../bench-fixtures/*.html")
+        .unwrap()
+        .map(|path| path.unwrap())
+        .collect();
+
+    let funcs: [(&str, fn(&[String])); 2] = [
+        ("bench_lhtml_tokenizer", bench_lhtml_tokenizer),
+        ("bench_html5ever_tokenizer", bench_html5ever_tokenizer),
+    ];
+
+    let mut tests = Vec::with_capacity(fixtures.len() * funcs.len());
+
+    for path in fixtures {
+        let mut input = String::new();
+        File::open(&path)
+            .unwrap()
+            .read_to_string(&mut input)
+            .unwrap();
+
+        let input_name = path.file_name().unwrap().to_str().unwrap();
+
+        let chunks = string_chunks(&input);
+
+        for &(func_name, func) in &funcs {
+            tests.push(TestDescAndFn {
+                desc: TestDesc {
+                    name: TestName::DynTestName(format!("{} x {}", func_name, input_name)),
+                    ignore: false,
+                    should_panic: ShouldPanic::No,
+                    allow_fail: false,
+                },
+                testfn: TestFn::DynBenchFn(Box::new(Bench {
+                    func,
+                    chunks: chunks.clone(),
+                })),
+            });
+        }
+    }
+
+    test_main(&args, tests);
 }
