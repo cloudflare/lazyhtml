@@ -31,7 +31,7 @@ typedef struct {
     size_t length;
 } lhtml_string_t;
 
-typedef LHTML_BUFFER_T(char) lhtml_buffer_t;
+typedef LHTML_BUFFER_T(char) lhtml_char_buffer_t;
 
 typedef struct {
     bool has_value;
@@ -120,7 +120,7 @@ typedef struct {
     char quote;
     int cs;
     lhtml_tag_type_t last_start_tag_type;
-    lhtml_buffer_t buffer;
+    lhtml_char_buffer_t buffer;
     lhtml_attr_buffer_t attr_buffer;
 
     uint64_t special_end_tag_type;

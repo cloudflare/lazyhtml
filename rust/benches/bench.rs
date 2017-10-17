@@ -54,7 +54,7 @@ fn bench_lhtml_tokenizer(chunks: &[String]) {
         let mut attr_buffer: [lhtml_attribute_t; MAX_ATTR_COUNT] = zeroed();
 
         let mut tokenizer = lhtml_state_t {
-            buffer: lhtml_buffer_t {
+            buffer: lhtml_char_buffer_t {
                 data: buffer.as_mut_ptr(),
                 capacity: buffer.len(),
             },

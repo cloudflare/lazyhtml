@@ -87,7 +87,7 @@ fn main() {
 
         let mut tokenizer = lhtml_state_t {
             cs: initial_state,
-            buffer: lhtml_buffer_t {
+            buffer: lhtml_char_buffer_t {
                 data: buffer.as_ptr(),
                 capacity: buffer.len(),
             },

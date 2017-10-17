@@ -244,7 +244,7 @@ impl Test {
                 let mut tokenizer = lhtml_state_t {
                     cs: cs as _,
                     last_start_tag_type,
-                    buffer: lhtml_buffer_t {
+                    buffer: lhtml_char_buffer_t {
                         data: buffer.as_ptr(),
                         capacity: buffer.len(),
                     },
