@@ -2,9 +2,9 @@ extern crate getopts;
 extern crate lazyhtml;
 
 use std::mem::zeroed;
-use std::ptr::{null, null_mut};
+use std::ptr::null_mut;
 use lazyhtml::*;
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_void;
 use getopts::Options;
 use std::env::args;
 
@@ -81,28 +81,16 @@ fn main() {
     let input = matches.free.first().unwrap();
 
     unsafe {
-        let buffer: [c_char; 2048] = zeroed();
-        let attr_buffer: [lhtml_attribute_t; 256] = zeroed();
-        let ns_buffer: [lhtml_ns_t; 64] = zeroed();
+        let mut ns_buffer: [lhtml_ns_t; 64] = zeroed();
 
-        let mut tokenizer = lhtml_state_t {
-            cs: initial_state,
-            buffer: lhtml_char_buffer_t {
-                data: buffer.as_ptr(),
-                capacity: buffer.len(),
-            },
-            attr_buffer: lhtml_attr_buffer_t {
-                data: attr_buffer.as_ptr(),
-                capacity: attr_buffer.len(),
-            },
-            ..zeroed()
-        };
+        let mut tokenizer = Tokenizer::new(2048, 256);
+        tokenizer.set_cs(initial_state);
 
         let mut feedback = lhtml_feedback_state_t {
             ns_stack: lhtml_ns_stack_t {
                 __bindgen_anon_1: lhtml_ns_stack_t__bindgen_ty_1 {
                     buffer: lhtml_ns_buffer_t {
-                        data: ns_buffer.as_ptr(),
+                        data: ns_buffer.as_mut_ptr(),
                         capacity: ns_buffer.len(),
                     },
                 },
@@ -111,23 +99,14 @@ fn main() {
             ..zeroed()
         };
 
-        lhtml_init(&mut tokenizer);
-
         if with_feedback {
-            lhtml_feedback_inject(&mut tokenizer, &mut feedback);
+            lhtml_feedback_inject(&mut *tokenizer, &mut feedback);
         }
 
         let mut test_state = HandlerState::new();
         lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
 
-        assert!(lhtml_feed(
-            &mut tokenizer,
-            &lhtml_string_t {
-                data: input.as_ptr() as _,
-                length: input.len(),
-            },
-        ));
-
-        assert!(lhtml_feed(&mut tokenizer, null()));
+        tokenizer.feed(input).expect("Could not feed input");
+        tokenizer.end().expect("Could not finalize input");
     }
 }

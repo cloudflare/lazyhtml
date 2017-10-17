@@ -25,10 +25,10 @@ mod html5lib;
 use std::collections::HashMap;
 use lazyhtml::*;
 use std::mem::{replace, zeroed};
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_void;
 use std::ascii::AsciiExt;
 use std::iter::FromIterator;
-use std::ptr::{null, null_mut};
+use std::ptr::null_mut;
 use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};
 use token::Token;
 use decoder::Decoder;
@@ -228,38 +228,21 @@ impl SerializerState {
 
 impl Test {
     pub unsafe fn run(&self) {
-        let last_start_tag_type = lhtml_get_tag_type(lhtml_string_t {
-            data: self.last_start_tag.as_ptr() as _,
-            length: self.last_start_tag.len(),
-        });
-
         for &cs in &self.initial_states {
             let mut serializer = SerializerState::new();
 
             for pass in 0..2 {
-                let buffer: [c_char; 2048] = zeroed();
-                let attr_buffer: [lhtml_attribute_t; 256] = zeroed();
-                let ns_buffer: [lhtml_ns_t; 64] = zeroed();
+                let mut ns_buffer: [lhtml_ns_t; 64] = zeroed();
 
-                let mut tokenizer = lhtml_state_t {
-                    cs: cs as _,
-                    last_start_tag_type,
-                    buffer: lhtml_char_buffer_t {
-                        data: buffer.as_ptr(),
-                        capacity: buffer.len(),
-                    },
-                    attr_buffer: lhtml_attr_buffer_t {
-                        data: attr_buffer.as_ptr(),
-                        capacity: attr_buffer.len(),
-                    },
-                    ..zeroed()
-                };
+                let mut tokenizer = Tokenizer::new(2048, 256);
+                tokenizer.set_cs(cs as _);
+                tokenizer.set_last_start_tag(&self.last_start_tag);
 
                 let mut feedback = lhtml_feedback_state_t {
                     ns_stack: lhtml_ns_stack_t {
                         __bindgen_anon_1: lhtml_ns_stack_t__bindgen_ty_1 {
                             buffer: lhtml_ns_buffer_t {
-                                data: ns_buffer.as_ptr(),
+                                data: ns_buffer.as_mut_ptr(),
                                 capacity: ns_buffer.len(),
                             },
                         },
@@ -268,31 +251,22 @@ impl Test {
                     ..zeroed()
                 };
 
-                lhtml_init(&mut tokenizer);
-
                 if self.with_feedback {
-                    lhtml_feedback_inject(&mut tokenizer, &mut feedback);
+                    lhtml_feedback_inject(&mut *tokenizer, &mut feedback);
                 }
 
                 let mut test_state = HandlerState::new(&tokenizer);
                 lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
 
                 let input = if pass == 0 {
-                    lhtml_serializer_inject(&mut tokenizer, &mut serializer.serializer);
+                    lhtml_serializer_inject(&mut *tokenizer, &mut serializer.serializer);
                     &self.input
                 } else {
                     &serializer.output
                 };
 
-                assert!(lhtml_feed(
-                    &mut tokenizer,
-                    &lhtml_string_t {
-                        data: input.as_ptr() as _,
-                        length: input.len(),
-                    },
-                ));
-
-                assert!(lhtml_feed(&mut tokenizer, null()));
+                tokenizer.feed(input).expect("Could not feed input");
+                tokenizer.end().expect("Could not finalize input");
 
                 assert_eq!(&test_state.raw_output, input);
 

@@ -5,10 +5,9 @@ extern crate test;
 
 use lazyhtml::*;
 use test::black_box;
-use std::ptr::{null, null_mut};
-use std::mem::zeroed;
+use std::ptr::null_mut;
 use test::Bencher;
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_void;
 use html5ever::tokenizer::{BufferQueue, Token, TokenSink, TokenSinkResult, Tokenizer,
                            TokenizerOpts, TokenizerResult};
 use html5ever::tendril::StrTendril;
@@ -21,8 +20,6 @@ unsafe extern "C" fn handle_token(token: *mut lhtml_token_t, _state: *mut c_void
 }
 
 const CHUNK_SIZE: usize = 1024;
-const BUFFER_SIZE: usize = 100 << 10;
-const MAX_ATTR_COUNT: usize = 256;
 
 fn string_chunks(mut s: &str) -> Vec<String> {
     let mut result = Vec::with_capacity((s.len() / CHUNK_SIZE) + 1);
@@ -50,22 +47,7 @@ fn string_chunks(mut s: &str) -> Vec<String> {
 
 fn bench_lhtml_tokenizer(chunks: &[String]) {
     unsafe {
-        let mut buffer: [c_char; BUFFER_SIZE] = zeroed();
-        let mut attr_buffer: [lhtml_attribute_t; MAX_ATTR_COUNT] = zeroed();
-
-        let mut tokenizer = lhtml_state_t {
-            buffer: lhtml_char_buffer_t {
-                data: buffer.as_mut_ptr(),
-                capacity: buffer.len(),
-            },
-            attr_buffer: lhtml_attr_buffer_t {
-                data: attr_buffer.as_mut_ptr(),
-                capacity: attr_buffer.len(),
-            },
-            ..zeroed()
-        };
-
-        lhtml_init(&mut tokenizer);
+        let mut tokenizer = lazyhtml::Tokenizer::new(100 << 10, 256);
 
         let mut bench_handler = lhtml_token_handler_t {
             callback: Some(handle_token),
@@ -75,16 +57,10 @@ fn bench_lhtml_tokenizer(chunks: &[String]) {
         lhtml_append_handlers(&mut tokenizer.base_handler, &mut bench_handler);
 
         for chunk in chunks {
-            assert!(lhtml_feed(
-                &mut tokenizer,
-                &lhtml_string_t {
-                    data: chunk.as_ptr() as _,
-                    length: chunk.len(),
-                }
-            ));
+            tokenizer.feed(chunk).expect("Could not feed input chunk");
         }
 
-        assert!(lhtml_feed(&mut tokenizer, null()));
+        tokenizer.end().expect("Could not finalize input");
     }
 }
 

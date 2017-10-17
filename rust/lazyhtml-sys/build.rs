@@ -33,6 +33,7 @@ fn main() {
     );
 
     bindgen::builder()
+        .clang_arg("-U__clang__")
         .header("wrapper.h")
         .rust_target(bindgen::RustTarget::Stable_1_19)
         .prepend_enum_name(false)
