@@ -2,6 +2,8 @@ extern crate lazyhtml_sys;
 
 pub use lazyhtml_sys::*;
 use std::ops::{Deref, DerefMut};
+use std::mem::zeroed;
+use std::marker::PhantomData;
 
 macro_rules! lhtml_alloc_buffer {
     ($ty:ident, $capacity:expr) => {{
@@ -27,23 +29,29 @@ macro_rules! lhtml_drop_buffer {
     }
 }
 
-pub struct Tokenizer(lhtml_state_t);
+pub struct Tokenizer<'a> {
+    state: lhtml_state_t,
+    phantom: PhantomData<&'a ()>,
+}
 
-impl Tokenizer {
+impl<'a> Tokenizer<'a> {
     pub fn new(char_capacity: usize, attr_capacity: usize) -> Self {
         let mut state = lhtml_state_t {
             buffer: lhtml_alloc_buffer!(lhtml_char_buffer_t, char_capacity),
             attr_buffer: lhtml_alloc_buffer!(lhtml_attr_buffer_t, attr_capacity),
-            ..unsafe { ::std::mem::zeroed() }
+            ..unsafe { zeroed() }
         };
         unsafe {
             lhtml_init(&mut state);
         }
-        Tokenizer(state)
+        Tokenizer {
+            state,
+            phantom: PhantomData,
+        }
     }
 
     fn feed_opt(&mut self, input: *const lhtml_string_t) -> Result<(), ()> {
-        if unsafe { lhtml_feed(&mut self.0, input) } {
+        if unsafe { lhtml_feed(&mut self.state, input) } {
             Ok(())
         } else {
             Err(())
@@ -75,23 +83,51 @@ impl Tokenizer {
     }
 }
 
-impl Drop for Tokenizer {
+impl<'a> Drop for Tokenizer<'a> {
     fn drop(&mut self) {
         lhtml_drop_buffer!(self.buffer);
         lhtml_drop_buffer!(self.attr_buffer);
     }
 }
 
-impl Deref for Tokenizer {
+impl<'a> Deref for Tokenizer<'a> {
     type Target = lhtml_state_t;
 
     fn deref(&self) -> &lhtml_state_t {
-        &self.0
+        &self.state
     }
 }
 
-impl DerefMut for Tokenizer {
+impl<'a> DerefMut for Tokenizer<'a> {
     fn deref_mut(&mut self) -> &mut lhtml_state_t {
-        &mut self.0
+        &mut self.state
+    }
+}
+
+pub struct Feedback(lhtml_feedback_state_t);
+
+impl Feedback {
+    pub fn new(ns_capacity: usize) -> Self {
+        Feedback(lhtml_feedback_state_t {
+            ns_stack: lhtml_ns_stack_t {
+                __bindgen_anon_1: lhtml_ns_stack_t__bindgen_ty_1 {
+                    buffer: lhtml_alloc_buffer!(lhtml_ns_buffer_t, ns_capacity),
+                },
+                length: 0,
+            },
+            ..unsafe { zeroed() }
+        })
+    }
+
+    pub fn inject_into<'a>(&'a mut self, tokenizer: &mut Tokenizer<'a>) {
+        unsafe {
+            lhtml_feedback_inject(&mut tokenizer.state, &mut self.0);
+        }
+    }
+}
+
+impl Drop for Feedback {
+    fn drop(&mut self) {
+        lhtml_drop_buffer!(self.0.ns_stack.__bindgen_anon_1.buffer);
     }
 }

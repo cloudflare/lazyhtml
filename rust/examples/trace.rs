@@ -1,7 +1,6 @@
 extern crate getopts;
 extern crate lazyhtml;
 
-use std::mem::zeroed;
 use std::ptr::null_mut;
 use lazyhtml::*;
 use std::os::raw::c_void;
@@ -81,26 +80,14 @@ fn main() {
     let input = matches.free.first().unwrap();
 
     unsafe {
-        let mut ns_buffer: [lhtml_ns_t; 64] = zeroed();
+        let mut feedback;
 
         let mut tokenizer = Tokenizer::new(2048, 256);
         tokenizer.set_cs(initial_state);
 
-        let mut feedback = lhtml_feedback_state_t {
-            ns_stack: lhtml_ns_stack_t {
-                __bindgen_anon_1: lhtml_ns_stack_t__bindgen_ty_1 {
-                    buffer: lhtml_ns_buffer_t {
-                        data: ns_buffer.as_mut_ptr(),
-                        capacity: ns_buffer.len(),
-                    },
-                },
-                length: 0,
-            },
-            ..zeroed()
-        };
-
         if with_feedback {
-            lhtml_feedback_inject(&mut *tokenizer, &mut feedback);
+            feedback = Feedback::new(64);
+            feedback.inject_into(&mut tokenizer);
         }
 
         let mut test_state = HandlerState::new();
