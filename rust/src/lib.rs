@@ -104,6 +104,10 @@ impl<'a> DerefMut for Tokenizer<'a> {
     }
 }
 
+pub trait TokenHandler {
+    fn inject_into<'a>(&'a mut self, tokenizer: &mut Tokenizer<'a>);
+}
+
 pub struct Feedback(lhtml_feedback_state_t);
 
 impl Feedback {
@@ -118,8 +122,10 @@ impl Feedback {
             ..unsafe { zeroed() }
         })
     }
+}
 
-    pub fn inject_into<'a>(&'a mut self, tokenizer: &mut Tokenizer<'a>) {
+impl TokenHandler for Feedback {
+    fn inject_into(&mut self, tokenizer: &mut Tokenizer) {
         unsafe {
             lhtml_feedback_inject(&mut tokenizer.state, &mut self.0);
         }
@@ -159,8 +165,10 @@ impl<F: FnMut(&str)> Serializer<F> {
             ::std::slice::from_raw_parts(s.data as _, s.length),
         ))
     }
+}
 
-    pub fn inject_into<'a>(&'a mut self, tokenizer: &mut Tokenizer<'a>) {
+impl<F> TokenHandler for Serializer<F> {
+    fn inject_into(&mut self, tokenizer: &mut Tokenizer) {
         unsafe {
             lhtml_serializer_inject(&mut tokenizer.state, &mut self.state);
         }
