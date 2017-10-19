@@ -24,7 +24,7 @@ mod html5lib;
 
 use std::collections::HashMap;
 use lazyhtml::*;
-use std::mem::{replace, zeroed};
+use std::mem::replace;
 use std::os::raw::c_void;
 use std::ascii::AsciiExt;
 use std::iter::FromIterator;
@@ -205,33 +205,14 @@ impl HandlerState {
     }
 }
 
-struct SerializerState {
-    serializer: lhtml_serializer_state_t,
-    output: String,
-}
-
-impl SerializerState {
-    fn new() -> Self {
-        SerializerState {
-            serializer: lhtml_serializer_state_t {
-                writer: Some(SerializerState::callback),
-                ..unsafe { zeroed() }
-            },
-            output: String::new(),
-        }
-    }
-
-    unsafe extern "C" fn callback(s: lhtml_string_t, state: *mut lhtml_serializer_state_t) {
-        (*(state as *mut SerializerState)).output += lhtml_to_raw_str(&s);
-    }
-}
-
 impl Test {
     pub unsafe fn run(&self) {
         for &cs in &self.initial_states {
-            let mut serializer = SerializerState::new();
+            let mut output = String::new();
 
             for pass in 0..2 {
+                let mut serializer;
+
                 let mut feedback;
 
                 let mut tokenizer = Tokenizer::new(2048, 256);
@@ -247,10 +228,13 @@ impl Test {
                 lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
 
                 let input = if pass == 0 {
-                    lhtml_serializer_inject(&mut *tokenizer, &mut serializer.serializer);
+                    serializer = Serializer::new(|chunk| {
+                        output += chunk;
+                    });
+                    serializer.inject_into(&mut tokenizer);
                     &self.input
                 } else {
-                    &serializer.output
+                    &output
                 };
 
                 tokenizer.feed(input).expect("Could not feed input");

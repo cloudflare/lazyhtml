@@ -131,3 +131,38 @@ impl Drop for Feedback {
         lhtml_drop_buffer!(self.0.ns_stack.__bindgen_anon_1.buffer);
     }
 }
+
+#[repr(C)]
+pub struct Serializer<F> {
+    state: lhtml_serializer_state_t,
+    callback: F,
+}
+
+impl<F: FnMut(&str)> Serializer<F> {
+    pub fn new(callback: F) -> Self {
+        Serializer {
+            state: lhtml_serializer_state_t {
+                handler: unsafe { zeroed() },
+                writer: Some(Self::writer),
+            },
+            callback,
+        }
+    }
+
+    unsafe extern "C" fn writer(s: lhtml_string_t, state: *mut lhtml_serializer_state_t) {
+        if s.length == 0 {
+            // not just optimisation, but also ensures that from_raw_parts
+            // doesn't get an unsupported NULL pointer
+            return;
+        }
+        ((*(state as *mut Self)).callback)(::std::str::from_utf8_unchecked(
+            ::std::slice::from_raw_parts(s.data as _, s.length),
+        ))
+    }
+
+    pub fn inject_into<'a>(&'a mut self, tokenizer: &mut Tokenizer<'a>) {
+        unsafe {
+            lhtml_serializer_inject(&mut tokenizer.state, &mut self.state);
+        }
+    }
+}
