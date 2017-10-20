@@ -42,17 +42,15 @@ impl<'a> Tokenizer<'a> {
         self.feed_opt(::std::ptr::null())
     }
 
-    pub fn set_cs(&mut self, cs: ::std::os::raw::c_int) {
+    pub unsafe fn set_cs(&mut self, cs: ::std::os::raw::c_int) {
         self.state.cs = cs;
     }
 
-    pub fn set_last_start_tag(&mut self, last_start_tag: &str) {
-        unsafe {
-            self.state.last_start_tag_type = lhtml_get_tag_type(lhtml_string_t {
-                data: last_start_tag.as_ptr() as _,
-                length: last_start_tag.len(),
-            });
-        }
+    pub unsafe fn set_last_start_tag(&mut self, last_start_tag: &str) {
+        self.state.last_start_tag_type = lhtml_get_tag_type(lhtml_string_t {
+            data: last_start_tag.as_ptr() as _,
+            length: last_start_tag.len(),
+        });
     }
 
     pub unsafe fn get_state(&mut self) -> &mut lhtml_state_t {

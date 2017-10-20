@@ -84,7 +84,10 @@ fn main() {
     let mut feedback;
 
     let mut tokenizer = Tokenizer::new(2048, 256);
-    tokenizer.set_cs(initial_state);
+
+    unsafe {
+        tokenizer.set_cs(initial_state);
+    }
 
     if with_feedback {
         feedback = Feedback::new(64);
