@@ -4,16 +4,52 @@
 #![allow(unused)]
 
 use std::fmt::{self, Debug, Formatter};
+use std::slice;
+use std::ops::{Deref, DerefMut};
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
+impl Deref for lhtml_string_t {
+    type Target = [u8];
+
+    fn deref(&self) -> &[u8] {
+        if self.data.is_null() {
+            &[]
+        } else {
+            unsafe { slice::from_raw_parts(self.data as _, self.length) }
+        }
+    }
+}
+
+impl Deref for lhtml_attributes_t {
+    type Target = [lhtml_attribute_t];
+
+    fn deref(&self) -> &[lhtml_attribute_t] {
+        let data = unsafe { self.__bindgen_anon_1.buffer.data };
+
+        if data.is_null() {
+            &[]
+        } else {
+            unsafe { slice::from_raw_parts(data, self.length) }
+        }
+    }
+}
+
+impl DerefMut for lhtml_attributes_t {
+    fn deref_mut(&mut self) -> &mut [lhtml_attribute_t] {
+        let data = unsafe { self.__bindgen_anon_1.buffer.data };
+
+        if data.is_null() {
+            &mut []
+        } else {
+            unsafe { slice::from_raw_parts_mut(data, self.length) }
+        }
+    }
+}
+
 impl Debug for lhtml_string_t {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        let s = unsafe {
-            ::std::str::from_utf8_unchecked(
-                ::std::slice::from_raw_parts(self.data as _, self.length),
-            )
-        };
+        let s = unsafe { ::std::str::from_utf8_unchecked(self) };
         s.fmt(f)
     }
 }
@@ -52,13 +88,7 @@ impl Debug for lhtml_attribute_t {
 
 impl Debug for lhtml_attributes_t {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        f.debug_list()
-            .entries(
-                unsafe {
-                    ::std::slice::from_raw_parts(self.__bindgen_anon_1.buffer.data, self.length)
-                }.iter(),
-            )
-            .finish()
+        f.debug_list().entries(self.iter()).finish()
     }
 }
 

@@ -156,14 +156,7 @@ impl<F: FnMut(&str)> Serializer<F> {
     }
 
     unsafe extern "C" fn writer(s: lhtml_string_t, state: *mut lhtml_serializer_state_t) {
-        if s.length == 0 {
-            // not just optimisation, but also ensures that from_raw_parts
-            // doesn't get an unsupported NULL pointer
-            return;
-        }
-        ((*(state as *mut Self)).callback)(::std::str::from_utf8_unchecked(
-            ::std::slice::from_raw_parts(s.data as _, s.length),
-        ))
+        ((*(state as *mut Self)).callback)(::std::str::from_utf8_unchecked(&s))
     }
 }
 

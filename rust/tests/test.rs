@@ -36,12 +36,7 @@ use unescape::Unescape;
 use html5lib::{get_tests, Test};
 
 unsafe fn lhtml_to_raw_str(s: &lhtml_string_t) -> &str {
-    let bytes = if s.data.is_null() {
-        b""
-    } else {
-        ::std::slice::from_raw_parts(s.data as _, s.length)
-    };
-    ::std::str::from_utf8_unchecked(bytes)
+    ::std::str::from_utf8_unchecked(s)
 }
 
 unsafe fn lhtml_to_name(s: lhtml_string_t) -> String {
@@ -78,7 +73,7 @@ impl HandlerState {
         use lhtml_token_type_t::*;
 
         let state = &mut *(extra as *mut Self);
-        let data = &(*token).__bindgen_anon_1;
+        let data = &mut (*token).__bindgen_anon_1;
 
         if let Some(&mut Token::Character(ref mut s)) = state.tokens.last_mut() {
             if (*token).type_ != LHTML_TOKEN_CHARACTER {
@@ -116,31 +111,26 @@ impl HandlerState {
                     .run(),
             )),
             LHTML_TOKEN_START_TAG => {
-                let start_tag = &data.start_tag;
+                let start_tag = &mut data.start_tag;
 
                 assert_eq!(lhtml_get_tag_type(start_tag.name), start_tag.type_);
-
-                let attrs = ::std::slice::from_raw_parts_mut(
-                    // need to cast mutability because
-                    // https://github.com/rust-lang-nursery/rust-bindgen/issues/511
-                    start_tag.attributes.__bindgen_anon_1.buffer.data as *mut lhtml_attribute_t,
-                    start_tag.attributes.length,
-                );
 
                 Some(Token::StartTag {
                     name: lhtml_to_name(start_tag.name),
 
-                    attributes: HashMap::from_iter(attrs.iter_mut().rev().map(|attr| {
-                        attr.raw.has_value = false;
+                    attributes: HashMap::from_iter(
+                        start_tag.attributes.iter_mut().rev().map(|attr| {
+                            attr.raw.has_value = false;
 
-                        (
-                            lhtml_to_name(attr.name),
-                            Decoder::new(lhtml_to_raw_str(&attr.value))
-                                .unsafe_null()
-                                .attr_entities()
-                                .run(),
-                        )
-                    })),
+                            (
+                                lhtml_to_name(attr.name),
+                                Decoder::new(lhtml_to_raw_str(&attr.value))
+                                    .unsafe_null()
+                                    .attr_entities()
+                                    .run(),
+                            )
+                        }),
+                    ),
 
                     self_closing: start_tag.self_closing,
                 })
