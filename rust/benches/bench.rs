@@ -46,22 +46,20 @@ fn string_chunks(mut s: &str) -> Vec<String> {
 }
 
 fn bench_lhtml_tokenizer(chunks: &[String]) {
-    unsafe {
-        let mut tokenizer = lazyhtml::Tokenizer::new(100 << 10, 256);
+    let mut bench_handler = lhtml_token_handler_t {
+        callback: Some(handle_token),
+        next: null_mut(),
+    };
 
-        let mut bench_handler = lhtml_token_handler_t {
-            callback: Some(handle_token),
-            next: null_mut(),
-        };
+    let mut tokenizer = lazyhtml::Tokenizer::new(100 << 10, 256);
 
-        lhtml_append_handlers(&mut tokenizer.base_handler, &mut bench_handler);
+    bench_handler.inject_into(&mut tokenizer);
 
-        for chunk in chunks {
-            tokenizer.feed(chunk).expect("Could not feed input chunk");
-        }
-
-        tokenizer.end().expect("Could not finalize input");
+    for chunk in chunks {
+        tokenizer.feed(chunk).expect("Could not feed input chunk");
     }
+
+    tokenizer.end().expect("Could not finalize input");
 }
 
 struct Sink;

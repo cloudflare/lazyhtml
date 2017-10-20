@@ -79,21 +79,20 @@ fn main() {
 
     let input = matches.free.first().unwrap();
 
-    unsafe {
-        let mut feedback;
+    let mut test_state = HandlerState::new();
 
-        let mut tokenizer = Tokenizer::new(2048, 256);
-        tokenizer.set_cs(initial_state);
+    let mut feedback;
 
-        if with_feedback {
-            feedback = Feedback::new(64);
-            feedback.inject_into(&mut tokenizer);
-        }
+    let mut tokenizer = Tokenizer::new(2048, 256);
+    tokenizer.set_cs(initial_state);
 
-        let mut test_state = HandlerState::new();
-        lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
-
-        tokenizer.feed(input).expect("Could not feed input");
-        tokenizer.end().expect("Could not finalize input");
+    if with_feedback {
+        feedback = Feedback::new(64);
+        feedback.inject_into(&mut tokenizer);
     }
+
+    test_state.handler.inject_into(&mut tokenizer);
+
+    tokenizer.feed(input).expect("Could not feed input");
+    tokenizer.end().expect("Could not finalize input");
 }

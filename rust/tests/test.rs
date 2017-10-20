@@ -56,13 +56,13 @@ struct HandlerState {
 }
 
 impl HandlerState {
-    pub fn new(tokenizer: &lhtml_state_t) -> Self {
+    pub fn new() -> Self {
         HandlerState {
             handler: lhtml_token_handler_t {
                 callback: Some(HandlerState::callback),
                 next: null_mut(),
             },
-            tokenizer,
+            tokenizer: ::std::ptr::null(),
             tokens: Vec::new(),
             raw_output: String::new(),
             saw_eof: false,
@@ -195,6 +195,13 @@ impl HandlerState {
     }
 }
 
+impl TokenHandler for HandlerState {
+    fn inject_into<'a>(&'a mut self, tokenizer: &mut Tokenizer<'a>) {
+        self.tokenizer = unsafe { tokenizer.get_state() };
+        self.handler.inject_into(tokenizer);
+    }
+}
+
 impl Test {
     pub unsafe fn run(&self) {
         for &cs in &self.initial_states {
@@ -202,33 +209,36 @@ impl Test {
 
             for pass in 0..2 {
                 let mut serializer;
-
+                let mut test_state = HandlerState::new();
                 let mut feedback;
 
-                let mut tokenizer = Tokenizer::new(2048, 256);
-                tokenizer.set_cs(cs as _);
-                tokenizer.set_last_start_tag(&self.last_start_tag);
+                let input = {
+                    let mut tokenizer = Tokenizer::new(2048, 256);
+                    tokenizer.set_cs(cs as _);
+                    tokenizer.set_last_start_tag(&self.last_start_tag);
 
-                if self.with_feedback {
-                    feedback = Feedback::new(64);
-                    feedback.inject_into(&mut tokenizer);
-                }
+                    if self.with_feedback {
+                        feedback = Feedback::new(64);
+                        feedback.inject_into(&mut tokenizer);
+                    }
 
-                let mut test_state = HandlerState::new(&tokenizer);
-                lhtml_append_handlers(&mut tokenizer.base_handler, &mut test_state.handler);
+                    test_state.inject_into(&mut tokenizer);
 
-                let input = if pass == 0 {
-                    serializer = Serializer::new(|chunk| {
-                        output += chunk;
-                    });
-                    serializer.inject_into(&mut tokenizer);
-                    &self.input
-                } else {
-                    &output
+                    let input = if pass == 0 {
+                        serializer = Serializer::new(|chunk| {
+                            output += chunk;
+                        });
+                        serializer.inject_into(&mut tokenizer);
+                        &self.input
+                    } else {
+                        &output
+                    };
+
+                    tokenizer.feed(input).expect("Could not feed input");
+                    tokenizer.end().expect("Could not finalize input");
+
+                    input
                 };
-
-                tokenizer.feed(input).expect("Could not feed input");
-                tokenizer.end().expect("Could not finalize input");
 
                 assert_eq!(&test_state.raw_output, input);
 
