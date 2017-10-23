@@ -133,6 +133,7 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
             break;
         }
 
+        case LHTML_TOKEN_UNPARSED:
         case LHTML_TOKEN_ERROR:
         case LHTML_TOKEN_EOF: {
             break;

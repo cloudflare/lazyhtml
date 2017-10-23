@@ -93,10 +93,15 @@ impl HandlerState {
             }
         }
 
+        assert!((*token).raw.has_value);
+        let raw = lhtml_to_raw_str(&(*token).raw.value);
+
         let test_token = match (*token).type_ {
-            LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END => None,
+            LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END | LHTML_TOKEN_UNPARSED => None,
             LHTML_TOKEN_CHARACTER => {
                 let value = lhtml_to_raw_str(&data.character.value);
+
+                assert_eq!(value, raw);
 
                 if let Some(&mut Token::Character(ref mut s)) = state.tokens.last_mut() {
                     *s += value;
@@ -187,8 +192,7 @@ impl HandlerState {
             state.tokens.push(test_token);
         }
 
-        assert!((*token).raw.has_value);
-        state.raw_output += lhtml_to_raw_str(&(*token).raw.value);
+        state.raw_output += raw;
         (*token).raw.has_value = false;
 
         lhtml_emit(token, extra);

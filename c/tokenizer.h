@@ -40,6 +40,7 @@ typedef struct {
 
 typedef enum {
     LHTML_TOKEN_ERROR,
+    LHTML_TOKEN_UNPARSED,
     LHTML_TOKEN_CHARACTER,
     LHTML_TOKEN_COMMENT,
     LHTML_TOKEN_START_TAG,

@@ -63,6 +63,10 @@
         token->type = LHTML_TOKEN_CDATA_END;
     }
 
+    action CreateUnparsed {
+        token->type = LHTML_TOKEN_UNPARSED;
+    }
+
     action EmitSlice {
         emit_slice(state, p);
     }

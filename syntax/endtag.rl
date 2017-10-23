@@ -24,7 +24,7 @@
     EndTagOpen := (
         (
             alpha @CreateEndTagToken @StartSlice @To_EndTagName |
-            '>' @To_Data
+            '>' @CreateUnparsed @EmitToken @To_Data
         ) >1 |
         any >0 @Reconsume @To_BogusComment
     ) @eof(CreateCharacter) @eof(EmitSlice);
