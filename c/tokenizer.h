@@ -124,10 +124,10 @@ typedef struct {
     const char *slice_start;
     const char *mark;
     char *buffer_pos;
-} lhtml_state_t;
+} lhtml_tokenizer_t;
 
 __attribute__((nonnull))
-void lhtml_init(lhtml_state_t *state);
+void lhtml_init(lhtml_tokenizer_t *state);
 
 __attribute__((nonnull))
 void lhtml_append_handlers(lhtml_token_handler_t *dest, lhtml_token_handler_t *src);
@@ -136,7 +136,7 @@ __attribute__((nonnull))
 void lhtml_emit(lhtml_token_t *token, void *extra);
 
 __attribute__((warn_unused_result, nonnull(1)))
-bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk);
+bool lhtml_feed(lhtml_tokenizer_t *state, const lhtml_string_t *chunk);
 
 __attribute__((pure, warn_unused_result))
 bool lhtml_str_nocase_equals(const lhtml_string_t actual, const lhtml_string_t expected);

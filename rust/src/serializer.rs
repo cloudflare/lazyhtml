@@ -4,14 +4,14 @@ use tokenizer::*;
 
 #[repr(C)]
 pub struct Serializer<F> {
-    state: lhtml_serializer_state_t,
+    state: lhtml_serializer_t,
     callback: F,
 }
 
 impl<F: FnMut(&str)> Serializer<F> {
     pub fn new(callback: F) -> Self {
         Serializer {
-            state: lhtml_serializer_state_t {
+            state: lhtml_serializer_t {
                 handler: unsafe { zeroed() },
                 writer: Some(Self::writer),
             },
@@ -19,7 +19,7 @@ impl<F: FnMut(&str)> Serializer<F> {
         }
     }
 
-    unsafe extern "C" fn writer(s: lhtml_string_t, state: *mut lhtml_serializer_state_t) {
+    unsafe extern "C" fn writer(s: lhtml_string_t, state: *mut lhtml_serializer_t) {
         ((*(state as *mut Self)).callback)(::std::str::from_utf8_unchecked(&s))
     }
 }

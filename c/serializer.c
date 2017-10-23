@@ -28,7 +28,7 @@ static lhtml_string_t split_iterator_next(split_iterator_t *iter) {
     };
 }
 
-static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
+static void serialize(lhtml_token_t *token, lhtml_serializer_t *extra) {
     lhtml_string_callback_t write = extra->writer;
 
     if (token->raw.has_value) {
@@ -138,6 +138,6 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
     }
 }
 
-void lhtml_serializer_inject(lhtml_state_t *tokenizer, lhtml_serializer_state_t *state) {
+void lhtml_serializer_inject(lhtml_tokenizer_t *tokenizer, lhtml_serializer_t *state) {
     LHTML_ADD_HANDLER(tokenizer, state, serialize);
 }

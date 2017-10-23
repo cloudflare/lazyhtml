@@ -3,13 +3,13 @@ use std::mem::zeroed;
 use std::marker::PhantomData;
 
 pub struct Tokenizer<'a> {
-    state: lhtml_state_t,
+    state: lhtml_tokenizer_t,
     phantom: PhantomData<&'a ()>,
 }
 
 impl<'a> Tokenizer<'a> {
     pub fn new(char_capacity: usize, attr_capacity: usize) -> Self {
-        let mut state = lhtml_state_t {
+        let mut state = lhtml_tokenizer_t {
             buffer: lhtml_alloc_buffer!(lhtml_char_buffer_t, char_capacity),
             attr_buffer: lhtml_alloc_buffer!(lhtml_attr_buffer_t, attr_capacity),
             ..unsafe { zeroed() }
@@ -53,7 +53,7 @@ impl<'a> Tokenizer<'a> {
         });
     }
 
-    pub unsafe fn get_state(&mut self) -> &mut lhtml_state_t {
+    pub unsafe fn get_state(&mut self) -> &mut lhtml_tokenizer_t {
         &mut self.state
     }
 }

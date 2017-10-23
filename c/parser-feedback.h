@@ -15,14 +15,14 @@ typedef LHTML_LIST_T(lhtml_ns_buffer_t) lhtml_ns_stack_t;
 typedef struct {
     lhtml_token_handler_t handler; // needs to be the first one
 
-    lhtml_state_t *tokenizer;
+    lhtml_tokenizer_t *tokenizer;
     lhtml_ns_stack_t ns_stack;
-} lhtml_feedback_state_t;
+} lhtml_feedback_t;
 
 __attribute__((nonnull))
-void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state);
+void lhtml_feedback_inject(lhtml_tokenizer_t *tokenizer, lhtml_feedback_t *state);
 
 __attribute__((nonnull, pure, warn_unused_result))
-lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_state_t *state);
+lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_t *state);
 
 #endif

@@ -3,7 +3,7 @@
 #include "parser-feedback.h"
 // #include "$OUT/tokenizer-states.h" - included with command option to respect env var
 
-lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_state_t *state) {
+lhtml_ns_t lhtml_get_current_ns(const lhtml_feedback_t *state) {
     return state->ns_stack.data[state->ns_stack.length - 1];
 }
 
@@ -12,7 +12,7 @@ static bool is_foreign_ns(lhtml_ns_t ns) {
 }
 
 __attribute__((warn_unused_result))
-static bool enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
+static bool enter_ns(lhtml_feedback_t *state, lhtml_ns_t ns) {
     if (state->ns_stack.length >= state->ns_stack.capacity) {
         return false;
     }
@@ -21,13 +21,13 @@ static bool enter_ns(lhtml_feedback_state_t *state, lhtml_ns_t ns) {
     return true;
 }
 
-static void leave_ns(lhtml_feedback_state_t *state) {
+static void leave_ns(lhtml_feedback_t *state) {
     assert(state->ns_stack.length > 1);
     state->ns_stack.length--;
     state->tokenizer->allow_cdata = is_foreign_ns(lhtml_get_current_ns(state));
 }
 
-static void ensure_tokenizer_mode(lhtml_state_t *tokenizer, lhtml_tag_type_t tag_type) {
+static void ensure_tokenizer_mode(lhtml_tokenizer_t *tokenizer, lhtml_tag_type_t tag_type) {
     int new_state;
 
     switch (tag_type) {
@@ -160,7 +160,7 @@ static bool foreign_is_integration_point(lhtml_ns_t ns, lhtml_tag_type_t type, c
 }
 
 __attribute__((warn_unused_result))
-static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_starttag_t *tag, bool *delayed_enter_html) {
+static bool handle_start_tag_token(lhtml_feedback_t *state, lhtml_token_starttag_t *tag, bool *delayed_enter_html) {
     lhtml_tag_type_t type = tag->type;
 
     if (type == LHTML_TAG_SVG || type == LHTML_TAG_MATH) {
@@ -187,7 +187,7 @@ static bool handle_start_tag_token(lhtml_feedback_state_t *state, lhtml_token_st
     return true;
 }
 
-static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_token_endtag_t *tag) {
+static void handle_end_tag_token(lhtml_feedback_t *state, const lhtml_token_endtag_t *tag) {
     lhtml_tag_type_t type = tag->type;
 
     lhtml_ns_t ns = lhtml_get_current_ns(state);
@@ -205,7 +205,7 @@ static void handle_end_tag_token(lhtml_feedback_state_t *state, const lhtml_toke
     }
 }
 
-static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
+static void handle_token(lhtml_token_t *token, lhtml_feedback_t *state) {
     if (token->type == LHTML_TOKEN_START_TAG) {
         bool delayed_enter_html = false;
         if (!handle_start_tag_token(state, &token->start_tag, &delayed_enter_html)) {
@@ -226,7 +226,7 @@ static void handle_token(lhtml_token_t *token, lhtml_feedback_state_t *state) {
     }
 }
 
-void lhtml_feedback_inject(lhtml_state_t *tokenizer, lhtml_feedback_state_t *state) {
+void lhtml_feedback_inject(lhtml_tokenizer_t *tokenizer, lhtml_feedback_t *state) {
     state->tokenizer = tokenizer;
     assert(enter_ns(state, LHTML_NS_HTML));
     LHTML_ADD_HANDLER(tokenizer, state, handle_token);

@@ -67,7 +67,7 @@ inline lhtml_tag_type_t lhtml_get_tag_type(const lhtml_string_t name) {
 }
 
 HELPER(nonnull)
-void emit_token(lhtml_state_t *state, const char *end) {
+void emit_token(lhtml_tokenizer_t *state, const char *end) {
     lhtml_token_t *token = &state->token;
     token->raw.value.length = (size_t) (end - token->raw.value.data);
     if (token->raw.value.length) {
@@ -80,7 +80,7 @@ void emit_token(lhtml_state_t *state, const char *end) {
 }
 
 HELPER(nonnull)
-bool already_errored(lhtml_state_t *state, lhtml_string_t unprocessed) {
+bool already_errored(lhtml_tokenizer_t *state, lhtml_string_t unprocessed) {
     if (unprocessed.length > 0) {
         lhtml_token_t *token = &state->token;
         token->type = LHTML_TOKEN_ERROR;
@@ -92,14 +92,14 @@ bool already_errored(lhtml_state_t *state, lhtml_string_t unprocessed) {
 }
 
 HELPER(nonnull)
-bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
+bool emit_error(lhtml_tokenizer_t *state, lhtml_string_t unprocessed) {
     state->token.type = LHTML_TOKEN_ERROR;
     emit_token(state, state->buffer_pos);
     return already_errored(state, unprocessed);
 }
 
 HELPER(nonnull)
-void emit_slice(lhtml_state_t *state, const char *p) {
+void emit_slice(lhtml_tokenizer_t *state, const char *p) {
     assert(state->token.type == LHTML_TOKEN_CHARACTER);
     assert(state->slice_start == state->token.raw.value.data);
     const char *slice_end = state->mark != NULL ? state->mark : p;
@@ -107,7 +107,7 @@ void emit_slice(lhtml_state_t *state, const char *p) {
 }
 
 HELPER(nonnull)
-void emit_eof(lhtml_state_t *state) {
+void emit_eof(lhtml_tokenizer_t *state) {
     lhtml_token_t *token = &state->token;
     token->type = LHTML_TOKEN_EOF;
     token->raw.has_value = true;
@@ -162,7 +162,7 @@ inline lhtml_attribute_t *lhtml_create_attr(lhtml_attributes_t *attrs) {
     return can_create_attr(attrs) ? &attrs->data[attrs->length++] : NULL;
 }
 
-void lhtml_init(lhtml_state_t *state) {
+void lhtml_init(lhtml_tokenizer_t *state) {
     %%write init nocs;
 
     if (state->cs == 0) {
@@ -179,7 +179,7 @@ void lhtml_append_handlers(lhtml_token_handler_t *dest, lhtml_token_handler_t *s
     dest->next = src;
 }
 
-bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
+bool lhtml_feed(lhtml_tokenizer_t *state, const lhtml_string_t *chunk) {
     lhtml_token_t *const token = &state->token;
 
     if (token->type == LHTML_TOKEN_EOF) {

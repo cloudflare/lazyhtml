@@ -49,7 +49,7 @@ unsafe fn lhtml_to_name(s: lhtml_string_t) -> String {
 
 struct HandlerState {
     handler: lhtml_token_handler_t,
-    tokenizer: *const lhtml_state_t,
+    tokenizer: *const lhtml_tokenizer_t,
     tokens: Vec<Token>,
     raw_output: String,
     saw_eof: bool,

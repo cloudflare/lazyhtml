@@ -2,11 +2,11 @@ pub use lazyhtml_sys::*;
 use std::mem::zeroed;
 use tokenizer::*;
 
-pub struct Feedback(lhtml_feedback_state_t);
+pub struct Feedback(lhtml_feedback_t);
 
 impl Feedback {
     pub fn new(ns_capacity: usize) -> Self {
-        Feedback(lhtml_feedback_state_t {
+        Feedback(lhtml_feedback_t {
             ns_stack: lhtml_ns_stack_t {
                 __bindgen_anon_1: lhtml_ns_stack_t__bindgen_ty_1 {
                     buffer: lhtml_alloc_buffer!(lhtml_ns_buffer_t, ns_capacity),
