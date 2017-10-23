@@ -24,10 +24,6 @@ clean-obj:
 clean:
 	rm -rf $(OUT)
 
-.PHONY: bench
-bench: $(OUT_TARGET)/bench
-	@for f in ../bench-fixtures/*.html; do echo $$f; $< $$f /dev/null; done
-
 ## Intermediate dependencies
 
 $(OUT) $(OUT_TARGET):
@@ -45,7 +41,7 @@ $(OUT)/%.d: %.c | $(OUT)
 $(OUT)/tokenizer.d: $(OUT)/tokenizer.c
 	$(CC) $(CFLAGS) -xc -iquote. -MM $< -MT "\$$(OUT)/$(@F)" -MT "\$$(OUT_TARGET)/$(@F:.d=.o)" -MP -MF $@
 
-ifneq (, $(filter all lib bench $(OUT)/%.d $(OUT_TARGET)/%, $(MAKECMDGOALS)))
+ifneq (, $(filter all lib $(OUT)/%.d $(OUT_TARGET)/%, $(MAKECMDGOALS)))
 -include $(patsubst %.c, $(OUT)/%.d, $(SOURCES))
 -include $(OUT)/tokenizer.d
 endif
@@ -67,5 +63,3 @@ $(OUT_TARGET)/parser-feedback.o:
 
 $(OUT_TARGET)/liblhtml.a: $(OUT_TARGET)/tokenizer.o $(OUT_TARGET)/parser-feedback.o $(OUT_TARGET)/serializer.o
 	ar rcs $@ $?
-
-$(OUT_TARGET)/bench: $(OUT_TARGET)/bench.o $(OUT_TARGET)/liblhtml.a
