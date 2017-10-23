@@ -99,24 +99,26 @@ impl HandlerState {
         let test_token = match (*token).type_ {
             LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END | LHTML_TOKEN_UNPARSED => None,
             LHTML_TOKEN_CHARACTER => {
-                let value = lhtml_to_raw_str(&data.character.value);
-
-                assert_eq!(value, raw);
-
                 if let Some(&mut Token::Character(ref mut s)) = state.tokens.last_mut() {
-                    *s += value;
+                    *s += raw;
                     None
                 } else {
-                    Some(Token::Character(value.to_owned()))
+                    Some(Token::Character(raw.to_owned()))
                 }
             }
-            LHTML_TOKEN_COMMENT => Some(Token::Comment(
-                Decoder::new(lhtml_to_raw_str(&data.comment.value))
-                    .unsafe_null()
-                    .run(),
-            )),
+            LHTML_TOKEN_COMMENT => {
+                (*token).raw.has_value = false;
+
+                Some(Token::Comment(
+                    Decoder::new(lhtml_to_raw_str(&data.comment.value))
+                        .unsafe_null()
+                        .run(),
+                ))
+            }
             LHTML_TOKEN_START_TAG => {
                 let start_tag = &mut data.start_tag;
+
+                (*token).raw.has_value = false;
 
                 assert_eq!(lhtml_get_tag_type(start_tag.name), start_tag.type_);
 
@@ -143,6 +145,8 @@ impl HandlerState {
             LHTML_TOKEN_END_TAG => {
                 let end_tag = &data.end_tag;
 
+                (*token).raw.has_value = false;
+
                 assert_eq!(lhtml_get_tag_type(end_tag.name), end_tag.type_);
 
                 Some(Token::EndTag {
@@ -151,6 +155,8 @@ impl HandlerState {
             }
             LHTML_TOKEN_DOCTYPE => {
                 let doctype = &data.doctype;
+
+                (*token).raw.has_value = false;
 
                 Some(Token::Doctype {
                     name: if doctype.name.has_value {
@@ -193,7 +199,6 @@ impl HandlerState {
         }
 
         state.raw_output += raw;
-        (*token).raw.has_value = false;
 
         lhtml_emit(token, extra);
     }

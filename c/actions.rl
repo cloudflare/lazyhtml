@@ -42,7 +42,7 @@
     }
 
     action CreateCharacter {
-        CREATE_TOKEN(CHARACTER, {});
+        token->type = LHTML_TOKEN_CHARACTER;
         state->unsafe_null = false;
         state->entities = false;
     }

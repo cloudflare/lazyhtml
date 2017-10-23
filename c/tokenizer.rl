@@ -100,9 +100,9 @@ bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
 
 HELPER(nonnull)
 void emit_slice(lhtml_state_t *state, const char *p) {
-    lhtml_token_t *token = &state->token;
+    assert(state->token.type == LHTML_TOKEN_CHARACTER);
+    assert(state->slice_start == state->token.raw.value.data);
     const char *slice_end = state->mark != NULL ? state->mark : p;
-    GET_TOKEN(CHARACTER)->value = range_string(state->slice_start, slice_end);
     emit_token(state, slice_end);
 }
 
@@ -237,7 +237,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
         if (token->type == LHTML_TOKEN_CHARACTER) {
             emit_slice(state, pe);
-            CREATE_TOKEN(CHARACTER, {});
+            token->type = LHTML_TOKEN_CHARACTER;
             state->slice_start = token->raw.value.data;
         }
 

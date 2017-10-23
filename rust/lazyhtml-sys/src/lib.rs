@@ -64,14 +64,6 @@ impl Debug for lhtml_opt_string_t {
     }
 }
 
-impl Debug for lhtml_token_character_t {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        f.debug_struct("lhtml_token_character_t")
-            .field("value", &self.value)
-            .finish()
-    }
-}
-
 impl Debug for lhtml_token_comment_t {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
         f.debug_struct("lhtml_token_comment_t")

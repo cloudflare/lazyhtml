@@ -53,10 +53,6 @@ typedef enum {
 
 typedef struct {
     lhtml_string_t value;
-} lhtml_token_character_t;
-
-typedef struct {
-    lhtml_string_t value;
 } lhtml_token_comment_t;
 
 typedef struct {
@@ -91,7 +87,6 @@ typedef struct {
 typedef struct {
     lhtml_token_type_t type;
     union {
-        lhtml_token_character_t character;
         lhtml_token_comment_t comment;
         lhtml_token_starttag_t start_tag;
         lhtml_token_endtag_t end_tag;

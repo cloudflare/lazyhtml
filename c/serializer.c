@@ -47,11 +47,6 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
             break;
         }
 
-        case LHTML_TOKEN_CHARACTER: {
-            write(token->character.value, extra);
-            break;
-        }
-
         case LHTML_TOKEN_DOCTYPE: {
             write(LHTML_STRING("<!DOCTYPE"), extra);
             if (token->doctype.name.has_value) {
@@ -133,10 +128,12 @@ static void serialize(lhtml_token_t *token, lhtml_serializer_state_t *extra) {
             break;
         }
 
+        case LHTML_TOKEN_CHARACTER:
         case LHTML_TOKEN_UNPARSED:
         case LHTML_TOKEN_ERROR:
         case LHTML_TOKEN_EOF: {
-            break;
+            // These tokens must have a raw value
+            assert(false);
         }
     }
 }
