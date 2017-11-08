@@ -15,7 +15,7 @@ c-tokenizer:
 	dot -Tpng $< -o $@
 	open $@
 
-tests.dat: convert-tests.js js/tests.proto .git/modules/html5lib-tests/HEAD
+tests.dat: convert-tests.js js/tests.proto
 	node $< html5lib-tests/tokenizer $@
 
 tests-with-feedback.dat: convert-tests.js js/tests.proto
@@ -24,9 +24,4 @@ tests-with-feedback.dat: convert-tests.js js/tests.proto
 .PHONY: clean
 clean:
 	rm -rf *.dot *.png
-	make -C js clean
 	make -C c clean
-
-.PHONY: js-tokenizer
-js-tokenizer:
-	make -C js tokenizer.js
