@@ -112,9 +112,9 @@ bool emit_error(lhtml_state_t *state, lhtml_string_t unprocessed) {
 HELPER(nonnull)
 void emit_slice(lhtml_state_t *state, const char *p) {
     lhtml_token_t *token = &state->token;
-    const char *end_slice = state->mark != NULL ? state->mark : p;
-    GET_TOKEN(CHARACTER)->value = range_string(state->start_slice, end_slice);
-    emit_token(state, end_slice);
+    const char *slice_end = state->mark != NULL ? state->mark : p;
+    GET_TOKEN(CHARACTER)->value = range_string(state->slice_start, slice_end);
+    emit_token(state, slice_end);
 }
 
 HELPER(nonnull)
@@ -250,7 +250,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
             lhtml_token_character_kind_t kind = token->character.kind;
             emit_slice(state, pe);
             CREATE_TOKEN(CHARACTER, { .kind = kind });
-            state->start_slice = token->raw.value.data;
+            state->slice_start = token->raw.value.data;
         }
 
         size_t shift = (size_t) (token->raw.value.data - state->buffer.data);
@@ -293,7 +293,7 @@ bool lhtml_feed(lhtml_state_t *state, const lhtml_string_t *chunk) {
 
             memmove(state->buffer.data, token->raw.value.data, (size_t) (state->buffer_pos - token->raw.value.data));
             state->buffer_pos -= shift;
-            state->start_slice -= shift;
+            state->slice_start -= shift;
 
             if (state->mark != NULL) {
                 state->mark -= shift;
