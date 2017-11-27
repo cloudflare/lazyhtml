@@ -10,7 +10,7 @@ jessie:
             - build-essential
             - ragel
             - pkg-config
-            - nodejs
+            - nodejs=8.*
             - libprotobuf-c-dev
         pre-cache:
             - npm i -g tap-summary
