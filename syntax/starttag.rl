@@ -7,39 +7,57 @@
         '>' @SetLastStartTagName @Next_Data @EmitToken
     );
 
-    StartTagName := any* %SetStartTagName :> _StartTagEnd;
+    _AttributeNameChars = (
+        ('"' | "'" | '<') >1 @Err_UnexpectedCharacterInAttributeName |
+        any >0
+    );
+
+    StartTagName := (any* %SetStartTagName :> _StartTagEnd) @eof(Err_EofInTag);
 
     BeforeAttributeName := TagNameSpace* <: (
         ('/' | '>') >1 @Reconsume @To_AfterAttributeName |
-        any >0 when CanCreateAttribute @StartSlice @To_AttributeName
-    );
+        '=' >1 @Err_UnexpectedEqualsSignBeforeAttributeName when CanCreateAttribute @StartSlice @To_AttributeName |
+        _AttributeNameChars >0 when CanCreateAttribute @StartSlice @To_AttributeName
+    ) @eof(Err_EofInTag);
 
-    AttributeName := any* %AppendAttribute :> (
+    AttributeName := _AttributeNameChars* %AppendAttribute :> (
         TagNameEnd @Reconsume @To_AfterAttributeName |
         '=' @To_BeforeAttributeValue
-    );
+    ) @eof(Err_EofInTag);
 
     AfterAttributeName := TagNameSpace* <: (
         (
             _StartTagEnd |
             '=' @To_BeforeAttributeValue
         ) >1 |
-        any >0 when CanCreateAttribute @StartSlice @To_AttributeName
-    );
+        _AttributeNameChars >0 when CanCreateAttribute @StartSlice @To_AttributeName
+    ) @eof(Err_EofInTag);
 
     BeforeAttributeValue := TagNameSpace* <: (
         _StartQuote >1 @To_AttributeValueQuoted |
+        '>' >1 @Err_MissingAttributeValue @Reconsume @To_AttributeValueUnquoted |
         any >0 @Reconsume @To_AttributeValueUnquoted
-    );
+    ) @eof(Err_EofInTag);
 
-    _AttrValue = (any* >StartSlice %SetAttributeValue)?;
+    _AttrValueCharsQuoted = (any* >StartSlice %SetAttributeValue)?;
 
-    AttributeValueQuoted := _AttrValue :> _EndQuote @To_BeforeAttributeName;
+    AttributeValueQuoted := (_AttrValueCharsQuoted :> _EndQuote @To_AfterAttributeValueQuoted) @eof(Err_EofInTag);
 
-    AttributeValueUnquoted := _AttrValue :> ((TagNameSpace | '>') & _StartTagEnd);
+    AfterAttributeValueQuoted := (
+        _StartTagEnd >1 |
+        '=' >1  @Err_MissingWhitespaceBetweenAttributes @Err_UnexpectedEqualsSignBeforeAttributeName when CanCreateAttribute @StartSlice @To_AttributeName |
+        _AttributeNameChars >0 @Err_MissingWhitespaceBetweenAttributes when CanCreateAttribute @StartSlice @To_AttributeName
+    ) @eof(Err_EofInTag);
+
+    _AttrValueCharsUnquoted = ((
+        ('"' | "'" | '<' | '=' | '`') >1 @Err_UnexpectedCharacterInUnquotedAttributeValue |
+        any >0
+    )* >StartSlice %SetAttributeValue)?;
+
+    AttributeValueUnquoted := (_AttrValueCharsUnquoted :> ((TagNameSpace | '>') & _StartTagEnd)) @eof(Err_EofInTag);
 
     SelfClosingTag := (
         '>' >1 @SetSelfClosingFlag @SetLastStartTagName @Next_Data @EmitToken |
-        any >0 @Reconsume @To_BeforeAttributeName
-    );
+        any >0 @Err_UnexpectedSolidusInTag @Reconsume @To_BeforeAttributeName
+    ) @eof(Err_EofInTag);
 }%%

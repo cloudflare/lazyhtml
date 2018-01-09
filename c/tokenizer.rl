@@ -8,12 +8,14 @@
     machine html;
 
     include 'actions.rl';
+    include 'parse_errors.rl';
     include '../syntax/index.rl';
 
     access state->;
 }%%
 
 #define GET_TOKEN(TYPE) (assert(token->type == LHTML_TOKEN_##TYPE), &token->LHTML_FIELD_NAME_##TYPE)
+#define TO_LOWER(c) (c | ((unsigned char) (c - 'A') < 26) << 5) // tolower that vectorizes
 
 #define CREATE_TOKEN(TYPE, VALUE) {\
     token->type = LHTML_TOKEN_##TYPE;\
@@ -73,6 +75,7 @@ void emit_token(lhtml_tokenizer_t *state, const char *end) {
     if (token->raw.value.length) {
         token->raw.has_value = true;
         lhtml_emit(token, &state->base_handler);
+        token->parse_errors = 0;
     }
     token->type = LHTML_TOKEN_ERROR;
     token->raw.value.data = end;
@@ -114,6 +117,15 @@ void emit_eof(lhtml_tokenizer_t *state) {
     lhtml_emit(token, &state->base_handler);
 }
 
+HELPER(nonnull)
+void parse_error(lhtml_tokenizer_t *state, lhtml_parse_error_t err) {
+    state->token.parse_errors |= 1ULL << err;
+}
+
+inline bool lhtml_has_parse_error(lhtml_token_t *token, lhtml_parse_error_t err) {
+    return token->parse_errors & (1ULL << err);
+}
+
 void lhtml_emit(lhtml_token_t *token, void *extra) {
     lhtml_token_handler_t *handler = ((lhtml_token_handler_t *) extra)->next;
     if (handler != NULL) {
@@ -129,11 +141,7 @@ inline bool lhtml_str_nocase_equals(const lhtml_string_t actual, const lhtml_str
     }
 
     for (size_t i = 0; i < length; i++) {
-        char c = actual.data[i];
-        c |= ((unsigned char) (c - 'A') < 26) << 5; // tolower that vectorizes
-        char e = expected.data[i];
-
-        if (c != e) {
+        if (TO_LOWER(actual.data[i]) != TO_LOWER(expected.data[i])) {
             return false;
         }
     }
@@ -141,7 +149,7 @@ inline bool lhtml_str_nocase_equals(const lhtml_string_t actual, const lhtml_str
     return true;
 }
 
-inline lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml_string_t name) {
+lhtml_attribute_t *lhtml_find_attr(lhtml_attributes_t *attrs, const lhtml_string_t name) {
     size_t count = attrs->length;
     lhtml_attribute_t *items = attrs->data;
     for (size_t i = 0; i < count; i++) {

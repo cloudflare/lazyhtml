@@ -13,7 +13,7 @@
     ScriptDataEscaped := _UnsafeText :> (
         '-' @CreateCharacter @UnsafeNull @StartSlice @To_ScriptDataEscapedDash |
         '<' @StartSlice @To_ScriptDataEscapedLessThanSign
-    );
+    ) @eof(Err_EofInScriptHtmlCommentLikeText);
 
     ScriptDataEscapedDash := (
         (
@@ -21,7 +21,7 @@
             '<' @EmitSlice @StartSlice @To_ScriptDataEscapedLessThanSign
         ) >1 |
         any >0 @EmitSlice @Reconsume @To_ScriptDataEscaped
-    ) @eof(EmitSlice);
+    ) @eof(Err_EofInScriptHtmlCommentLikeText) @eof(EmitSlice);
 
     ScriptDataEscapedDashDash := '-'* <: (
         (
@@ -29,7 +29,7 @@
             '>' @EmitSlice @Reconsume @To_ScriptData
         ) >1 |
         any >0 @EmitSlice @Reconsume @To_ScriptDataEscaped
-    ) @eof(EmitSlice);
+    ) @eof(Err_EofInScriptHtmlCommentLikeText) @eof(EmitSlice);
 
     ScriptDataEscapedLessThanSign := (
         _SpecialEndTag |
@@ -39,7 +39,7 @@
     ScriptDataDoubleEscaped := any* :> (
         '-' @To_ScriptDataDoubleEscapedDash |
         '<' @To_ScriptDataDoubleEscapedLessThanSign
-    ) @eof(EmitSlice);
+    ) @eof(Err_EofInScriptHtmlCommentLikeText) @eof(EmitSlice);
 
     ScriptDataDoubleEscapedDash := (
         (
@@ -47,7 +47,7 @@
             '<' @To_ScriptDataDoubleEscapedLessThanSign
         ) >1 |
         any >0 @To_ScriptDataDoubleEscaped
-    ) @eof(EmitSlice);
+    ) @eof(Err_EofInScriptHtmlCommentLikeText) @eof(EmitSlice);
 
     ScriptDataDoubleEscapedDashDash := '-'* <: (
         (
@@ -55,7 +55,7 @@
             '>' @EmitSlice @Reconsume @To_ScriptData
         ) >1 |
         any >0 @To_ScriptDataDoubleEscaped
-    ) @eof(EmitSlice);
+    ) @eof(Err_EofInScriptHtmlCommentLikeText) @eof(EmitSlice);
 
     ScriptDataDoubleEscapedLessThanSign := (
         '/' /script/i TagNameEnd @EmitSlice @Reconsume @To_ScriptDataEscaped

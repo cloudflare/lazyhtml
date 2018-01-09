@@ -21,18 +21,21 @@ mod feedback_tokens;
 mod decoder;
 mod unescape;
 mod html5lib;
+mod parse_errors;
 
 use std::collections::HashMap;
 use lazyhtml::*;
-use std::mem::replace;
 use std::os::raw::c_void;
 use std::iter::FromIterator;
 use std::ptr::null_mut;
 use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};
-use token::Token;
+use token::{Token, TokenRange};
 use decoder::Decoder;
 use unescape::Unescape;
 use html5lib::{get_tests, Test};
+use std::iter::IntoIterator;
+use parse_errors::{ParseErrors, ERROR_CODES};
+use lazyhtml::lhtml_token_type_t::{LHTML_TOKEN_CHARACTER, LHTML_TOKEN_EOF};
 
 unsafe fn lhtml_to_raw_str(s: &lhtml_string_t) -> &str {
     ::std::str::from_utf8_unchecked(s)
@@ -52,6 +55,9 @@ struct HandlerState {
     tokens: Vec<Token>,
     raw_output: String,
     saw_eof: bool,
+    current_pos: usize,
+    parse_errors: ParseErrors,
+    token_ranges: Vec<TokenRange>,
 }
 
 impl HandlerState {
@@ -65,7 +71,72 @@ impl HandlerState {
             tokens: Vec::new(),
             raw_output: String::new(),
             saw_eof: false,
+            current_pos: 0,
+            parse_errors: ParseErrors::new(),
+            token_ranges: Vec::new(),
         }
+    }
+
+    fn get_extended_last_token_range(&mut self, new_end: usize) -> TokenRange {
+        let last_range = self.token_ranges.last_mut().unwrap();
+
+        let extended_range = TokenRange {
+            start: last_range.start,
+            end: new_end,
+        };
+
+        // NOTE: go through all errors and update their ranges
+        self.parse_errors =
+            ParseErrors::from_iter(self.parse_errors.iter().map(|&(token_range, code)| {
+                if token_range == *last_range {
+                    (extended_range, code)
+                } else {
+                    (token_range, code)
+                }
+            }));
+
+        *last_range = extended_range;
+        extended_range
+    }
+
+    unsafe fn update_parse_errors(&mut self, token: *mut lhtml_token_t, token_len: usize) {
+        let errors_bit_flags = (*token).parse_errors;
+        let mut end = self.current_pos + token_len;
+        let mut is_consequent_chars = false;
+        let is_eof = (*token).type_ == LHTML_TOKEN_EOF;
+
+        if is_eof {
+            end += 1;
+        }
+
+        if let (LHTML_TOKEN_CHARACTER, Some(&Token::Character(_))) =
+            ((*token).type_, self.tokens.last())
+        {
+            is_consequent_chars = true;
+        }
+
+        let should_extend_last_range =
+            (is_consequent_chars || is_eof) && self.token_ranges.len() > 0;
+
+        let token_range = if should_extend_last_range {
+            self.get_extended_last_token_range(end)
+        } else {
+            let token_range = TokenRange {
+                start: self.current_pos,
+                end,
+            };
+
+            self.token_ranges.push(token_range);
+            token_range
+        };
+
+        self.current_pos = end;
+
+        ERROR_CODES.iter().enumerate().for_each(|(i, code)| {
+            if errors_bit_flags & (1 << i) > 0 {
+                self.parse_errors.insert((token_range, code));
+            }
+        });
     }
 
     unsafe extern "C" fn callback(token: *mut lhtml_token_t, extra: *mut c_void) {
@@ -93,7 +164,10 @@ impl HandlerState {
         }
 
         assert!((*token).raw.has_value);
+
         let raw = lhtml_to_raw_str(&(*token).raw.value);
+
+        state.update_parse_errors(token, raw.len());
 
         let test_token = match (*token).type_ {
             LHTML_TOKEN_CDATA_START | LHTML_TOKEN_CDATA_END | LHTML_TOKEN_UNPARSED => None,
@@ -216,6 +290,7 @@ impl Test {
             let mut output = String::new();
 
             for pass in 0..2 {
+                let is_serializer_test = pass == 1;
                 let mut serializer;
                 let mut test_state = HandlerState::new();
                 let mut feedback;
@@ -232,7 +307,7 @@ impl Test {
 
                     test_state.inject_into(&mut tokenizer);
 
-                    let input = if pass == 0 {
+                    let input = if !is_serializer_test {
                         serializer = Serializer::new(|chunk| {
                             output += chunk;
                         });
@@ -250,6 +325,19 @@ impl Test {
 
                 assert_eq!(&test_state.raw_output, input);
 
+                if !is_serializer_test && self.with_errors {
+                    let expected_errors = self.get_expected_parse_errors(test_state.token_ranges)
+                        .unwrap();
+
+                    assert_eq!(
+                        test_state.parse_errors, expected_errors,
+                        "Parse error mismatch:\n\
+                         actual: {:?}\n\
+                         expected: {:?}\n",
+                        test_state.parse_errors, expected_errors
+                    );
+                }
+
                 assert!(
                     test_state.tokens == self.output,
                     "Token mismatch\n\
@@ -259,7 +347,11 @@ impl Test {
                      actual: {:#?}\n\
                      expected: {:#?}",
                     cs,
-                    if pass == 1 { Some(&self.input) } else { None },
+                    if is_serializer_test {
+                        Some(&self.input)
+                    } else {
+                        None
+                    },
                     input,
                     test_state.tokens,
                     self.output
@@ -279,7 +371,7 @@ fn main() {
 
             TestDescAndFn {
                 desc: TestDesc {
-                    name: TestName::DynTestName(replace(&mut test.description, String::new())),
+                    name: TestName::DynTestName(test.description.to_owned()),
                     ignore,
                     should_panic: ShouldPanic::No,
                     allow_fail: false,

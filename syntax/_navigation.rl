@@ -33,17 +33,22 @@
     action To_AfterAttributeName { fgoto AfterAttributeName; }
     action To_BeforeAttributeValue { fgoto BeforeAttributeValue; }
     action To_AttributeValueQuoted { fgoto AttributeValueQuoted; }
+    action To_AfterAttributeValueQuoted { fgoto AfterAttributeValueQuoted; }
     action To_AttributeValueUnquoted { fgoto AttributeValueUnquoted; }
     action To_DocType { fgoto DocType; }
     action To_CDataSection { fgoto CDataSection; }
     action To_Comment { fgoto Comment; }
+    action To_BeforeDocTypeName { fgoto BeforeDocTypeName; }
     action To_DocTypeName { fgoto DocTypeName; }
     action To_AfterDocTypeName { fgoto AfterDocTypeName; }
+    action To_AfterDocTypePublicKeyword { fgoto AfterDocTypePublicKeyword; }
     action To_BeforeDocTypePublicIdentifier { fgoto BeforeDocTypePublicIdentifier; }
     action To_DocTypePublicIdentifierQuoted { fgoto DocTypePublicIdentifierQuoted; }
     action To_BogusDocType { fgoto BogusDocType; }
+    action To_AfterDocTypePublicIdentifier { fgoto AfterDocTypePublicIdentifier; }
     action To_BetweenDocTypePublicAndSystemIdentifiers { fgoto BetweenDocTypePublicAndSystemIdentifiers; }
     action To_DocTypeSystemIdentifierQuoted { fgoto DocTypeSystemIdentifierQuoted; }
+    action To_AfterDocTypeSystemKeyword { fgoto AfterDocTypeSystemKeyword; }
     action To_BeforeDocTypeSystemIdentifier { fgoto BeforeDocTypeSystemIdentifier; }
     action To_AfterDocTypeSystemIdentifier { fgoto AfterDocTypeSystemIdentifier; }
 }%%

@@ -9,7 +9,23 @@ enum TokenKind {
     Comment,
     StartTag,
     EndTag,
-    #[serde(rename = "DOCTYPE")] Doctype,
+    #[serde(rename = "DOCTYPE")]
+    Doctype,
+}
+
+// NOTE: we use custom Range implementation for tokens because std::ops::Range
+// is an iterator and, therefore, doesn't implement Copy trait. Also, currently
+// contains() method is available only in the nightly.
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
+pub struct TokenRange {
+    pub start: usize,
+    pub end: usize,
+}
+
+impl TokenRange {
+    pub fn contains(&self, val: usize) -> bool {
+        (self.start <= val) && (val < self.end)
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

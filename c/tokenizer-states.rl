@@ -5,6 +5,7 @@
     machine html;
 
     include 'actions.rl';
+    include 'parse_errors.rl';
     include '../syntax/index.rl';
 }%%
 

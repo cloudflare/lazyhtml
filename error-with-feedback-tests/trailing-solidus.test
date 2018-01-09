@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "description": "Non-void HTML element with trailing solidus",
+      "input": "<div/>",
+      "output": [["StartTag", "div", {}, true]],
+      "errors": [
+        {
+          "code": "non-void-html-element-start-tag-with-trailing-solidus",
+          "line": 1,
+          "col": 6
+        }
+      ]
+    },
+    {
+      "description":
+        "Non-void HTML element with trailing solidus in foreign content",
+      "input": "<svg><div/></svg>",
+      "output": [
+        ["StartTag", "svg", {}],
+        ["StartTag", "div", {}, true],
+        ["EndTag", "svg"]
+      ],
+      "errors": [
+        {
+          "code": "non-void-html-element-start-tag-with-trailing-solidus",
+          "line": 1,
+          "col": 11
+        }
+      ]
+    }
+  ]
+}

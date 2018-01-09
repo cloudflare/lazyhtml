@@ -112,22 +112,31 @@
     action CanCreateAttribute { can_create_attr(&GET_TOKEN(START_TAG)->attributes) }
 
     action SetAttributeValue {
-        lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
-        lhtml_attribute_t *attr = &attributes->data[attributes->length - 1];
-        attr->value = range_string(state->slice_start, p);
-        attr->raw.value.length = (size_t) (p + (*p == '"' || *p == '\'') - attr->name.data);
+        if (state->current_attr_is_unique) {
+            lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
+            lhtml_attribute_t *attr = &attributes->data[attributes->length - 1];
+            attr->value = range_string(state->slice_start, p);
+            attr->raw.value.length = (size_t) (p + (*p == '"' || *p == '\'') - attr->name.data);
+        }
     }
 
     action AppendAttribute {
         lhtml_attributes_t *attributes = &GET_TOKEN(START_TAG)->attributes;
         lhtml_string_t name = range_string(state->slice_start, p);
-        attributes->data[attributes->length++] = (lhtml_attribute_t) {
-            .name = name,
-            .raw = (lhtml_opt_string_t) {
-                .has_value = true,
-                .value = name
-            }
-        };
+
+        state->current_attr_is_unique = lhtml_find_attr(attributes, name) == NULL;
+
+        if (state->current_attr_is_unique ) {
+            attributes->data[attributes->length++] = (lhtml_attribute_t) {
+                .name = name,
+                .raw = (lhtml_opt_string_t) {
+                    .has_value = true,
+                    .value = name
+                }
+            };
+        } else {
+            parse_error(state, LHTML_ERR_DUPLICATE_ATTRIBUTE);
+        }
     }
 
     action IsCDataAllowed { state->allow_cdata }

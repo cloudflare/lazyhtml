@@ -60,6 +60,34 @@ static void ensure_tokenizer_mode(lhtml_tokenizer_t *tokenizer, lhtml_tag_type_t
     tokenizer->cs = new_state;
 }
 
+static bool can_be_self_closing(lhtml_tag_type_t tag_type) {
+    switch (tag_type) {
+        case LHTML_TAG_BASE:
+        case LHTML_TAG_BASEFONT:
+        case LHTML_TAG_BGSOUND:
+        case LHTML_TAG_LINK:
+        case LHTML_TAG_META:
+        case LHTML_TAG_AREA:
+        case LHTML_TAG_BR:
+        case LHTML_TAG_EMBED:
+        case LHTML_TAG_IMG:
+        case LHTML_TAG_KEYGEN:
+        case LHTML_TAG_WBR:
+        case LHTML_TAG_INPUT:
+        case LHTML_TAG_PARAM:
+        case LHTML_TAG_SOURCE:
+        case LHTML_TAG_TRACK:
+        case LHTML_TAG_HR:
+        case LHTML_TAG_MATH:
+        case LHTML_TAG_SVG:
+        case LHTML_TAG_COL:
+        case LHTML_TAG_FRAME:
+            return true;
+        default:
+            return false;
+    }
+}
+
 static bool foreign_causes_exit(const lhtml_token_starttag_t *start_tag) {
     switch (start_tag->type) {
         case LHTML_TAG_B:
@@ -212,7 +240,15 @@ static void handle_token(lhtml_token_t *token, lhtml_feedback_t *state) {
             token->type = LHTML_TOKEN_ERROR;
             state->tokenizer->cs = html_error;
         }
+
+        lhtml_ns_t ns = lhtml_get_current_ns(state);
+
+        if (!is_foreign_ns(ns) && !can_be_self_closing(token->start_tag.type)) {
+            token->parse_errors |= 1ULL << LHTML_ERR_NON_VOID_HTML_START_TAG_WITH_TRAILING_SOLIDUS;
+        }
+
         lhtml_emit(token, state);
+
         if (delayed_enter_html) {
             if (!enter_ns(state, LHTML_NS_HTML)) {
                 state->tokenizer->cs = html_error;
