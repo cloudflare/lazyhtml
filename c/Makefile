@@ -28,7 +28,7 @@ test: $(OUT_TARGET)/test-runner $(TESTS)
 
 .PHONY: bamboo-test
 $(OUT_TARGET)/%.xml: ../%.dat $(OUT_TARGET)/test-runner
-	$(OUT_TARGET)/test-runner $< | tail -n +2 | tap-xunit > $@
+	$(OUT_TARGET)/test-runner $< | tap-xunit > $@
 
 bamboo-test: $(patsubst ../%.dat, $(OUT_TARGET)/%.xml, $(TESTS))
 
