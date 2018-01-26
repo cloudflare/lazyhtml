@@ -26,7 +26,6 @@ use std::collections::HashMap;
 use lazyhtml::*;
 use std::mem::replace;
 use std::os::raw::c_void;
-use std::ascii::AsciiExt;
 use std::iter::FromIterator;
 use std::ptr::null_mut;
 use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};

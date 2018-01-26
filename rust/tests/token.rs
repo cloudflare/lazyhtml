@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use serde::de::{Deserialize, Deserializer, Error as DeError};
 use std::fmt::{self, Formatter};
 use std::iter::FromIterator;
-use std::ascii::AsciiExt;
 
 #[derive(Clone, Copy, Deserialize)]
 enum TokenKind {
