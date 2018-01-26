@@ -26,6 +26,7 @@ fn main() {
             .current_dir("../../c")
             .arg("lib")
             .arg(format!("OUT_TARGET={}", out_dir))
+            .arg("CFLAGS=-fPIC")
             .status()
             .unwrap()
             .success(),
