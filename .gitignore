@@ -2,3 +2,4 @@
 *.png
 *.ri
 node_modules
+/rust/test.*

@@ -4,16 +4,22 @@ everything: &everything
             - build-essential
             - ragel
         post-cache:
-            - cd c; make lib
-    test: &test
-        builddeps: &testdeps
-            - build-essential
+            - make -C c lib
+    test:
+        builddeps:
             - ragel
-            - nodejs=8.*
             - rust
             - clang
         post-cache:
             - cd rust; cargo test
+    bamboo-test:
+        builddeps:
+            - ragel
+            - rust
+            - clang
+            - python
+        post-cache:
+            - cd rust; cargo test -- --logfile test.log; ../convert-test-log.py
 squeeze: *everything
 jessie: *everything
 stretch: *everything
