@@ -1,0 +1,19 @@
+everything: &everything
+    build:
+        builddeps:
+            - build-essential
+            - ragel
+        post-cache:
+            - cd c; make lib
+    test: &test
+        builddeps: &testdeps
+            - build-essential
+            - ragel
+            - nodejs=8.*
+            - rust
+            - clang
+        post-cache:
+            - cd rust; cargo test
+squeeze: *everything
+jessie: *everything
+stretch: *everything
