@@ -124,8 +124,8 @@ impl HandlerState {
                 Some(Token::StartTag {
                     name: lhtml_to_name(start_tag.name),
 
-                    attributes: HashMap::from_iter(
-                        start_tag.attributes.iter_mut().rev().map(|attr| {
+                    attributes: HashMap::from_iter(start_tag.attributes.iter_mut().rev().map(
+                        |attr| {
                             attr.raw.has_value = false;
 
                             (
@@ -135,8 +135,8 @@ impl HandlerState {
                                     .attr_entities()
                                     .run(),
                             )
-                        }),
-                    ),
+                        },
+                    )),
 
                     self_closing: start_tag.self_closing,
                 })

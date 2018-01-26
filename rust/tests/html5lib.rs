@@ -27,23 +27,12 @@ macro_rules! read_tests {
 #[derive(Clone, Copy, Deserialize, Debug)]
 #[repr(i32)]
 pub enum InitialState {
-    #[serde(rename = "Data state")]
-    Data = lazyhtml::html_en_Data,
-
-    #[serde(rename = "PLAINTEXT state")]
-    PlainText = lazyhtml::html_en_PlainText,
-
-    #[serde(rename = "RCDATA state")]
-    RCData = lazyhtml::html_en_RCData,
-
-    #[serde(rename = "RAWTEXT state")]
-    RawText = lazyhtml::html_en_RawText,
-
-    #[serde(rename = "Script data state")]
-    ScriptData = lazyhtml::html_en_ScriptData,
-
-    #[serde(rename = "CDATA section state")]
-    CDataSection = lazyhtml::html_en_CDataSection,
+    #[serde(rename = "Data state")] Data = lazyhtml::html_en_Data,
+    #[serde(rename = "PLAINTEXT state")] PlainText = lazyhtml::html_en_PlainText,
+    #[serde(rename = "RCDATA state")] RCData = lazyhtml::html_en_RCData,
+    #[serde(rename = "RAWTEXT state")] RawText = lazyhtml::html_en_RawText,
+    #[serde(rename = "Script data state")] ScriptData = lazyhtml::html_en_ScriptData,
+    #[serde(rename = "CDATA section state")] CDataSection = lazyhtml::html_en_CDataSection,
 }
 
 fn default_initial_states() -> Vec<InitialState> {
@@ -85,9 +74,7 @@ impl Unescape for Test {
 
 pub fn get_tests() -> Vec<Test> {
     read_tests!("tokenizer/*.test")
-        .flat_map(|file| {
-            serde_json::from_reader::<_, Suite>(file).unwrap().tests
-        })
+        .flat_map(|file| serde_json::from_reader::<_, Suite>(file).unwrap().tests)
         .chain(
             read_tests!("tree-construction/*.dat")
                 .flat_map(|file| {
@@ -111,16 +98,14 @@ pub fn get_tests() -> Vec<Test> {
                     }
                     inputs
                 })
-                .map(|input| {
-                    Test {
-                        description: input.chars().flat_map(|c| c.escape_default()).collect(),
-                        output: tokenize_with_tree_builder(&input),
-                        input,
-                        with_feedback: true,
-                        initial_states: default_initial_states(),
-                        double_escaped: false,
-                        last_start_tag: String::new(),
-                    }
+                .map(|input| Test {
+                    description: input.chars().flat_map(|c| c.escape_default()).collect(),
+                    output: tokenize_with_tree_builder(&input),
+                    input,
+                    with_feedback: true,
+                    initial_states: default_initial_states(),
+                    double_escaped: false,
+                    last_start_tag: String::new(),
                 }),
         )
         .collect()

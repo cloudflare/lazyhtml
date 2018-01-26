@@ -9,9 +9,7 @@ enum TokenKind {
     Comment,
     StartTag,
     EndTag,
-
-    #[serde(rename = "DOCTYPE")]
-    Doctype,
+    #[serde(rename = "DOCTYPE")] Doctype,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -26,7 +24,9 @@ pub enum Token {
         self_closing: bool,
     },
 
-    EndTag { name: String },
+    EndTag {
+        name: String,
+    },
 
     Doctype {
         name: Option<String>,
