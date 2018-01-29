@@ -99,7 +99,10 @@ pub fn get_tests() -> Vec<Test> {
                     inputs
                 })
                 .map(|input| Test {
-                    description: input.chars().flat_map(|c| c.escape_default()).collect(),
+                    description: input
+                        .chars()
+                        .flat_map(|c| c.escape_default())
+                        .collect::<String>() + " (with feedback)",
                     output: tokenize_with_tree_builder(&input),
                     input,
                     with_feedback: true,

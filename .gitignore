@@ -2,4 +2,6 @@
 *.png
 *.ri
 node_modules
-/rust/test.*
+/rust/tests.log
+/rust/failures.log
+/rust/tests.xml

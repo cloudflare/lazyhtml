@@ -4,28 +4,27 @@ import re
 
 failure_re = re.compile(r"""thread '(.*?)' panicked at '(.*?)', tests/test\.rs:\d+:\d+
 (?:note: Run with `RUST_BACKTRACE=1` for a backtrace.
-)?failed \1\n""", re.DOTALL)
+)?""", re.DOTALL)
 
-success_re = re.compile("(ok|ignored) (.*?)\n")
+tests = open('tests.log', 'r').read().rstrip().split('\n')
+failures = open('failures.log', 'r').read()
+failures_pos = 0
 
-log = open('test.log', 'r').read()
+root = ET.Element('testsuite', name='html5lib-tests', tests=str(len(tests)))
 
-root = ET.Element('testsuite', name='html5lib-tests')
-
-pos = 0
-while pos < len(log):
-    match = success_re.match(log, pos)
-    if match is not None:
-        status, name = match.groups()
-        case = ET.SubElement(root, 'testcase', name=name)
-        if status == 'ignored':
-            ET.SubElement(case, 'skipped')
+for test in tests:
+    (status, name) = test.split(' ', 1)
+    case = ET.SubElement(root, 'testcase', name=name)
+    if status == 'failed':
+        match = failure_re.match(failures, failures_pos)
+        assert match is not None, "Could not parse %r" % failures[failures_pos:].split('\n', 1)[0]
+        failure_name, details = match.groups()
+        assert name == failure_name, "Could not find failure message for %s" % name
+        ET.SubElement(case, 'failure').text = details
+        failures_pos = match.end()
+    elif status == 'ignored':
+        ET.SubElement(case, 'skipped')
     else:
-        match = failure_re.match(log, pos)
-        assert match is not None, "Could not parse %r" % log[pos:].split('\n', 1)[0]
-        name, msg = match.groups()
-        case = ET.SubElement(root, 'testcase', name=name)
-        ET.SubElement(case, 'failure').text = msg
-    pos = match.end()
+        assert status == 'ok', 'Unknown test status: %s' % status
 
-ET.ElementTree(root).write('test.xml')
+ET.ElementTree(root).write('tests.xml')

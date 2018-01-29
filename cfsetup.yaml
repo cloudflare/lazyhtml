@@ -11,7 +11,8 @@ everything: &everything
             - rust
             - clang
         post-cache:
-            - cd rust; cargo test
+            - cd rust
+            - cargo test
     bamboo-test:
         builddeps:
             - ragel
@@ -19,8 +20,9 @@ everything: &everything
             - clang
             - python
         post-cache:
-            - cd rust; cargo test --no-run # print compilation failures if any
-            - RUST_TEST_THREADS=1 cd rust; cargo test -q --test test -- --logfile /dev/stderr 2>test.log; ../convert-test-log.py
+            - cd rust
+            - cargo test --no-run # print compilation failures if any
+            - RUST_TEST_THREADS=1 cargo test -q --test test -- --logfile tests.log 2>failures.log; ../convert-test-log.py
 squeeze: *everything
 jessie: *everything
 stretch: *everything

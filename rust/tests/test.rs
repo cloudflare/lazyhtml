@@ -254,13 +254,11 @@ impl Test {
                     test_state.tokens == self.output,
                     "Token mismatch\n\
                      state: {:?}\n\
-                     with feedback: {:?}\n\
                      original input: {:?}\n\
                      input: {:?}\n\
                      actual: {:#?}\n\
                      expected: {:#?}",
                     cs,
-                    self.with_feedback,
                     if pass == 1 { Some(&self.input) } else { None },
                     input,
                     test_state.tokens,
