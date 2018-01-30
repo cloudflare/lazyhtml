@@ -57,7 +57,7 @@ impl<'de> Deserialize<'de> for Token {
                 let mut actual_length = 0;
 
                 macro_rules! next {
-                    ($expected: expr) => (match seq.next_element()? {
+                    ($error_msg: expr) => (match seq.next_element()? {
                         Some(value) => {
                             #[allow(unused_assignments)] {
                                 actual_length += 1;
@@ -67,7 +67,7 @@ impl<'de> Deserialize<'de> for Token {
                         },
                         None => return Err(DeError::invalid_length(
                             actual_length,
-                            &$expected
+                            &$error_msg
                         ))
                     })
                 }
