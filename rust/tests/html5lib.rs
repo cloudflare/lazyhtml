@@ -73,43 +73,43 @@ impl Unescape for Test {
 }
 
 pub fn get_tests() -> Vec<Test> {
-    read_tests!("tokenizer/*.test")
-        .flat_map(|file| serde_json::from_reader::<_, Suite>(file).unwrap().tests)
-        .chain(
-            read_tests!("tree-construction/*.dat")
-                .flat_map(|file| {
-                    let mut inputs = Vec::new();
-                    let mut in_data = 0;
-                    for line in file.lines().map(|line| line.unwrap()) {
-                        if line == "#data" {
-                            in_data = 1;
-                        } else if line.starts_with('#') {
-                            in_data = 0;
-                        } else if in_data > 0 {
-                            if in_data > 1 {
-                                let s: &mut String = inputs.last_mut().unwrap();
-                                s.push('\n');
-                                s.push_str(&line);
-                            } else {
-                                inputs.push(line);
-                            }
-                            in_data += 1;
-                        }
-                    }
-                    inputs
-                })
-                .map(|input| Test {
-                    description: input
-                        .chars()
-                        .flat_map(|c| c.escape_default())
-                        .collect::<String>() + " (with feedback)",
-                    output: tokenize_with_tree_builder(&input),
-                    input,
-                    with_feedback: true,
-                    initial_states: default_initial_states(),
-                    double_escaped: false,
-                    last_start_tag: String::new(),
-                }),
-        )
-        .collect()
+    let mut tests = Vec::new();
+    for file in read_tests!("tokenizer/*.test") {
+        tests.extend(serde_json::from_reader::<_, Suite>(file).unwrap().tests);
+    }
+    for file in read_tests!("tree-construction/*.dat") {
+        let mut inputs = Vec::new();
+        let mut in_data = 0;
+        for line in file.lines().map(|line| line.unwrap()) {
+            if line == "#data" {
+                in_data = 1;
+            } else if line.starts_with('#') {
+                in_data = 0;
+            } else if in_data > 0 {
+                if in_data > 1 {
+                    let s: &mut String = inputs.last_mut().unwrap();
+                    s.push('\n');
+                    s.push_str(&line);
+                } else {
+                    inputs.push(line);
+                }
+                in_data += 1;
+            }
+        }
+        tests.extend(inputs.into_iter().map(|input| {
+            Test {
+                description: input
+                    .chars()
+                    .flat_map(|c| c.escape_default())
+                    .collect::<String>() + " (with feedback)",
+                output: tokenize_with_tree_builder(&input),
+                input,
+                with_feedback: true,
+                initial_states: default_initial_states(),
+                double_escaped: false,
+                last_start_tag: String::new(),
+            }
+        }));
+    }
+    tests
 }
