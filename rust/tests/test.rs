@@ -55,7 +55,6 @@ struct HandlerState {
     tokens: Vec<Token>,
     raw_output: String,
     saw_eof: bool,
-    current_pos: usize,
     parse_errors: ParseErrors,
     token_ranges: Vec<TokenRange>,
 }
@@ -71,7 +70,6 @@ impl HandlerState {
             tokens: Vec::new(),
             raw_output: String::new(),
             saw_eof: false,
-            current_pos: 0,
             parse_errors: ParseErrors::new(),
             token_ranges: Vec::new(),
         }
@@ -101,7 +99,8 @@ impl HandlerState {
 
     unsafe fn update_parse_errors(&mut self, token: *mut lhtml_token_t, token_len: usize) {
         let errors_bit_flags = (*token).parse_errors;
-        let mut end = self.current_pos + token_len;
+        let start = self.raw_output.len();
+        let mut end = start + token_len;
         let mut is_consequent_chars = false;
         let is_eof = (*token).type_ == LHTML_TOKEN_EOF;
 
@@ -121,16 +120,11 @@ impl HandlerState {
         let token_range = if should_extend_last_range {
             self.get_extended_last_token_range(end)
         } else {
-            let token_range = TokenRange {
-                start: self.current_pos,
-                end,
-            };
+            let token_range = TokenRange { start, end };
 
             self.token_ranges.push(token_range);
             token_range
         };
-
-        self.current_pos = end;
 
         ERROR_CODES.iter().enumerate().for_each(|(i, code)| {
             if errors_bit_flags & (1 << i) > 0 {

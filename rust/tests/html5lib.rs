@@ -56,7 +56,6 @@ fn default_with_errors() -> bool {
 }
 
 #[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct ParseError {
     pub code: String,
     pub line: usize,
@@ -105,8 +104,7 @@ impl Test {
                     let pos = self.input
                         .split("\n")
                         .take(err.line - 1)
-                        .fold(0, |pos, s| pos + s.len()) + err.col
-                        - 1;
+                        .fold(err.col - 1, |pos, s| pos + s.len());
 
                     // NOTE: use error code slice from the static array
                     // to avoid specifying lifetimes on owning structures.
