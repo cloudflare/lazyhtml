@@ -114,6 +114,13 @@ impl HandlerState {
             is_consequent_chars = true;
         }
 
+        // NOTE: Consider we have an EOF in DOCTYPE at pos 15.
+        // We attach error to DOCTYPE, so actual error has range [0; 15).
+        // However, when we assign range to expected error it fails into EOF's
+        // range [15;16) and, thus, we have mismatch.
+        // Therefore, to workaround such cases, instead of adding separate range
+        // for EOF or consequent character token we just extend last available
+        // token range.
         let should_extend_last_range =
             (is_consequent_chars || is_eof) && self.token_ranges.len() > 0;
 
