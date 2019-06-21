@@ -2,6 +2,8 @@
 authors = ["Ingvar Stepanyan <me@rreverser.com>"]
 name = "lazyhtml"
 version = "0.1.0"
+publish = false
+autotests = false
 
 [[bench]]
 harness = false
