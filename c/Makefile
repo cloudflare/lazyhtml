@@ -48,16 +48,16 @@ endif
 
 ## Object files
 
-$(OUT_TARGET)/%.o: | $(OUT_TARGET)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OUT_TARGET)/tokenizer.o: $(OUT)/tokenizer-states.h
+$(OUT_TARGET)/tokenizer.o: $(OUT)/tokenizer-states.h | $(OUT_TARGET)
 $(OUT_TARGET)/tokenizer.o:
 	$(CC) $(CFLAGS) -c $< -include $(OUT)/tokenizer-states.h -iquote. -Wno-parentheses-equality -o $@
 
-$(OUT_TARGET)/parser-feedback.o: $(OUT)/tokenizer-states.h
+$(OUT_TARGET)/parser-feedback.o: $(OUT)/tokenizer-states.h | $(OUT_TARGET)
 $(OUT_TARGET)/parser-feedback.o:
 	$(CC) $(CFLAGS) -c $< -include $(OUT)/tokenizer-states.h -o $@
+
+$(OUT_TARGET)/serializer.o: | $(OUT_TARGET)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 ## Final library and binaries
 
