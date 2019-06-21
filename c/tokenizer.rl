@@ -231,7 +231,10 @@ bool lhtml_feed(lhtml_tokenizer_t *state, const lhtml_string_t *chunk) {
         const char *const pe = state->buffer_pos;
         const char *const eof = chunk == NULL ? pe : NULL;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
         %%write exec;
+#pragma GCC diagnostic pop
 
         if (state->cs == html_error) {
             return emit_error(state, unprocessed);
