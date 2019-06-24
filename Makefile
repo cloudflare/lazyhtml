@@ -11,6 +11,10 @@ c-tokenizer:
 test:
 	cd rust && cargo test
 
+.PHONY: bench
+bench:
+	cd rust && cargo bench
+
 %.dot: c/tokenizer.rl $(RL_FILES)
 	$(RAGEL) $(RAGELFLAGS) -Vp -M $(notdir $(basename $@)) $< > $@
 	node simplify-graph.js $@
