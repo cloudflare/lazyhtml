@@ -1,10 +1,9 @@
 extern crate lazyhtml;
 
-extern crate serde;
-extern crate serde_json;
-
 #[macro_use]
-extern crate serde_derive;
+extern crate serde;
+
+extern crate serde_json;
 
 #[macro_use]
 extern crate html5ever;
@@ -12,7 +11,7 @@ extern crate html5ever;
 // From 'rustc-test' crate.
 // Mirrors Rust's internal 'libtest'.
 // https://doc.rust-lang.org/1.1.0/test/index.html
-extern crate test;
+extern crate rustc_test as test;
 
 extern crate glob;
 

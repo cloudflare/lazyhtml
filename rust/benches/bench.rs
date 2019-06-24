@@ -1,7 +1,7 @@
 extern crate glob;
 extern crate html5ever;
 extern crate lazyhtml;
-extern crate test;
+extern crate rustc_test as test;
 
 use lazyhtml::*;
 use test::black_box;
