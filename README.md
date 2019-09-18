@@ -1,6 +1,6 @@
 # LazyHTML (lhtml)
 
-lhtml is a HTML5-compliant parser and serializer than enables building transformation pipeline in a pluggable manner.
+LazyHTML is an HTML5-compliant parser and serializer than enables building transformation pipeline in a pluggable manner.
 
 ## Testing
 
