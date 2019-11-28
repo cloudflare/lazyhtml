@@ -32,9 +32,9 @@ lhtml_options_t options = {
   .buffer = buffer,
   .buffer_size = sizeof(buffer)
 };
- 
+
 lhtml_state_t state;
- 
+
 lhtml_init(state, options);
 ```
 
@@ -70,7 +70,7 @@ static const lhtml_string_t REPLACEMENT = {
   .data = "[REPLACED]",
   .length = sizeof("[REPLACED]") - 1
 };
- 
+
 static void token_handler(lhtml_token_t *token, void *extra /* this can be your state */) {
   if (token->type == LHTML_TOKEN_START_TAG) { // we're interested only in start tags
     const lhtml_token_starttag_t *tag = &token->start_tag;
@@ -168,3 +168,7 @@ More specifically, as per specification, you have various text transformations i
 Those are important for correct display in browsers, but as we don't render content, perform very limited text processing, and care only about standard (ASCII-subset) tag names and attributes, we can get away with ignoring those and implementing in a separate plugin if needed. This doesn't change correctness as long as you do e.g. case-insensitive comparisons (which we already do in a very cheap way - case-insensitive hashing).
 
 Otherwise, we would need to apply charset detection and text decoding (as entity matches or U+FFFD have different representations in various encodings) in front of the parser which would make it significantly slower for little to no benefits.
+
+## License
+
+BSD licensed. See the [LICENSE](LICENSE) file for details.
