@@ -1,6 +1,6 @@
 pub use lazyhtml_sys::*;
-use std::mem::zeroed;
 use std::marker::PhantomData;
+use std::mem::zeroed;
 
 pub struct Tokenizer<'a> {
     state: lhtml_tokenizer_t,

@@ -4,8 +4,8 @@
 #![allow(unused)]
 
 use std::fmt::{self, Debug, Formatter};
-use std::slice;
 use std::ops::{Deref, DerefMut};
+use std::slice;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 

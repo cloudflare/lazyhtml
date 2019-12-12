@@ -1,5 +1,5 @@
-use token::TokenRange;
 use std::collections::HashSet;
+use token::TokenRange;
 
 pub const ERROR_CODES: &'static [&'static str] = &[
     "abrupt-closing-of-empty-comment",

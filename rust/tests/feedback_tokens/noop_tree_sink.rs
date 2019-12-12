@@ -1,8 +1,8 @@
 // https://github.com/servo/html5ever/blob/master/html5ever/examples/noop-tree-builder.rs
 
+use html5ever::tendril::StrTendril;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use html5ever::{Attribute, ExpandedName, QualName};
-use html5ever::tendril::StrTendril;
 use std::borrow::Cow;
 
 pub struct NoopTreeSink {
