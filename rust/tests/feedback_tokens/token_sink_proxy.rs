@@ -1,7 +1,7 @@
 use html5ever::tokenizer::{TagKind, Token, TokenSink, TokenSinkResult};
-use token::Token as MyToken;
 use std::collections::HashMap;
 use std::iter::FromIterator;
+use token::Token as MyToken;
 
 // sends tokens to a given sink, while at the same time converting and
 // recording them into the provided array
@@ -57,9 +57,11 @@ where
             Token::CommentToken(ref s) => {
                 self.tokens.push(MyToken::Comment(s.to_string()));
             }
-            Token::CharacterTokens(ref s) => if !s.is_empty() {
-                self.push_character_token(s);
-            },
+            Token::CharacterTokens(ref s) => {
+                if !s.is_empty() {
+                    self.push_character_token(s);
+                }
+            }
             Token::NullCharacterToken => {
                 self.push_character_token("\0");
             }
