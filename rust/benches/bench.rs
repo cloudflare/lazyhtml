@@ -3,17 +3,18 @@ extern crate html5ever;
 extern crate lazyhtml;
 extern crate rustc_test as test;
 
-use lazyhtml::*;
-use test::black_box;
-use std::ptr::null_mut;
-use test::Bencher;
-use std::os::raw::c_void;
-use html5ever::tokenizer::{BufferQueue, Token, TokenSink, TokenSinkResult, Tokenizer,
-                           TokenizerOpts, TokenizerResult};
 use html5ever::tendril::StrTendril;
-use test::{test_main, ShouldPanic, TDynBenchFn, TestDesc, TestDescAndFn, TestFn, TestName};
+use html5ever::tokenizer::{
+    BufferQueue, Token, TokenSink, TokenSinkResult, Tokenizer, TokenizerOpts, TokenizerResult,
+};
+use lazyhtml::*;
 use std::fs::File;
 use std::io::Read;
+use std::os::raw::c_void;
+use std::ptr::null_mut;
+use test::black_box;
+use test::Bencher;
+use test::{test_main, ShouldPanic, TDynBenchFn, TestDesc, TestDescAndFn, TestFn, TestName};
 
 unsafe extern "C" fn handle_token(token: *mut lhtml_token_t, _state: *mut c_void) {
     black_box(*token);

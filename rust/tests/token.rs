@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::de::{Deserialize, Deserializer, Error as DeError};
+use std::collections::HashMap;
 use std::fmt::{self, Formatter};
 use std::iter::FromIterator;
 
@@ -73,19 +73,21 @@ impl<'de> Deserialize<'de> for Token {
                 let mut actual_length = 0;
 
                 macro_rules! next {
-                    ($error_msg: expr) => (match seq.next_element()? {
-                        Some(value) => {
-                            #[allow(unused_assignments)] {
-                                actual_length += 1;
-                            }
+                    ($error_msg: expr) => {
+                        match seq.next_element()? {
+                            Some(value) => {
+                                #[allow(unused_assignments)]
+                                {
+                                    actual_length += 1;
+                                }
 
-                            value
-                        },
-                        None => return Err(DeError::invalid_length(
-                            actual_length,
-                            &$error_msg
-                        ))
-                    })
+                                value
+                            }
+                            None => {
+                                return Err(DeError::invalid_length(actual_length, &$error_msg))
+                            }
+                        }
+                    };
                 }
 
                 let kind = next!("2 or more");

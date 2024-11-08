@@ -1,10 +1,10 @@
 extern crate bindgen;
 extern crate glob;
 
+use glob::glob;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
-use glob::glob;
 
 const IMPLICIT_DEPS: &[&str] = &[
     "../../c/tokenizer-states.rl",

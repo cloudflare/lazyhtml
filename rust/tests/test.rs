@@ -15,26 +15,26 @@ extern crate rustc_test as test;
 
 extern crate glob;
 
-mod token;
-mod feedback_tokens;
 mod decoder;
-mod unescape;
+mod feedback_tokens;
 mod html5lib;
 mod parse_errors;
+mod token;
+mod unescape;
 
-use std::collections::HashMap;
+use decoder::Decoder;
+use html5lib::{get_tests, Test};
+use lazyhtml::lhtml_token_type_t::{LHTML_TOKEN_CHARACTER, LHTML_TOKEN_EOF};
 use lazyhtml::*;
-use std::os::raw::c_void;
+use parse_errors::{ParseErrors, ERROR_CODES};
+use std::collections::HashMap;
 use std::iter::FromIterator;
+use std::iter::IntoIterator;
+use std::os::raw::c_void;
 use std::ptr::null_mut;
 use test::{test_main, ShouldPanic, TestDesc, TestDescAndFn, TestFn, TestName};
 use token::{Token, TokenRange};
-use decoder::Decoder;
 use unescape::Unescape;
-use html5lib::{get_tests, Test};
-use std::iter::IntoIterator;
-use parse_errors::{ParseErrors, ERROR_CODES};
-use lazyhtml::lhtml_token_type_t::{LHTML_TOKEN_CHARACTER, LHTML_TOKEN_EOF};
 
 unsafe fn lhtml_to_raw_str(s: &lhtml_string_t) -> &str {
     ::std::str::from_utf8_unchecked(s)
@@ -326,7 +326,8 @@ impl Test {
                 assert_eq!(&test_state.raw_output, input);
 
                 if !is_serializer_test && self.with_errors {
-                    let expected_errors = self.get_expected_parse_errors(test_state.token_ranges)
+                    let expected_errors = self
+                        .get_expected_parse_errors(test_state.token_ranges)
                         .unwrap();
 
                     assert_eq!(

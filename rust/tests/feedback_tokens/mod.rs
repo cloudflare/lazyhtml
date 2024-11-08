@@ -1,12 +1,12 @@
 mod noop_tree_sink;
 mod token_sink_proxy;
 
-use html5ever::tree_builder::{TreeBuilder, TreeBuilderOpts};
-use html5ever::tokenizer::{BufferQueue, Tokenizer, TokenizerOpts, TokenizerResult};
-use html5ever::tendril::StrTendril;
-use token::Token as MyToken;
 use self::noop_tree_sink::NoopTreeSink;
 use self::token_sink_proxy::TokenSinkProxy;
+use html5ever::tendril::StrTendril;
+use html5ever::tokenizer::{BufferQueue, Tokenizer, TokenizerOpts, TokenizerResult};
+use html5ever::tree_builder::{TreeBuilder, TreeBuilderOpts};
+use token::Token as MyToken;
 
 pub fn tokenize_with_tree_builder(input: &str) -> Vec<MyToken> {
     let mut tokens = Vec::new();

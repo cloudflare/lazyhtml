@@ -1,7 +1,7 @@
 use html5ever::data::{C1_REPLACEMENTS, NAMED_ENTITIES};
 use std::char;
-use std::str::Chars;
 use std::iter::Peekable;
+use std::str::Chars;
 
 #[derive(PartialEq, Eq)]
 enum Entities {
@@ -48,7 +48,8 @@ impl<'a> Decoder<'a> {
                         C1_REPLACEMENTS[(code - 0x80) as usize].or_else(|| char::from_u32(code))
                     }
                     _ => char::from_u32(code),
-                }.unwrap_or('\u{FFFD}'),
+                }
+                .unwrap_or('\u{FFFD}'),
             );
             self.next_if_char(';');
             true

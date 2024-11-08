@@ -1,12 +1,12 @@
-use serde_json;
-use glob;
-use std::io::{BufRead, BufReader};
-use std::fs::File;
-use unescape::Unescape;
-use lazyhtml;
-use token::{Token, TokenRange};
 use feedback_tokens::tokenize_with_tree_builder;
+use glob;
+use lazyhtml;
 use parse_errors::{ParseErrors, ERROR_CODES};
+use serde_json;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use token::{Token, TokenRange};
+use unescape::Unescape;
 
 // Skip some errors in certain tests due to the limited functionality of the parser.
 const SKIP_ERRORS: &'static [(&'static str, &'static str)] = &[
@@ -20,14 +20,11 @@ struct Suite {
 }
 
 macro_rules! read_tests {
-    ($path: expr) => (
-        glob::glob(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../",
-            $path
-        )).unwrap()
-        .map(|path| BufReader::new(File::open(path.unwrap()).unwrap()))
-    )
+    ($path: expr) => {
+        glob::glob(concat!(env!("CARGO_MANIFEST_DIR"), "/../", $path))
+            .unwrap()
+            .map(|path| BufReader::new(File::open(path.unwrap()).unwrap()))
+    };
 }
 
 #[derive(Clone, Copy, Deserialize, Debug)]
@@ -101,7 +98,8 @@ impl Test {
                 .filter(|&code| !SKIP_ERRORS.contains(&(self.description.as_str(), code)))
                 .find(|&&code| code == err.code)
                 .map(|&code| {
-                    let pos = self.input
+                    let pos = self
+                        .input
                         .split("\n")
                         .take(err.line - 1)
                         .fold(err.col - 1, |pos, s| pos + s.len());
@@ -184,7 +182,8 @@ pub fn get_tests() -> Vec<Test> {
                 description: input
                     .chars()
                     .flat_map(|c| c.escape_default())
-                    .collect::<String>() + " (with feedback)",
+                    .collect::<String>()
+                    + " (with feedback)",
                 output: tokenize_with_tree_builder(&input),
                 input,
                 with_feedback: true,

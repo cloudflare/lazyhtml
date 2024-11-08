@@ -1,11 +1,11 @@
 extern crate getopts;
 extern crate lazyhtml;
 
-use std::ptr::null_mut;
-use lazyhtml::*;
-use std::os::raw::c_void;
 use getopts::Options;
+use lazyhtml::*;
 use std::env::args;
+use std::os::raw::c_void;
+use std::ptr::null_mut;
 
 struct HandlerState {
     handler: lhtml_token_handler_t,
@@ -40,14 +40,16 @@ fn main() {
     opts.optflag("h", "help", "Show this help");
 
     let matches = match opts.parse(args().skip(1)) {
-        Ok(matches) => if matches.free.is_empty() {
-            eprintln!("Missing HTML input");
-            None
-        } else if matches.opt_present("h") {
-            None
-        } else {
-            Some(matches)
-        },
+        Ok(matches) => {
+            if matches.free.is_empty() {
+                eprintln!("Missing HTML input");
+                None
+            } else if matches.opt_present("h") {
+                None
+            } else {
+                Some(matches)
+            }
+        }
         Err(e) => {
             eprintln!("{}", e);
             None
